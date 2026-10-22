@@ -1,26 +1,289 @@
+@import url('https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Poppins:wght@500;600;700;800&display=swap');
 @import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+@custom-variant dark (&:is(.dark *));
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  --font-sans: var(--font-open-sans), var(--font-sans), 'Open Sans', system-ui, -apple-system, sans-serif;
+  --font-heading: var(--font-poppins), var(--font-heading), 'Poppins', system-ui, -apple-system, sans-serif;
+
+  --color-heading: #111827;
+  --color-text: #111827;
+  --color-background: #FFFFFF;
+  --color-surface: #FFFFFF;
+  --color-section: #F3F4F6;
+  --color-section-bg: #F3F4F6;
+  --color-primary: #4F46E5;
+  --color-link: #4F46E5;
+  --color-on-primary: #FFFFFF;
+  --color-footer-background: #111827;
+  --color-footer-bg: #111827;
+  --color-footer-text: #FFFFFF;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+:root {
+  /* =========================================================================
+     EXACT 4-COLOR INTERFACE SYSTEM & SEMANTIC TOKENS
+     #111827 — Headings, body text, and footer background
+     #FFFFFF — Main background, cards, inverse text
+     #F3F4F6 — Alternate section backgrounds and subtle surfaces
+     #4F46E5 — Primary buttons, links, and active interactive elements
+  ========================================================================= */
+  --color-heading: #111827;
+  --color-text: #111827;
+  --color-background: #FFFFFF;
+  --color-surface: #FFFFFF;
+  --color-section: #F3F4F6;
+  --color-section-bg: #F3F4F6;
+  --color-primary: #4F46E5;
+  --color-link: #4F46E5;
+  --color-on-primary: #FFFFFF;
+  --color-footer-background: #111827;
+  --color-footer-bg: #111827;
+  --color-footer-text: #FFFFFF;
+  --color-border: #E5E7EB;
+
+  /* Semantic Core */
+  --background: #FFFFFF;
+  --foreground: #111827;
+  --card: #FFFFFF;
+  --card-foreground: #111827;
+  --popover: #FFFFFF;
+  --popover-foreground: #111827;
+
+  /* Primary Action */
+  --primary: #4F46E5;
+  --primary-foreground: #FFFFFF;
+  --primary-hover: #4338CA;
+  --primary-active: #3730A3;
+
+  /* Supporting Surfaces */
+  --secondary: #F3F4F6;
+  --secondary-foreground: #111827;
+  --muted: #F3F4F6;
+  --muted-foreground: #4B5563;
+  --accent: #F3F4F6;
+  --accent-foreground: #4F46E5;
+
+  /* Borders & Inputs */
+  --border: #E5E7EB;
+  --input: #E5E7EB;
+  --ring: #4F46E5;
+  --destructive: #DC2626;
+
+  /* Consistent Radius */
+  --radius: 0.75rem;
+}
+
+.dark {
+  /* Preserved dark mode definitions without alteration */
+  --background: #111827;
+  --foreground: #F9FAFB;
+  --card: #1F2937;
+  --card-foreground: #F9FAFB;
+  --popover: #1F2937;
+  --popover-foreground: #F9FAFB;
+  --primary: #6366F1;
+  --primary-foreground: #FFFFFF;
+  --secondary: #374151;
+  --secondary-foreground: #F9FAFB;
+  --muted: #374151;
+  --muted-foreground: #9CA3AF;
+  --accent: #374151;
+  --accent-foreground: #818CF8;
+  --border: #374151;
+  --input: #374151;
+  --ring: #6366F1;
+  --destructive: #EF4444;
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground transition-colors duration-150;
+    font-family: var(--font-open-sans), var(--font-sans), 'Open Sans', system-ui, -apple-system, sans-serif;
+    font-feature-settings: "rlig" 1, "calt" 1;
+    scroll-behavior: smooth;
+    color: #111827;
+    background-color: #FFFFFF;
+  }
+  h1, h2, h3, h4, h5, h6,
+  .font-heading,
+  .font-serif,
+  [data-heading],
+  .page-title,
+  .section-title,
+  .card-title,
+  th,
+  summary {
+    font-family: var(--font-poppins), var(--font-heading), 'Poppins', system-ui, -apple-system, sans-serif !important;
+    letter-spacing: -0.02em;
+    color: #111827;
+  }
+  h1 { font-weight: 800; letter-spacing: -0.025em; }
+  h2 { font-weight: 700; letter-spacing: -0.02em; }
+  h3 { font-weight: 600; letter-spacing: -0.015em; }
+  h4, h5, h6 { font-weight: 600; letter-spacing: -0.01em; }
+}
+
+/* Accessibility Focus States */
+:focus-visible {
+  outline: 2px solid #4F46E5;
+  outline-offset: 2px;
+}
+
+/* =========================================================================
+   CANONICAL SHARED CONTENT CONTAINER: site-container
+   Consistent Full-Width Layout matching Header and Footer:
+   - Width: 100%
+   - Box-sizing: border-box
+   - Mobile gutter: 16px per side (px-4)
+   - Small tablet gutter: 24px per side (sm:px-6)
+   - Large tablet and desktop gutter: 32px per side (lg:px-8)
+   - Wide screen gutter: 48px per side (xl:px-12)
+========================================================================= */
+@utility site-container {
+  box-sizing: border-box;
+  width: 100%;
+  padding-inline: 16px;
+
+  @variant sm {
+    padding-inline: 24px;
+  }
+  @variant lg {
+    padding-inline: 32px;
+  }
+  @variant xl {
+    padding-inline: 48px;
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+.site-container {
+  box-sizing: border-box;
+  width: 100%;
+  padding-inline: 16px;
+}
+
+@media (min-width: 640px) {
+  .site-container {
+    padding-inline: 24px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .site-container {
+    padding-inline: 32px;
+  }
+}
+
+@media (min-width: 1280px) {
+  .site-container {
+    padding-inline: 48px;
+  }
+}
+
+/* Shared Outlined Interactive Component Styling */
+@utility btn-outline {
+  border: 1px solid #E5E7EB;
+  background-color: #FFFFFF;
+  color: #111827;
+  transition-property: color, background-color, border-color;
+  transition-duration: 150ms;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+
+  &:hover:not(:disabled):not([aria-disabled="true"]) {
+    background-color: #4F46E5;
+    color: #FFFFFF;
+    border-color: #4F46E5;
+  }
+
+  &:hover:not(:disabled):not([aria-disabled="true"]) svg {
+    color: #FFFFFF;
+  }
+
+  &:focus-visible {
+    outline: 2px solid #4F46E5;
+    outline-offset: 2px;
+  }
+
+  &:disabled,
+  &[aria-disabled="true"] {
+    opacity: 0.5;
+    pointer-events: none;
+    cursor: not-allowed;
+  }
+}
+
+.btn-outline {
+  border: 1px solid #E5E7EB;
+  background-color: #FFFFFF;
+  color: #111827;
+  transition: color 150ms cubic-bezier(0.4, 0, 0.2, 1),
+              background-color 150ms cubic-bezier(0.4, 0, 0.2, 1),
+              border-color 150ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+.btn-outline:hover:not(:disabled):not([aria-disabled="true"]) {
+  background-color: #4F46E5;
+  color: #FFFFFF;
+  border-color: #4F46E5;
+}
+.btn-outline:hover:not(:disabled):not([aria-disabled="true"]) svg {
+  color: #FFFFFF;
+}
+.btn-outline:focus-visible {
+  outline: 2px solid #4F46E5;
+  outline-offset: 2px;
+}
+.btn-outline:disabled,
+.btn-outline[aria-disabled="true"] {
+  opacity: 0.5;
+  pointer-events: none;
+  cursor: not-allowed;
+}
+
+/* Subtle Card Elevation */
+.editorial-card {
+  background-color: #FFFFFF;
+  border: 1px solid #E5E7EB;
+  border-radius: 12px;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+.editorial-card:hover {
+  border-color: #D1D5DB;
+  box-shadow: 0 4px 16px -2px rgba(17, 24, 39, 0.05);
+}
+
+/* Accessible prefers-reduced-motion safeguard */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

@@ -1,0 +1,777 @@
+react
+next/link
+@/lib/school-data
+@/components/AdmissionEnquiryForm
+lucide-react
+lg:col-span-7 flex flex-col gap-5 text-center lg:text-left
+inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#FEF2F2] border border-[#FECACA] text-[#B91C1C] text-xs font-bold uppercase tracking-wider mx-auto lg:mx-0 w-fit shadow-xs
+}
+              <span className=
+>
+                Since 1988
+              </span>
+            </h1>
+
+            {/* Subtitle */}
+            <p className=
+>
+              Welcome to <strong>Devasthaly Vidyapeeth</strong>, Chilkahar, Ballia. A premier CBSE-affiliated co-educational residential and day-boarding institution where timeless Indian values converge with state-of-the-art modern education.
+            </p>
+
+            {/* Quick Key Badges */}
+            <div className=
+>
+              <span className=
+>
+                <ShieldCheck className=
+>CBSE Affil. No. 2130238</span>
+              </span>
+              <span className=
+>
+                <Award className=
+>36+ Years of Trust</span>
+              </span>
+              <span className=
+>
+                <Building className=
+>15-Acre Eco Campus</span>
+              </span>
+            </div>
+
+            {/* Primary & Secondary Action Buttons */}
+            <div className=
+>
+              <Link
+                href=
+className=
+>
+                <span>Apply for Admission</span>
+                <ArrowRight className=
+rel=
+className=
+>
+                <MessageCircle className=
+>
+            <AdmissionEnquiryForm />
+          </div>
+        </div>
+      </section>
+
+      {/* =========================================================================
+          SECTION 2: INSTITUTIONAL TRUST STRIP
+      ========================================================================= */}
+      <section className=
+>
+        <div className=
+>
+          {SCHOOL_INFO.stats.map((stat, idx) => (
+            <div
+              key={idx}
+              className=
+>
+              <span className=
+>
+                {stat.value}
+              </span>
+              <span className=
+>
+                {stat.label}
+              </span>
+              <span className=
+>{stat.subtext}</span>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* =========================================================================
+          SECTION 3: PARENT QUICK ACTIONS HUB
+      ========================================================================= */}
+      <section className=
+>
+        <div className=
+>
+          {[
+            { label:
+, href:
+, icon: Download },
+            { label:
+, href:
+, icon: FileText },
+            { label:
+, href:
+, icon: Bus },
+            { label:
+, href:
+, icon: Award },
+            { label:
+, href:
+, icon: Calendar },
+            { label:
+, href:
+, icon: ShieldCheck },
+          ].map((item, idx) => {
+            const IconComponent = item.icon;
+            return (
+              <Link
+                key={idx}
+                href={item.href}
+                className=
+>
+                <IconComponent className=
+>
+        <div className=
+>
+          <span className=
+>
+            Our Foundation
+          </span>
+          <h2 className=
+>
+            An Academic Environment Built for Focus, Character, and Distinction
+          </h2>
+          <p className=
+>
+            For more than three decades, Devasthaly Vidyapeeth has been the trusted sanctuary for families seeking rigorous CBSE learning, disciplined boarding life, and authentic Indian values.
+          </p>
+        </div>
+
+        <div className=
+>
+          {[
+            {
+              title:
+,
+              desc:
+,
+              icon: BookOpen,
+              color:
+,
+              bg:
+,
+            },
+            {
+              title:
+,
+              desc:
+,
+              icon: Building,
+              color:
+,
+              bg:
+,
+            },
+            {
+              title:
+,
+              desc:
+,
+              icon: Sparkles,
+              color:
+,
+              bg:
+,
+            },
+            {
+              title:
+,
+              desc:
+,
+              icon: Heart,
+              color:
+,
+              bg:
+,
+            },
+          ].map((pillar, idx) => {
+            const Icon = pillar.icon;
+            return (
+              <div
+                key={idx}
+                className=
+>
+                <div>
+                  <div
+                    className={`w-12 h-12 rounded-xl ${pillar.bg} ${pillar.color} flex items-center justify-center mb-4`}
+                  >
+                    <Icon className=
+>
+                    {pillar.title}
+                  </h3>
+                  <p className=
+>
+                    {pillar.desc}
+                  </p>
+                </div>
+                <div className=
+>
+                  <span>Learn more</span>
+                  <ChevronRight className=
+>
+        <div className=
+>
+          <div className=
+>
+            <div>
+              <span className=
+>
+                Curriculum Progression
+              </span>
+              <h2 className=
+>
+                Comprehensive CBSE Curriculum (LKG to Class 12)
+              </h2>
+            </div>
+            <Link
+              href=
+className=
+>
+              <span>Explore Detailed Academic Wings</span>
+              <ChevronRight className=
+>
+            {/* Wing 1: Foundational */}
+            <div className=
+>
+              <div>
+                <span className=
+>
+                  Early Childhood (Age 3–7)
+                </span>
+                <h3 className=
+>
+                  Foundational Wing (LKG to Class II)
+                </h3>
+                <p className=
+>
+                  Activity-based, play-way methodology focused on foundational literacy, numeracy, spoken English confidence, and sensory discovery in colorful child-friendly classrooms.
+                </p>
+                <ul className=
+>
+                  <li className=
+>
+                    <CheckCircle2 className=
+>
+                    <CheckCircle2 className=
+>
+                    <CheckCircle2 className=
+className=
+>
+                Learn About Foundational Pedagogy →
+              </Link>
+            </div>
+
+            {/* Wing 2: Middle School */}
+            <div className=
+>
+              <div>
+                <span className=
+>
+                  Classes III to VIII
+                </span>
+                <h3 className=
+>
+                  Preparatory & Middle Wing
+                </h3>
+                <p className=
+>
+                  Experiential learning introducing scientific inquiry, analytical mathematics, computer programming, languages (English, Hindi, Sanskrit), and collaborative project work.
+                </p>
+                <ul className=
+>
+                  <li className=
+>
+                    <CheckCircle2 className=
+>
+                    <CheckCircle2 className=
+>
+                    <CheckCircle2 className=
+className=
+>
+                Learn About Middle School Subjects →
+              </Link>
+            </div>
+
+            {/* Wing 3: Senior Secondary */}
+            <div className=
+>
+              <div className=
+>
+                High Demand
+              </div>
+              <div>
+                <span className=
+>
+                  Classes IX to XII
+                </span>
+                <h3 className=
+>
+                  Secondary & Senior Secondary
+                </h3>
+                <p className=
+>
+                  Rigorous preparation for CBSE Board examinations coupled with foundation guidance for NEET, JEE, and CUET across all three distinct streams.
+                </p>
+                <ul className=
+>
+                  <li className=
+>
+                    <CheckCircle2 className=
+>
+                    <CheckCircle2 className=
+>
+                    <CheckCircle2 className=
+className=
+>
+                Apply for Class XI Admission →
+              </Link>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* =========================================================================
+          SECTION 6: CAMPUS FACILITIES & RESIDENTIAL LIFE
+      ========================================================================= */}
+      {/* =========================================================================
+          SECTION 6: CAMPUS FACILITIES & RESIDENTIAL LIFE
+      ========================================================================= */}
+      <section className=
+>
+        <div className=
+>
+          <span className=
+>
+            Infrastructure & Facilities
+          </span>
+          <h2 className=
+>
+            World-Class Infrastructure on a Serene 15-Acre Campus
+          </h2>
+          <p className=
+>
+            From modern science laboratories and smart digital learning suites to separate residential hostels and an expansive athletics arena.
+          </p>
+        </div>
+
+        <div className=
+>
+          {FACILITIES_DATA.slice(0, 8).map((fac) => (
+            <div
+              key={fac.id}
+              className=
+>
+              <div>
+                <span className=
+>
+                  {fac.category}
+                </span>
+                <h3 className=
+>
+                  {fac.title}
+                </h3>
+                <p className=
+>
+                  {fac.description}
+                </p>
+              </div>
+
+              <div className=
+>
+                {fac.highlights.map((h, i) => (
+                  <div key={i} className=
+>
+                    <span className=
+>
+          <Link
+            href=
+className=
+>
+            <span>Explore All Campus Facilities & Hostel Routine</span>
+            <ChevronRight className=
+>
+        <div className=
+>
+          {/* Left Column: Official Notices */}
+          <div className=
+>
+            <div className=
+>
+              <div>
+                <span className=
+>
+                  Official School Desk
+                </span>
+                <h2 className=
+>
+                  Latest Notices & Circulars
+                </h2>
+              </div>
+              <Link
+                href=
+className=
+>
+                <span>View Archive</span>
+                <ChevronRight className=
+>
+              {NOTICES_DATA.slice(0, 5).map((notice) => (
+                <div
+                  key={notice.id}
+                  className=
+>
+                  <div className=
+>
+                    <div className=
+>
+                      <FileText className=
+>
+                        <span className=
+>
+                          {notice.category}
+                        </span>
+                        {notice.isNew && (
+                          <span className=
+>
+                            New
+                          </span>
+                        )}
+                        <span className=
+>{notice.date}</span>
+                      </div>
+                      <h4 className=
+>
+                        {notice.title}
+                      </h4>
+                    </div>
+                  </div>
+
+                  <Link
+                    href=
+className=
+>
+                    <Download className=
+>
+            <div className=
+>
+              <div className=
+>
+                <ShieldCheck className=
+>
+                CBSE Mandatory Public Disclosure
+              </h3>
+              <p className=
+>
+                In strict adherence to CBSE Circular CBSE/AFF/2021, all general school information, society registration, fire safety certificate, building safety certificate, and fee structure documents are available for public verification.
+              </p>
+              <Link
+                href=
+className=
+>
+                Access Mandatory Disclosures →
+              </Link>
+            </div>
+
+            <div className=
+>
+              <h4 className=
+>
+                Key Document Downloads
+              </h4>
+              <ul className=
+>
+                {[
+                  { name:
+, size:
+},
+                  { name:
+, size:
+},
+                  { name:
+, size:
+},
+                  { name:
+, size:
+},
+                ].map((doc, i) => (
+                  <li key={i}>
+                    <Link
+                      href=
+className=
+>
+                      <span className=
+>{doc.name}</span>
+                      <span className=
+>PDF • {doc.size}</span>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* =========================================================================
+          SECTION 8: PROOF OF EXCELLENCE: TOPPERS & TESTIMONIALS
+      ========================================================================= */}
+      <section className=
+>
+        <div className=
+>
+          <span className=
+>
+            Proven Merit
+          </span>
+          <h2 className=
+>
+            Proven Results. Proud Parents. Inspired Alumni.
+          </h2>
+          <p className=
+>
+            Consistently leading Ballia district board merit lists while grooming students for national entrance examinations and leadership careers.
+          </p>
+        </div>
+
+        {/* Board Toppers Grid */}
+        <div className=
+>
+          {TOPPERS_DATA.map((topper, idx) => (
+            <div
+              key={idx}
+              className=
+>
+              <div>
+                <div className=
+>
+                  <span className=
+>
+                    {topper.grade}
+                  </span>
+                  <span className=
+>{topper.year}</span>
+                </div>
+                <div className=
+>
+                  {topper.score}
+                </div>
+                <h4 className=
+>
+                  {topper.name}
+                </h4>
+                {topper.stream && (
+                  <p className=
+>{topper.stream}</p>
+                )}
+                <p className=
+>
+                  {topper.achievement}
+                </p>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Parent Testimonials */}
+        <div className=
+>
+          <div className=
+>
+            <Quote className=
+>
+</p>
+            <div className=
+>
+              <div className=
+>
+                RT
+              </div>
+              <div>
+                <h5 className=
+>
+                  Shri Rajeshwar Tiwari
+                </h5>
+                <p className=
+>Parent of Class IX Boarding Scholar • Rasra</p>
+              </div>
+            </div>
+          </div>
+
+          <div className=
+>
+            <Quote className=
+>
+</p>
+            <div className=
+>
+              <div className=
+>
+                SP
+              </div>
+              <div>
+                <h5 className=
+>
+                  Dr. Sunita Pandey
+                </h5>
+                <p className=
+>Parent of Class VI Day-Scholar • Ballia City</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* =========================================================================
+          SECTION 9: FREQUENTLY ASKED QUESTIONS (FAQ)
+      ========================================================================= */}
+      <section className=
+>
+        <div className=
+>
+          <div className=
+>
+            <span className=
+>
+              Parent Queries
+            </span>
+            <h2 className=
+>
+              Frequently Asked Questions
+            </h2>
+            <p className=
+>
+              Everything parents want to know regarding admissions, transport, hostel life, and CBSE curriculum.
+            </p>
+          </div>
+
+          <div className=
+>
+            {FAQ_DATA.map((faq, idx) => (
+              <details
+                key={idx}
+                className=
+>
+                <summary className=
+>
+                  <span>{faq.question}</span>
+                  <span className=
+>
+                    ▾
+                  </span>
+                </summary>
+                <p className=
+>
+                  {faq.answer}
+                </p>
+              </details>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* =========================================================================
+          SECTION 10: REACH US & CAMPUS VISIT (MAP EMBED)
+      ========================================================================= */}
+      <section className=
+>
+        <div className=
+>
+          {/* Contact Details */}
+          <div className=
+>
+            <div>
+              <span className=
+>
+                Plan Your Visit
+              </span>
+              <h2 className=
+>
+                Visit Our Campus in Chilkahar, Ballia
+              </h2>
+              <p className=
+>
+                Parents are welcome to visit our lush campus for an in-person tour of our smart classrooms, science labs, hostels, and sports grounds.
+              </p>
+            </div>
+
+            <div className=
+>
+              <div className=
+>
+                <MapPin className=
+>Campus Address:</strong>
+                  <p className=
+>
+                    Devasthaly Vidyapeeth, Chilkahar, Tehsil Rasra, District Ballia, Uttar Pradesh — 277123
+                  </p>
+                  <p className=
+>
+                    Landmark: Near Chilkahar Railway Crossing / Ballia-Rasra State Highway
+                  </p>
+                </div>
+              </div>
+
+              <div className=
+>
+                <Phone className=
+>Admissions Desk:</strong>{
+)}`}
+                    className=
+>
+                    {SCHOOL_INFO.contacts.admissionsPhone}
+                  </a>
+                </div>
+              </div>
+
+              <div className=
+>
+                <Clock className=
+>Visiting Hours:</strong> {SCHOOL_INFO.contacts.workingHours}
+                </div>
+              </div>
+            </div>
+
+            <div className=
+>
+              <Link
+                href=
+className=
+>
+                Schedule a Guided Campus Tour
+              </Link>
+              <Link
+                href={`https://wa.me/${SCHOOL_INFO.contacts.whatsappNumber}`}
+                target=
+rel=
+className=
+>
+                <MessageCircle className=
+>
+            <iframe
+              title=
+src=
+width=
+height=
+style={{ border: 0 }}
+              allowFullScreen={false}
+              loading=
+referrerPolicy=
+Admissions Open 2025–26 • LKG to Class XI
+Devasthaly Vidyapeeth
+CBSE Affil. No. 2130238
+36+ Years of Trust
+15-Acre Eco Campus
+Apply for Admission
+WhatsApp Counsellor
+Learn more
+Explore Detailed Academic Wings
+Science Stream:
+Commerce Stream:
+Humanities Stream:
+Explore All Campus Facilities & Hostel Routine
+View Archive
+Download
+Statutory Compliance
+Parent of Class IX Boarding Scholar • Rasra
+Parent of Class VI Day-Scholar • Ballia City
+Campus Address:
+Admissions Desk:
+Visiting Hours:

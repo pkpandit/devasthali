@@ -1,0 +1,283 @@
+// Prisma Schema for Devasthaly Vidyapeeth — Production Database
+// Target: PostgreSQL / Supabase with Connection Pooling (PgBouncer)
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// ==========================================
+// 1. ENUMS (ROLE-BASED ACCESS & DOMAIN TYPES)
+// ==========================================
+
+enum Role {
+  SUPER_ADMIN        // Trust management, full system access
+  PRINCIPAL          // Academic director, approval authority, notices
+  ADMISSIONS_OFFICER // Admissions desk, lead status tracking, fee verification
+  TEACHER            // Class notices, homework, exam marks entry
+  STAFF              // Office clerk, document/TC issuance
+}
+
+enum AdmissionType {
+  DAY_SCHOLAR
+  RESIDENTIAL_BOARDER
+}
+
+enum LeadStatus {
+  NEW                  // Fresh submission from web/WhatsApp
+  CONTACTED            // Telephonic counselling initiated
+  CAMPUS_VISIT_BOOKED  // Parent visit scheduled at Chilkahar
+  EVALUATED            // Assessment/interview completed
+  ADMISSION_OFFERED    // Provisional seat offered
+  ENROLLED             // Fee deposited & enrolled
+  REJECTED             // Ineligible or withdrawn
+}
+
+enum NoticeCategory {
+  CIRCULAR             // Administrative & holiday notices
+  EXAMINATION          // Board date sheets, practicals, results
+  ADMISSION            // Admission updates & prospectus releases
+  EVENT                // Sports day, exhibitions, cultural galas
+}
+
+enum DocumentCategory {
+  CBSE_STATUTORY       // Appendix IX Mandatory Public Disclosure
+  ADMISSION_PROSPECTUS // Syllabi, fee matrices, brochures
+  STUDENT_FORM         // TC application, medical certificates
+  ACADEMIC_CALENDAR    // Annual planner, holiday list
+}
+
+enum GradeLevel {
+  LKG
+  UKG
+  CLASS_1
+  CLASS_2
+  CLASS_3
+  CLASS_4
+  CLASS_5
+  CLASS_6
+  CLASS_7
+  CLASS_8
+  CLASS_9
+  CLASS_10
+  CLASS_11_SCIENCE
+  CLASS_11_COMMERCE
+  CLASS_11_HUMANITIES
+  CLASS_12_SCIENCE
+  CLASS_12_COMMERCE
+  CLASS_12_HUMANITIES
+}
+
+// ==========================================
+// 2. USER & AUTHENTICATION MODELS (NextAuth)
+// ==========================================
+
+model User {
+  id            String    @id @default(cuid())
+  name          String
+  email         String    @unique
+  emailVerified DateTime?
+  passwordHash  String
+  image         String?
+  role          Role      @default(STAFF)
+  isActive      Boolean   @default(true)
+  phoneNumber   String?
+  lastLoginAt   DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // Audit Relations
+  noticesPublished Notice[]
+  leadNotes        LeadNote[]
+  auditLogs        AuditLog[]
+
+  @@index([role, isActive])
+  @@map("users")
+}
+
+// ==========================================
+// 3. ADMISSION LEADS & PIPELINE
+// ==========================================
+
+model AdmissionEnquiry {
+  id              String        @id @default(cuid())
+  enquiryNumber   String        @unique // e.g. DV-2025-0142
+  studentName     String
+  parentName      String
+  phone           String
+  alternatePhone  String?
+  email           String?
+  grade           GradeLevel
+  admissionType   AdmissionType @default(DAY_SCHOLAR)
+  cityVillage     String        // Ballia, Rasra, Chilkahar, etc.
+  tehsil          String?
+  district        String        @default("Ballia")
+  state           String        @default("Uttar Pradesh")
+  parentMessage   String?       @db.Text
+  status          LeadStatus    @default(NEW)
+  syncToWhatsApp  Boolean       @default(true)
+  
+  // Security & Tracking
+  ipAddress       String?
+  userAgent       String?
+  leadSource      String        @default("WEBSITE_HERO_FORM") // WEBSITE, WHATSAPP, COUNTER
+
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  // Relational Audit Notes
+  notes           LeadNote[]
+
+  @@index([status, createdAt])
+  @@index([phone])
+  @@index([grade])
+  @@map("admission_enquiries")
+}
+
+model LeadNote {
+  id          String           @id @default(cuid())
+  enquiryId   String
+  enquiry     AdmissionEnquiry @relation(fields: [enquiryId], references: [id], onDelete: Cascade)
+  authorId    String
+  author      User             @relation(fields: [authorId], references: [id])
+  content     String           @db.Text
+  statusChange LeadStatus?
+  createdAt   DateTime         @default(now())
+
+  @@index([enquiryId])
+  @@map("lead_notes")
+}
+
+// ==========================================
+// 4. NOTICES, CIRCULARS & DOWNLOADABLE DOCS
+// ==========================================
+
+model Notice {
+  id           String         @id @default(cuid())
+  title        String
+  slug         String         @unique
+  category     NoticeCategory @default(CIRCULAR)
+  summary      String?        @db.Text
+  content      String?        @db.Text
+  isUrgent     Boolean        @default(false)
+  isPublished  Boolean        @default(true)
+  fileUrl      String?        // PDF asset URL in S3/Cloudinary
+  fileSize     String?        // e.g. "1.4 MB"
+  publishDate  DateTime       @default(now())
+  expiryDate   DateTime?
+
+  authorId     String
+  author       User           @relation(fields: [authorId], references: [id])
+
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+
+  @@index([category, isPublished, publishDate])
+  @@map("notices")
+}
+
+model DocumentDownload {
+  id              String           @id @default(cuid())
+  title           String
+  slug            String           @unique
+  category        DocumentCategory @default(CBSE_STATUTORY)
+  fileUrl         String
+  fileSize        String
+  fileType        String           @default("PDF")
+  isCBSEMandatory Boolean          @default(false)
+  academicSession String           @default("2025-26")
+  displayOrder    Int              @default(0)
+  downloadCount   Int              @default(0)
+
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  @@index([category, isCBSEMandatory])
+  @@map("document_downloads")
+}
+
+// ==========================================
+// 5. ACADEMIC RESULTS & TOPPERS
+// ==========================================
+
+model BoardResultTopper {
+  id           String     @id @default(cuid())
+  studentName  String
+  scorePercent Decimal    @db.Decimal(5, 2) // e.g. 98.40
+  grade        String     // "Class X" or "Class XII"
+  stream       String?    // "Science (PCM)", "Commerce", etc.
+  academicYear String     // "2023-24"
+  achievement  String     // "District Rank 1 | Admitted to IIT Roorkee"
+  photoUrl     String?
+  displayOrder Int        @default(0)
+  isFeatured   Boolean    @default(true)
+
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  @@index([academicYear, grade])
+  @@map("board_result_toppers")
+}
+
+// ==========================================
+// 6. CALENDAR & CAMPUS EVENTS
+// ==========================================
+
+model SchoolEvent {
+  id          String   @id @default(cuid())
+  title       String
+  slug        String   @unique
+  startDate   DateTime
+  endDate     DateTime?
+  timeSlot    String   // e.g. "9:30 AM – 2:00 PM"
+  venue       String   // e.g. "5-Acre Sports Complex"
+  description String   @db.Text
+  isPublic    Boolean  @default(true)
+  coverImage  String?
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([startDate, isPublic])
+  @@map("school_events")
+}
+
+// ==========================================
+// 7. SYSTEM AUDIT LOGGING & BANNERS
+// ==========================================
+
+model HomepageAnnouncementBanner {
+  id        String    @id @default(cuid())
+  headline  String
+  ctaLabel  String?
+  ctaUrl    String?
+  isActive  Boolean   @default(true)
+  startsAt  DateTime  @default(now())
+  endsAt    DateTime?
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@map("homepage_announcement_banners")
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  userId     String?
+  user       User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  action     String   // "ENQUIRY_STATUS_UPDATE", "NOTICE_PUBLISH", "PDF_UPLOAD"
+  entityType String   // "Enquiry", "Notice", "DocumentDownload"
+  entityId   String
+  metadata   Json?
+  ipAddress  String?
+  createdAt  DateTime @default(now())
+
+  @@index([entityType, entityId])
+  @@index([createdAt])
+  @@map("audit_logs")
+}
