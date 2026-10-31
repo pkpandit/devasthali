@@ -1,15 +1,16 @@
 import type { Metadata, Viewport } from "next";
 import { Poppins, Open_Sans } from "next/font/google";
 import "./globals.css";
-import { Header } from "@/components/Header";
-import { NoticeTicker } from "@/components/NoticeTicker";
-import { Footer } from "@/components/Footer";
-import { MobileStickyDock } from "@/components/MobileStickyDock";
-import { LocalSeoSchema } from "@/components/LocalSeoSchema";
-import { ThemeProvider } from "@/components/theme-provider";
+import { Header } from "@/components/layout/Header";
+import { NoticeTicker } from "@/components/layout/NoticeTicker";
+import { Footer } from "@/components/layout/Footer";
+import { MobileStickyDock } from "@/components/layout/MobileStickyDock";
+import { ScrollToTop } from "@/components/layout/ScrollToTop";
+import { LocalSeoSchema } from "@/components/features/seo/LocalSeoSchema";
+import { ThemeProvider } from "@/components/layout/theme-provider";
 
 const poppins = Poppins({
-  weight: ["500", "600", "700", "800"],
+  weight: ["400", "500", "600", "700", "800"],
   subsets: ["latin"],
   variable: "--font-poppins",
   display: "swap",
@@ -26,7 +27,7 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   maximumScale: 5,
-  themeColor: "#4F46E5",
+  themeColor: "#B91C1C",
 };
 
 export const metadata: Metadata = {
@@ -97,21 +98,25 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${poppins.variable} ${openSans.variable} scroll-smooth`} suppressHydrationWarning>
       <head>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link
-          href="https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Poppins:wght@500;600;700;800&display=swap"
-          rel="stylesheet"
-        />
         <LocalSeoSchema />
       </head>
-      <body className="min-h-screen flex flex-col bg-background text-foreground antialiased selection:bg-[#4F46E5]/20 selection:text-[#4F46E5]">
+      <body className="min-h-screen flex flex-col bg-background text-foreground antialiased selection:bg-[#B91C1C]/20 selection:text-[#B91C1C]">
+        {/* WCAG 2.4.1 Bypass Blocks: Accessible Skip to Main Content Link */}
+        <a
+          href="#main-content"
+          className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-[100] focus:px-4 focus:py-2.5 focus:bg-[#B91C1C] focus:text-white focus:rounded-xl focus:shadow-2xl focus:font-heading focus:font-bold focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-[#111827]"
+        >
+          Skip to main content
+        </a>
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
           <NoticeTicker />
           <Header />
-          <main className="flex-1 w-full">{children}</main>
+          <main id="main-content" tabIndex={-1} className="flex-1 w-full focus:outline-none">
+            {children}
+          </main>
           <Footer />
           <MobileStickyDock />
+          <ScrollToTop />
         </ThemeProvider>
       </body>
     </html>

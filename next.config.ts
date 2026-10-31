@@ -37,7 +37,7 @@ const nextConfig: NextConfig = {
       { source: "/contact-us.html", destination: "/contact", permanent: true },
       { source: "/notice-board.php", destination: "/notices", permanent: true },
       { source: "/fee-structure.html", destination: "/admissions/fees", permanent: true },
-      { source: "/mandatory-disclosure.html", destination: "/downloads", permanent: true },
+      { source: "/mandatory-disclosure.html", destination: "/mandatory-public-disclosure", permanent: true },
       { source: "/about-us.html", destination: "/about", permanent: true },
     ];
   },

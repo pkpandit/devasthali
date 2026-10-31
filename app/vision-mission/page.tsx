@@ -1,94 +1,64 @@
 import React from "react";
 import type { Metadata } from "next";
-import Link from "next/link";
-import { Compass, Target, Heart, Sparkles, CheckCircle2 } from "lucide-react";
+import { Sparkles, Compass, Target } from "lucide-react";
 
 export const metadata: Metadata = {
-  title: "Vision, Mission & Core Values | Devasthaly Vidyapeeth",
+  title: "Vision and Mission | Devasthaly Vidyapeeth",
   description:
-    "Discover the vision, mission, and guiding educational values of Devasthaly Vidyapeeth, Chilkahar, Ballia. Fostering academic rigor, moral character, and social responsibility.",
+    "Vision and mission of Devasthaly Vidyapeeth, Chilkahar, Ballia. Imparting comprehensive modern education with valuable Indian traditions since 1988.",
 };
 
 export default function VisionMissionPage() {
   return (
-    <div className="w-full bg-[#F3F4F6] py-12">
-      <div className="site-container space-y-12">
-        {/* Header */}
-        <div className="border-b border-[#E5E7EB] pb-8 text-left">
-          <div className="text-xs font-bold text-[#4F46E5] uppercase tracking-widest mb-2">
-            About Us / Philosophy
+    <div className="w-full bg-[#F9FAFB] pb-20">
+      {/* 1. Page Header Banner (Edplus University standard) */}
+      <div className="w-full bg-white border-b border-gray-200/80 py-12 sm:py-16 mb-12">
+        <div className="site-container">
+          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-red-50 border border-red-100 text-[#B91C1C] text-sm font-heading font-bold uppercase tracking-wider mb-4">
+            <Sparkles className="w-3.5 h-3.5 text-[#B91C1C]" aria-hidden="true" />
+            <span>About School / Vision &amp; Mission</span>
           </div>
-          <h1 className="font-heading text-3xl sm:text-4xl lg:text-5xl font-black text-[#111827]">
-            Vision, Mission & Guiding Values
+          <h1 className="font-heading text-2xl sm:text-3xl lg:text-[40px] lg:leading-[50px] font-bold text-[#111827] tracking-tight">
+            Vision and Mission
           </h1>
-          <p className="text-sm sm:text-base text-[#4B5563] mt-3 max-w-3xl leading-relaxed">
-            Cultivating minds capable of critical thought, compassion, and leadership while holding steadfast to Indian cultural roots and global competence.
+          <p className="text-base text-gray-600 leading-[1.7] mt-3 max-w-3xl leading-relaxed font-sans">
+            Guiding educational philosophy and institutional objectives of Devasthaly Vidyapeeth.
           </p>
         </div>
+      </div>
 
-        {/* Vision & Mission Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          {/* Vision */}
-          <div className="bg-white p-8 rounded-2xl border border-[#E5E7EB] shadow-xs flex flex-col justify-between">
-            <div>
-              <div className="w-12 h-12 rounded-xl bg-[#F3F4F6] text-[#4F46E5] flex items-center justify-center mb-4 border border-[#E5E7EB]">
-                <Compass className="w-6 h-6" />
-              </div>
-              <h2 className="font-heading text-2xl font-bold text-[#111827] mb-4">Our Vision</h2>
-              <p className="text-sm sm:text-base text-[#4B5563] leading-relaxed">
-                To be the benchmark institution of holistic schooling in eastern Uttar Pradesh, recognized for academic excellence, ethical grounding, and empowering students from every background to emerge as responsible global citizens, innovative thinkers, and leaders of character.
-              </p>
+      <div className="site-container space-y-12">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-10">
+          {/* Vision Card (Edplus Feature Anatomy) */}
+          <div className="bg-white p-8 sm:p-12 rounded-3xl border border-gray-200/90 shadow-xs hover:shadow-xl hover:-translate-y-1 hover:border-red-300 transition-all duration-300 space-y-6 group">
+            <div className="w-14 h-14 rounded-2xl bg-red-50 text-[#B91C1C] flex items-center justify-center border border-red-100/60 shadow-2xs group-hover:scale-105 transition-transform">
+              <Compass className="w-7 h-7" aria-hidden="true" />
             </div>
-            <div className="pt-6 mt-6 border-t border-[#E5E7EB] text-xs text-[#4F46E5] font-bold">
-              &ldquo;Vidya Dadati Vinayam&rdquo; — Knowledge Imparts Humility
+            <div className="space-y-3">
+              <h2 className="font-heading text-2xl sm:text-3xl font-black text-[#111827] tracking-tight group-hover:text-[#B91C1C] transition-colors">
+                Our Vision &amp; Establishment
+              </h2>
+              <div className="h-1 w-12 bg-[#B91C1C] rounded-full" aria-hidden="true" />
             </div>
+            <p className="text-sm sm:text-base text-gray-700 leading-relaxed font-sans">
+              To meet a long-felt need of providing quality educational facilities to our younger children, Devasthaly Vidyapeeth, Devasthaly, Ballia has been opened. The School is located 8kms. away from Rasra or 25kms. away from Ballia on Ballia-Lucknow State Highway.
+            </p>
           </div>
 
-          {/* Mission */}
-          <div className="bg-white p-8 rounded-2xl border border-[#E5E7EB] shadow-xs flex flex-col justify-between">
-            <div>
-              <div className="w-12 h-12 rounded-xl bg-[#F3F4F6] text-[#4F46E5] flex items-center justify-center mb-4 border border-[#E5E7EB]">
-                <Target className="w-6 h-6" />
-              </div>
-              <h2 className="font-heading text-2xl font-bold text-[#111827] mb-4">Our Mission</h2>
-              <ul className="space-y-3 text-xs sm:text-sm text-[#4B5563]">
-                <li className="flex items-start gap-2.5">
-                  <CheckCircle2 className="w-4 h-4 text-[#4F46E5] shrink-0 mt-0.5" />
-                  <span>Deliver rigorous CBSE-aligned education fostering scientific inquiry, mathematics, and expressive English fluency.</span>
-                </li>
-                <li className="flex items-start gap-2.5">
-                  <CheckCircle2 className="w-4 h-4 text-[#4F46E5] shrink-0 mt-0.5" />
-                  <span>Provide safe, disciplined residential hostels that cultivate independence, brotherhood, and time management.</span>
-                </li>
-                <li className="flex items-start gap-2.5">
-                  <CheckCircle2 className="w-4 h-4 text-[#4F46E5] shrink-0 mt-0.5" />
-                  <span>Nurture physical agility and sportsmanship through dedicated athletics, martial arts, yoga, and NCC training.</span>
-                </li>
-              </ul>
+          {/* Mission Card (Edplus Feature Anatomy) */}
+          <div className="bg-white p-8 sm:p-12 rounded-3xl border border-gray-200/90 shadow-xs hover:shadow-xl hover:-translate-y-1 hover:border-red-300 transition-all duration-300 space-y-6 group">
+            <div className="w-14 h-14 rounded-2xl bg-red-50 text-[#B91C1C] flex items-center justify-center border border-red-100/60 shadow-2xs group-hover:scale-105 transition-transform">
+              <Target className="w-7 h-7" aria-hidden="true" />
             </div>
-            <div className="pt-6 mt-6 border-t border-[#E5E7EB] text-xs text-[#4F46E5] font-bold">
-              Committed to NEP 2020 Holistic Competencies
+            <div className="space-y-3">
+              <h2 className="font-heading text-2xl sm:text-3xl font-black text-[#111827] tracking-tight group-hover:text-[#B91C1C] transition-colors">
+                Our Mission &amp; Development Goals
+              </h2>
+              <div className="h-1 w-12 bg-[#B91C1C] rounded-full" aria-hidden="true" />
             </div>
-          </div>
-        </div>
-
-        {/* 4 Pillars of Values */}
-        <div className="bg-white p-8 rounded-2xl border border-[#E5E7EB] shadow-xs">
-          <h3 className="font-heading text-xl font-bold text-[#111827] mb-6 text-center">
-            The Four Pillars of Devasthaly Character
-          </h3>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {[
-              { title: "Academic Integrity", desc: "Honesty in thought, intellectual curiosity, and pursuit of deep concept mastery over rote memorization." },
-              { title: "Discipline & Duty", desc: "Respect for time, institutional norms, teachers, parents, and adherence to personal accountability." },
-              { title: "Cultural Sanskaar", desc: "Deep reverence for heritage, patriotic duty towards the nation, and humility in personal conduct." },
-              { title: "Universal Empathy", desc: "Kindness, peer cooperation, community service, and sensitivity towards environmental sustainability." },
-            ].map((v, i) => (
-              <div key={i} className="p-4 rounded-xl bg-[#F3F4F6] border border-[#E5E7EB]">
-                <div className="font-heading font-bold text-base text-[#111827] mb-2">{v.title}</div>
-                <p className="text-xs text-[#4B5563] leading-relaxed">{v.desc}</p>
-              </div>
-            ))}
+            <p className="text-sm sm:text-base text-gray-700 leading-relaxed font-sans">
+              The School was started on Oct., 2, 1988. It is an English medium institution co-educational and prepares students for CBSE examination. This institution aims at all round physical, mental moral and spiritual development of the child. Special care is taken to make the child a useful member of the society.
+            </p>
           </div>
         </div>
       </div>

@@ -1,102 +1,117 @@
 import React from "react";
 import type { Metadata } from "next";
 import Link from "next/link";
-import { CheckCircle2, FileText, ArrowRight, ShieldCheck } from "lucide-react";
+import { CheckCircle2, FileText, ArrowRight, ShieldCheck, Sparkles, AlertCircle } from "lucide-react";
 
 export const metadata: Metadata = {
-  title: "Admission Procedure & Required Documents 2025–26",
+  title: "Admission Procedure & Subject for Entrance Exam | Devasthaly Vidyapeeth",
   description:
-    "Step-by-step admission procedure and mandatory document checklist for Devasthaly Vidyapeeth, Chilkahar, Ballia. Guidelines for day-scholars and boarding admissions.",
+    "Official admission procedure, registration rules (16th Jan to 20th March), demand draft requirements, and entrance examination subjects for Devasthaly Vidyapeeth, Chilkahar, Ballia.",
 };
 
 export default function AdmissionProcedurePage() {
+  const rules = [
+    "Before admission child’s name has to be registered (16th January to 20th of March) in advance. A sum of Rs.1000/- is charged as registration fee for boarder and day scholar. The said payment is to done in form of Demand Draft (DD) in favour of \"Principal Devasthaly, Devasthaly Ballia\", Payable at Ballia, Along with application form.",
+    "No admission will be granted to the student unless a transfer certificate from the previous institution is produced along with application form",
+    "Formal admission is completed after the perusal of the application form by the principal and the parents are informed of his decision after a test and an interview",
+    "Every student will have to produce a birth certificate from from the Hospital, Nursing home, The Municipality or the Gram Panchayat",
+    "The child must have attained the age of four years at the time of admission in L.K.G.",
+    "If the child fails for two successive years he/ she will not allowed to continue his/her education in this institute",
+  ];
+
+  const examSubjects = [
+    { grade: "L.K.G.", subjects: "Oral Test" },
+    { grade: "U.K.G. To V", subjects: "English, Hindi, Maths" },
+    { grade: "VI to IX", subjects: "English, Maths, Science" },
+    { grade: "XI (Maths & Bio Group)", subjects: "English, Maths, Science" },
+    { grade: "XI (Commerce Group)", subjects: "English, Social Science & Maths" },
+    { grade: "XI (Humanity Group)", subjects: "English, Hindi & Social Science" },
+  ];
+
   return (
-    <div className="w-full bg-[#F3F4F6] py-12">
-      <div className="site-container space-y-10">
-        <div className="border-b border-[#E5E7EB] pb-6 text-left">
-          <div className="text-xs font-bold text-[#4F46E5] uppercase tracking-widest mb-2">
-            Admissions / Guidelines
+    <div className="w-full bg-[#F3F4F6] pb-16">
+      {/* Full-Width White Edunex Page Header Banner */}
+      <div className="w-full bg-white border-b border-gray-200/80 py-10 sm:py-14 mb-10">
+        <div className="site-container">
+          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-red-50 border border-red-100 text-[#B91C1C] text-sm font-heading font-bold uppercase tracking-wider mb-4">
+            <Sparkles className="w-3.5 h-3.5 text-[#B91C1C]" />
+            <span>Admissions / Guidelines</span>
           </div>
-          <h1 className="font-heading text-3xl sm:text-4xl font-black text-[#111827]">
-            Step-by-Step Admission Procedure 2025–26
+          <h1 className="font-heading text-2xl sm:text-3xl lg:text-[40px] lg:leading-[50px] font-bold text-[#111827] tracking-tight">
+            Admission Procedure &amp; Entrance Details
           </h1>
-          <p className="text-sm text-[#4B5563] mt-2">
-            A transparent and parent-friendly guide to securing enrollment at Devasthaly Vidyapeeth, Chilkahar, Ballia.
+          <p className="text-base text-gray-600 leading-[1.7] mt-3 max-w-3xl leading-relaxed font-sans">
+            Official guidelines, registration timeline, and entrance examination subjects for Devasthaly Vidyapeeth.
           </p>
         </div>
+      </div>
 
-        {/* The 4 Detailed Steps */}
-        <div className="space-y-6">
-          {[
-            {
-              num: "Step 1",
-              title: "Procurement of Registration Form & Prospectus",
-              details:
-                "Parents can obtain the official School Prospectus and Admission Form either directly from the school administrative office in Chilkahar or submit an initial application via our Online Enquiry portal. A nominal registration fee applies.",
-            },
-            {
-              num: "Step 2",
-              title: "Aptitude Assessment & Informal Interaction",
-              details:
-                "For Foundational classes (LKG to Class I), an informal interaction is conducted to assess social readiness, motor coordination, and curiosity. For Classes II through IX and Class XI, a written diagnostic evaluation is conducted covering English, Mathematics, and General Science to understand baseline academic aptitude.",
-            },
-            {
-              num: "Step 3",
-              title: "Parent Counselling & Document Verification",
-              details:
-                "Parents meet with the Principal / Vice Principal to discuss curriculum goals, transport or boarding requirements, and student interests. Original certificates are verified.",
-            },
-            {
-              num: "Step 4",
-              title: "Admission Confirmation & Fee Deposit",
-              details:
-                "Upon selection notification, admission is finalized by submitting the admission fee installment. Day-scholars receive bus pass details, while residential scholars receive hostel room and locker allocations.",
-            },
-          ].map((st, i) => (
-            <div key={i} className="bg-white p-6 sm:p-8 rounded-2xl border border-[#E5E7EB] shadow-xs flex flex-col sm:flex-row gap-6 hover:border-[#4F46E5] transition-colors">
-              <div className="w-16 h-16 rounded-xl bg-[#111827] border border-gray-700 text-white flex items-center justify-center font-heading font-black text-xl shrink-0 shadow-xs">
-                {st.num}
-              </div>
-              <div>
-                <h3 className="font-heading font-bold text-lg text-[#111827] mb-2">{st.title}</h3>
-                <p className="text-xs sm:text-sm text-[#4B5563] leading-relaxed">{st.details}</p>
-              </div>
-            </div>
-          ))}
-        </div>
-
-        {/* Required Documents Checklist */}
-        <div className="bg-white p-8 rounded-2xl border border-[#E5E7EB] shadow-xs space-y-4">
-          <h2 className="font-heading text-xl font-bold text-[#111827]">
-            Mandatory Documents Required at Confirmation
+      <div className="site-container space-y-10">
+        {/* Registration Terms Card */}
+        <div className="bg-white p-8 sm:p-10 rounded-3xl border border-gray-200/90 shadow-sm space-y-6">
+          <h2 className="font-heading text-xl sm:text-2xl font-bold text-[#111827] flex items-center gap-2">
+            <span className="w-8 h-8 rounded-xl bg-red-50 text-[#B91C1C] flex items-center justify-center text-sm font-bold">1</span>
+            <span>Registration &amp; Eligibility Guidelines</span>
           </h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs sm:text-sm text-[#4B5563] pt-2">
-            {[
-              "Attested photocopy of official Municipal Birth Certificate (LKG - Class I)",
-              "Original Transfer Certificate (TC) counter-signed by CBSE/competent board (Class II upwards)",
-              "Previous class Report Card / Marksheet from recognized school",
-              "Photocopy of Student's Aadhaar Card",
-              "Photocopy of Parent's / Guardian's Aadhaar Cards",
-              "6 recent passport-sized color photographs of the student",
-              "2 passport-sized photographs of Father, Mother, and local Guardian (for boarders)",
-              "Medical Fitness Certificate & Blood Group report by a certified doctor",
-            ].map((doc, idx) => (
-              <div key={idx} className="flex items-start gap-2.5">
-                <CheckCircle2 className="w-4 h-4 text-[#4F46E5] shrink-0 mt-0.5" />
-                <span>{doc}</span>
+
+          <div className="space-y-4">
+            {rules.map((rule, idx) => (
+              <div
+                key={idx}
+                className="p-4 sm:p-5 rounded-2xl bg-[#F3F4F6] border border-gray-200/80 flex items-start gap-3.5"
+              >
+                <CheckCircle2 className="w-5 h-5 text-[#B91C1C] shrink-0 mt-0.5" />
+                <p className="text-sm text-[#111827] leading-relaxed font-sans font-medium">
+                  {rule}
+                </p>
               </div>
             ))}
           </div>
         </div>
 
-        <div className="text-center pt-4">
-          <Link
-            href="/admissions#enquiry"
-            className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-[#4F46E5] hover:bg-[#4338CA] text-white text-xs font-bold uppercase tracking-wider transition-colors shadow-xs border border-[#4338CA]"
-          >
-            <span>Proceed to Online Admission Enquiry</span>
-            <ArrowRight className="w-4 h-4 text-white" />
-          </Link>
+        {/* Entrance Exam Subjects Table */}
+        <div className="bg-white p-8 sm:p-10 rounded-3xl border border-gray-200/90 shadow-sm space-y-6">
+          <h2 className="font-heading text-xl sm:text-2xl font-bold text-[#111827] flex items-center gap-2">
+            <span className="w-8 h-8 rounded-xl bg-red-50 text-[#B91C1C] flex items-center justify-center text-sm font-bold">2</span>
+            <span>Subject For Entrance Examination</span>
+          </h2>
+
+          <div className="overflow-x-auto border border-gray-200 rounded-2xl">
+            <table className="w-full text-sm text-left">
+              <thead className="bg-[#111827] text-white">
+                <tr>
+                  <th className="py-3 px-4 font-heading font-bold w-1/3">CLASS / GROUP</th>
+                  <th className="py-3 px-4 font-heading font-bold">EXAMINATION SUBJECTS</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-200 font-sans text-gray-800">
+                {examSubjects.map((item, idx) => (
+                  <tr key={idx} className="hover:bg-[#F3F4F6] transition-colors">
+                    <td className="py-3.5 px-4 font-bold text-[#111827]">{item.grade}</td>
+                    <td className="py-3.5 px-4 font-medium text-gray-700">{item.subjects}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          <div className="pt-4 flex flex-wrap items-center justify-between gap-4 border-t border-gray-100">
+            <Link
+              href="/admissions/fees"
+              className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-white text-[#111827] border border-[#E5E7EB] hover:bg-[#B91C1C] hover:text-white hover:border-[#B91C1C] [&_svg]:transition-colors [&_svg]:duration-150 hover:[&_svg]:text-white text-sm font-heading font-bold transition-all hover:-translate-y-0.5 shadow-2xs hover:shadow-xs focus-visible:outline-2 focus-visible:outline-[#B91C1C] focus-visible:outline-offset-2"
+            >
+              <span>View Official Fee Structure</span>
+              <ArrowRight className="w-4 h-4" />
+            </Link>
+
+            <Link
+              href="/online-admission-form"
+              className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-[#B91C1C] hover:bg-[#991B1B] text-white text-sm font-heading font-bold transition-all shadow-sm hover:shadow-md border border-[#991B1B] hover:-translate-y-0.5 focus-visible:outline-2 focus-visible:outline-[#B91C1C] focus-visible:outline-offset-2"
+            >
+              <span>Fill Online Admission Form</span>
+              <ArrowRight className="w-4 h-4" />
+            </Link>
+          </div>
         </div>
       </div>
     </div>

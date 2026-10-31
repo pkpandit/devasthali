@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Poppins:wght@500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Poppins:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&display=swap');
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
@@ -25,8 +25,24 @@
   --color-input: var(--input);
   --color-ring: var(--ring);
 
-  --font-sans: var(--font-open-sans), var(--font-sans), 'Open Sans', system-ui, -apple-system, sans-serif;
-  --font-heading: var(--font-poppins), var(--font-heading), 'Poppins', system-ui, -apple-system, sans-serif;
+  --font-sans: var(--font-open-sans), 'Open Sans', system-ui, -apple-system, sans-serif;
+  --font-heading: var(--font-poppins), 'Poppins', system-ui, -apple-system, sans-serif;
+  --font-poppins: var(--font-poppins), 'Poppins', system-ui, -apple-system, sans-serif;
+  --font-open-sans: var(--font-open-sans), 'Open Sans', system-ui, -apple-system, sans-serif;
+
+  /* Edplus Distance Measured Typography Scale Tokens */
+  --text-hero: clamp(2.1875rem, 5vw + 1rem, 3.875rem); /* 35px - 62px */
+  --text-section-title: clamp(1.625rem, 2.5vw + 0.8rem, 2.1875rem); /* 26px - 35px */
+  --text-page-title: clamp(1.75rem, 3vw + 0.8rem, 2.5rem); /* 28px - 40px */
+  --text-card-title: 1.375rem; /* 22px */
+  --text-subheading: 1.25rem; /* 20px */
+  --text-body-large: 1.125rem; /* 18px */
+  --text-base: 1rem; /* 16px */
+  --text-meta: 0.9375rem; /* 15px */
+  --text-sm: 0.875rem; /* 14px minimum floor */
+
+  --text-xs: 0.875rem;
+  --text-xs--line-height: 1.25rem;
 
   --color-heading: #111827;
   --color-text: #111827;
@@ -34,8 +50,8 @@
   --color-surface: #FFFFFF;
   --color-section: #F3F4F6;
   --color-section-bg: #F3F4F6;
-  --color-primary: #4F46E5;
-  --color-link: #4F46E5;
+  --color-primary: #B91C1C;
+  --color-link: #B91C1C;
   --color-on-primary: #FFFFFF;
   --color-footer-background: #111827;
   --color-footer-bg: #111827;
@@ -48,7 +64,7 @@
      #111827 — Headings, body text, and footer background
      #FFFFFF — Main background, cards, inverse text
      #F3F4F6 — Alternate section backgrounds and subtle surfaces
-     #4F46E5 — Primary buttons, links, and active interactive elements
+     #B91C1C — Primary buttons, links, and active interactive elements
   ========================================================================= */
   --color-heading: #111827;
   --color-text: #111827;
@@ -56,8 +72,8 @@
   --color-surface: #FFFFFF;
   --color-section: #F3F4F6;
   --color-section-bg: #F3F4F6;
-  --color-primary: #4F46E5;
-  --color-link: #4F46E5;
+  --color-primary: #B91C1C;
+  --color-link: #B91C1C;
   --color-on-primary: #FFFFFF;
   --color-footer-background: #111827;
   --color-footer-bg: #111827;
@@ -73,10 +89,10 @@
   --popover-foreground: #111827;
 
   /* Primary Action */
-  --primary: #4F46E5;
+  --primary: #B91C1C;
   --primary-foreground: #FFFFFF;
-  --primary-hover: #4338CA;
-  --primary-active: #3730A3;
+  --primary-hover: #991B1B;
+  --primary-active: #7F1D1D;
 
   /* Supporting Surfaces */
   --secondary: #F3F4F6;
@@ -84,12 +100,12 @@
   --muted: #F3F4F6;
   --muted-foreground: #4B5563;
   --accent: #F3F4F6;
-  --accent-foreground: #4F46E5;
+  --accent-foreground: #B91C1C;
 
   /* Borders & Inputs */
   --border: #E5E7EB;
   --input: #E5E7EB;
-  --ring: #4F46E5;
+  --ring: #B91C1C;
   --destructive: #DC2626;
 
   /* Consistent Radius */
@@ -104,17 +120,17 @@
   --card-foreground: #F9FAFB;
   --popover: #1F2937;
   --popover-foreground: #F9FAFB;
-  --primary: #6366F1;
+  --primary: #EF4444;
   --primary-foreground: #FFFFFF;
   --secondary: #374151;
   --secondary-foreground: #F9FAFB;
   --muted: #374151;
   --muted-foreground: #9CA3AF;
   --accent: #374151;
-  --accent-foreground: #818CF8;
+  --accent-foreground: #F4CD13;
   --border: #374151;
   --input: #374151;
-  --ring: #6366F1;
+  --ring: #EF4444;
   --destructive: #EF4444;
 }
 
@@ -124,11 +140,14 @@
   }
   body {
     @apply bg-background text-foreground transition-colors duration-150;
-    font-family: var(--font-open-sans), var(--font-sans), 'Open Sans', system-ui, -apple-system, sans-serif;
+    font-family: var(--font-open-sans), 'Open Sans', system-ui, -apple-system, sans-serif;
     font-feature-settings: "rlig" 1, "calt" 1;
     scroll-behavior: smooth;
     color: #111827;
     background-color: #FFFFFF;
+    font-size: 1rem;
+    line-height: 1.7;
+    font-weight: 400;
   }
   h1, h2, h3, h4, h5, h6,
   .font-heading,
@@ -139,35 +158,54 @@
   .card-title,
   th,
   summary {
-    font-family: var(--font-poppins), var(--font-heading), 'Poppins', system-ui, -apple-system, sans-serif !important;
-    letter-spacing: -0.02em;
+    font-family: var(--font-poppins), 'Poppins', system-ui, -apple-system, sans-serif !important;
     color: #111827;
   }
-  h1 { font-weight: 800; letter-spacing: -0.025em; }
-  h2 { font-weight: 700; letter-spacing: -0.02em; }
-  h3 { font-weight: 600; letter-spacing: -0.015em; }
-  h4, h5, h6 { font-weight: 600; letter-spacing: -0.01em; }
+  h1 { font-weight: 700; line-height: 1.15; letter-spacing: -0.02em; }
+  h2 { font-weight: 600; line-height: 1.25; letter-spacing: -0.015em; }
+  h3 { font-weight: 600; line-height: 1.35; letter-spacing: -0.01em; }
+  h4, h5, h6 { font-weight: 600; line-height: 1.4; letter-spacing: -0.005em; }
+  p {
+    font-family: var(--font-open-sans), 'Open Sans', system-ui, -apple-system, sans-serif;
+    font-size: 1rem;
+    line-height: 1.7;
+    font-weight: 400;
+  }
+  input, select, textarea {
+    font-family: var(--font-open-sans), 'Open Sans', system-ui, -apple-system, sans-serif;
+    font-size: 1rem;
+    line-height: 1.5;
+  }
+}
+
+/* Accessibility: Minimum 14px effective font size enforcement */
+.text-xs {
+  font-size: 0.875rem !important; /* 14px */
+  line-height: 1.25rem !important; /* 20px */
 }
 
 /* Accessibility Focus States */
 :focus-visible {
-  outline: 2px solid #4F46E5;
+  outline: 2px solid #B91C1C;
   outline-offset: 2px;
 }
 
 /* =========================================================================
    CANONICAL SHARED CONTENT CONTAINER: site-container
-   Consistent Full-Width Layout matching Header and Footer:
+   Constrained Centered Body Content Layout:
    - Width: 100%
+   - Max-Width: 1280px
+   - Margin-inline: auto (centered horizontally)
    - Box-sizing: border-box
    - Mobile gutter: 16px per side (px-4)
    - Small tablet gutter: 24px per side (sm:px-6)
    - Large tablet and desktop gutter: 32px per side (lg:px-8)
-   - Wide screen gutter: 48px per side (xl:px-12)
 ========================================================================= */
 @utility site-container {
   box-sizing: border-box;
   width: 100%;
+  max-width: 1280px;
+  margin-inline: auto;
   padding-inline: 16px;
 
   @variant sm {
@@ -176,14 +214,13 @@
   @variant lg {
     padding-inline: 32px;
   }
-  @variant xl {
-    padding-inline: 48px;
-  }
 }
 
 .site-container {
   box-sizing: border-box;
   width: 100%;
+  max-width: 1280px;
+  margin-inline: auto;
   padding-inline: 16px;
 }
 
@@ -199,12 +236,6 @@
   }
 }
 
-@media (min-width: 1280px) {
-  .site-container {
-    padding-inline: 48px;
-  }
-}
-
 /* Shared Outlined Interactive Component Styling */
 @utility btn-outline {
   border: 1px solid #E5E7EB;
@@ -215,9 +246,9 @@
   transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
 
   &:hover:not(:disabled):not([aria-disabled="true"]) {
-    background-color: #4F46E5;
+    background-color: #B91C1C;
     color: #FFFFFF;
-    border-color: #4F46E5;
+    border-color: #B91C1C;
   }
 
   &:hover:not(:disabled):not([aria-disabled="true"]) svg {
@@ -225,7 +256,7 @@
   }
 
   &:focus-visible {
-    outline: 2px solid #4F46E5;
+    outline: 2px solid #B91C1C;
     outline-offset: 2px;
   }
 
@@ -246,15 +277,15 @@
               border-color 150ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 .btn-outline:hover:not(:disabled):not([aria-disabled="true"]) {
-  background-color: #4F46E5;
+  background-color: #B91C1C;
   color: #FFFFFF;
-  border-color: #4F46E5;
+  border-color: #B91C1C;
 }
 .btn-outline:hover:not(:disabled):not([aria-disabled="true"]) svg {
   color: #FFFFFF;
 }
 .btn-outline:focus-visible {
-  outline: 2px solid #4F46E5;
+  outline: 2px solid #B91C1C;
   outline-offset: 2px;
 }
 .btn-outline:disabled,
@@ -262,6 +293,108 @@
   opacity: 0.5;
   pointer-events: none;
   cursor: not-allowed;
+}
+
+/* Shared Primary CTA Button Token */
+@utility btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.75rem;
+  border-radius: 9999px;
+  background-color: #B91C1C;
+  color: #FFFFFF;
+  font-family: var(--font-poppins), 'Poppins', system-ui, sans-serif;
+  font-weight: 700;
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border: 1px solid #991B1B;
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  transition-property: color, background-color, border-color, box-shadow, transform;
+  transition-duration: 150ms;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+
+  &:hover:not(:disabled):not([aria-disabled="true"]) {
+    background-color: #991B1B;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+    transform: translateY(-2px);
+  }
+
+  &:focus-visible {
+    outline: 2px solid #B91C1C;
+    outline-offset: 2px;
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
+
+  &:disabled,
+  &[aria-disabled="true"] {
+    opacity: 0.5;
+    pointer-events: none;
+    cursor: not-allowed;
+  }
+}
+
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.75rem;
+  border-radius: 9999px;
+  background-color: #B91C1C;
+  color: #FFFFFF;
+  font-family: var(--font-poppins), 'Poppins', system-ui, sans-serif;
+  font-weight: 700;
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border: 1px solid #991B1B;
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  transition: all 150ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+.btn-primary:hover:not(:disabled):not([aria-disabled="true"]) {
+  background-color: #991B1B;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+  transform: translateY(-2px);
+}
+.btn-primary:focus-visible {
+  outline: 2px solid #B91C1C;
+  outline-offset: 2px;
+}
+.btn-primary:active {
+  transform: translateY(0);
+}
+.btn-primary:disabled,
+.btn-primary[aria-disabled="true"] {
+  opacity: 0.5;
+  pointer-events: none;
+  cursor: not-allowed;
+}
+
+/* Shared Canonical Form Field Styling */
+.form-input-canonical {
+  width: 100%;
+  padding: 0.625rem 1rem;
+  border-radius: 0.75rem;
+  border: 1px solid #D1D5DB;
+  background-color: #FFFFFF;
+  color: #111827;
+  font-family: var(--font-open-sans), 'Open Sans', system-ui, sans-serif;
+  font-size: 1rem; /* 16px minimum */
+  line-height: 1.5rem;
+  transition: border-color 150ms ease, box-shadow 150ms ease;
+  outline: none;
+}
+.form-input-canonical:focus {
+  border-color: #B91C1C;
+  box-shadow: 0 0 0 3px rgba(185, 28, 28, 0.15);
 }
 
 /* Subtle Card Elevation */
