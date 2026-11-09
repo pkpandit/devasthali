@@ -48,7 +48,10 @@ export const navItems: NavItem[] = [
         items: [
           { name: "About School & Heritage", href: "/about" },
           { name: "Vision and Mission", href: "/vision-mission" },
-          { name: "CBSE Mandatory Disclosure", href: "/mandatory-public-disclosure" },
+          {
+            name: "CBSE Mandatory Disclosure",
+            href: "/mandatory-public-disclosure",
+          },
         ],
       },
       {
@@ -94,7 +97,10 @@ export const navItems: NavItem[] = [
         heading: "Guidelines & Fees",
         items: [
           { name: "Admission Overview & Eligibility", href: "/admissions" },
-          { name: "Admission Procedure & Entrance", href: "/admissions/procedure" },
+          {
+            name: "Admission Procedure & Entrance",
+            href: "/admissions/procedure",
+          },
           { name: "Fee Structure (2026–27)", href: "/admissions/fees" },
         ],
       },
@@ -102,7 +108,11 @@ export const navItems: NavItem[] = [
         heading: "Application & Prospectus",
         items: [
           { name: "School Prospectus", href: "/school-prospectus" },
-          { name: "Online Admission Form", href: "/online-admission-form", badge: "Apply Now" },
+          {
+            name: "Online Admission Form",
+            href: "/online-admission-form",
+            badge: "Apply Now",
+          },
         ],
       },
     ],
@@ -123,7 +133,10 @@ export const navItems: NavItem[] = [
       {
         heading: "Activities & Culture",
         items: [
-          { name: "Co-Curricular Activities & Sports", href: "/co-curricular-activities" },
+          {
+            name: "Co-Curricular Activities & Sports",
+            href: "/co-curricular-activities",
+          },
           { name: "Campus Photo Gallery", href: "/gallery" },
         ],
       },
@@ -138,7 +151,10 @@ export const navItems: NavItem[] = [
         items: [
           { name: "Official Notices & Circulars", href: "/notices" },
           { name: "Downloads & Public Records", href: "/downloads" },
-          { name: "General Instructions & Rules", href: "/general-instructions" },
+          {
+            name: "General Instructions & Rules",
+            href: "/general-instructions",
+          },
           { name: "Alumni Corner & Reunion", href: "/alumni" },
         ],
       },
@@ -168,7 +184,9 @@ export function Header() {
   const mobileDrawerRef = useRef<HTMLDivElement>(null);
   const mobileMenuButtonRef = useRef<HTMLButtonElement>(null);
   const desktopNavRef = useRef<HTMLElement>(null);
-  const toggleButtonRefs = useRef<{ [key: string]: HTMLButtonElement | null }>({});
+  const toggleButtonRefs = useRef<{ [key: string]: HTMLButtonElement | null }>(
+    {},
+  );
   const hoverTimerRef = useRef<NodeJS.Timeout | null>(null);
   const closeTimerRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -236,7 +254,10 @@ export function Header() {
     };
 
     const handleClickOutside = (e: MouseEvent) => {
-      if (desktopNavRef.current && !desktopNavRef.current.contains(e.target as Node)) {
+      if (
+        desktopNavRef.current &&
+        !desktopNavRef.current.contains(e.target as Node)
+      ) {
         setOpenDesktopMenu(null);
       }
     };
@@ -259,7 +280,7 @@ export function Header() {
     const handleTrapFocus = (e: KeyboardEvent) => {
       if (e.key !== "Tab" || !mobileDrawerRef.current) return;
       const focusables = mobileDrawerRef.current.querySelectorAll<HTMLElement>(
-        'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])'
+        'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])',
       );
       if (focusables.length === 0) return;
 
@@ -296,10 +317,15 @@ export function Header() {
           <div className="flex flex-wrap items-center gap-3 sm:gap-4 text-gray-300">
             <span className="inline-flex items-center gap-1.5 text-white font-medium">
               <ShieldCheck className="w-3.5 h-3.5 text-[#F4CD13]" />
-              CBSE Affiliation No. <strong className="text-white">{SCHOOL_INFO.affiliationNo}</strong>
+              CBSE Affiliation No.{" "}
+              <strong className="text-white">
+                {SCHOOL_INFO.affiliationNo}
+              </strong>
             </span>
             <span className="hidden sm:inline text-gray-600">|</span>
-            <span className="hidden sm:inline text-gray-300">School Code: {SCHOOL_INFO.schoolCode}</span>
+            <span className="hidden sm:inline text-gray-300">
+              School Code: {SCHOOL_INFO.schoolCode}
+            </span>
             <span className="hidden lg:inline text-gray-600">|</span>
             <span className="hidden lg:inline-flex items-center gap-1">
               <MapPin className="w-3 h-3 text-[#F4CD13]" />
@@ -341,11 +367,11 @@ export function Header() {
 
       {/* 2. PRIMARY NAVIGATION BAR (#FFFFFF Pure White Surface) */}
       <div className="w-full bg-white relative">
-        <div className="w-full px-4 sm:px-6 lg:px-8 xl:px-8 2xl:px-12 py-3.5 flex items-center justify-between gap-4">
+        <div className="w-full px-4 sm:px-6 lg:px-8 xl:px-8 2xl:px-12 py-3.5 flex items-center justify-between gap-4 2xl:gap-2">
           {/* School Identity & Crest */}
           <Link
             href="/"
-            className="flex items-center gap-3.5 group focus-visible:outline-2 focus-visible:outline-[#B91C1C] focus-visible:outline-offset-2 rounded-xl shrink-0"
+            className="flex min-w-0 items-center gap-3.5 group focus-visible:outline-2 focus-visible:outline-[#B91C1C] focus-visible:outline-offset-2 rounded-xl"
           >
             <div className="w-12 h-12 rounded-2xl bg-white flex items-center justify-center p-1 shadow-xs border border-[#E5E7EB] group-hover:border-[#B91C1C] transition-colors shrink-0 overflow-hidden">
               <Image
@@ -358,7 +384,7 @@ export function Header() {
               />
             </div>
             <div className="flex flex-col min-w-0">
-              <span className="font-heading font-bold text-lg sm:text-xl xl:text-2xl tracking-tight text-[#111827] leading-none group-hover:text-[#B91C1C] transition-colors whitespace-nowrap">
+              <span className="font-heading font-bold text-lg sm:text-xl xl:text-2xl tracking-tight text-[#111827] leading-tight group-hover:text-[#B91C1C] transition-colors whitespace-normal sm:whitespace-nowrap">
                 Devasthaly Vidyapeeth
               </span>
               <span
@@ -373,31 +399,40 @@ export function Header() {
           {/* Desktop Navigation Links */}
           <nav
             ref={desktopNavRef}
-            className="hidden xl:flex items-center gap-1.5 2xl:gap-3 shrink-0 font-heading"
+            className="hidden 2xl:flex items-center gap-1.5 shrink-0 font-heading"
             aria-label="Main Navigation"
           >
             {navItems.map((link) => {
               const isMenuOpen = openDesktopMenu === link.name;
-              const hasChildren = Boolean(link.columns && link.columns.length > 0);
+              const hasChildren = Boolean(
+                link.columns && link.columns.length > 0,
+              );
               const isCurrentSection =
                 (pathname.startsWith(link.href) && link.href !== "/") ||
                 Boolean(
                   link.columns?.some((col) =>
                     col.items.some((sub) => {
                       const subPath = sub.href.split("#")[0];
-                      return subPath !== "/" && (pathname === subPath || pathname.startsWith(subPath + "/"));
-                    })
-                  )
+                      return (
+                        subPath !== "/" &&
+                        (pathname === subPath ||
+                          pathname.startsWith(subPath + "/"))
+                      );
+                    }),
+                  ),
                 );
               const isCurrentPage = pathname === link.href;
               const dropdownId = `desktop-menu-${link.name.toLowerCase().replace(/[^a-z0-9]/g, "-")}`;
-              const isBroadPanel = link.panelType === "mega" || link.panelType === "medium";
+              const isBroadPanel =
+                link.panelType === "mega" || link.panelType === "medium";
 
               return (
                 <div
                   key={link.name}
                   className={`shrink-0 ${isBroadPanel ? "static" : "relative"}`}
-                  onMouseEnter={() => hasChildren && handleMouseEnter(link.name)}
+                  onMouseEnter={() =>
+                    hasChildren && handleMouseEnter(link.name)
+                  }
                   onMouseLeave={() => hasChildren && handleMouseLeave()}
                 >
                   {hasChildren ? (
@@ -422,9 +457,15 @@ export function Header() {
                           toggleButtonRefs.current[link.name] = el;
                         }}
                         type="button"
-                        onClick={() => setOpenDesktopMenu(isMenuOpen ? null : link.name)}
+                        onClick={() =>
+                          setOpenDesktopMenu(isMenuOpen ? null : link.name)
+                        }
                         onKeyDown={(e) => {
-                          if (e.key === "ArrowDown" || e.key === "Enter" || e.key === " ") {
+                          if (
+                            e.key === "ArrowDown" ||
+                            e.key === "Enter" ||
+                            e.key === " "
+                          ) {
                             e.preventDefault();
                             setOpenDesktopMenu(link.name);
                           }
@@ -456,8 +497,9 @@ export function Header() {
                   )}
 
                   {/* Mega-Menu & Submenu Panels */}
-                  {hasChildren && isMenuOpen && (
-                    isBroadPanel ? (
+                  {hasChildren &&
+                    isMenuOpen &&
+                    (isBroadPanel ? (
                       <div
                         id={dropdownId}
                         role="region"
@@ -471,7 +513,10 @@ export function Header() {
                             <div>
                               <div className="grid grid-cols-2 gap-8 divide-x divide-gray-100">
                                 {link.columns?.map((col, cIdx) => (
-                                  <div key={cIdx} className={cIdx > 0 ? "pl-8" : ""}>
+                                  <div
+                                    key={cIdx}
+                                    className={cIdx > 0 ? "pl-8" : ""}
+                                  >
                                     {col.heading && (
                                       <div className="text-sm font-heading font-bold uppercase tracking-wider text-gray-400 mb-3 px-3 pb-1.5 border-b border-gray-100">
                                         {col.heading}
@@ -479,19 +524,24 @@ export function Header() {
                                     )}
                                     <div className="flex flex-col gap-1.5">
                                       {col.items.map((subItem) => {
-                                        const isItemActive = pathname === subItem.href;
+                                        const isItemActive =
+                                          pathname === subItem.href;
                                         return (
                                           <Link
                                             key={subItem.name}
                                             href={subItem.href}
-                                            onClick={() => setOpenDesktopMenu(null)}
+                                            onClick={() =>
+                                              setOpenDesktopMenu(null)
+                                            }
                                             className={`group/item flex items-start justify-between gap-3 px-3.5 py-2.5 rounded-xl text-[15px] font-medium transition-all ${
                                               isItemActive
                                                 ? "bg-red-50 text-[#B91C1C] font-semibold"
                                                 : "text-gray-700 hover:text-[#B91C1C] hover:bg-red-50/60"
                                             }`}
                                           >
-                                            <span className="break-words leading-snug">{subItem.name}</span>
+                                            <span className="break-words leading-snug">
+                                              {subItem.name}
+                                            </span>
                                             <div className="flex items-center gap-1.5 shrink-0 mt-0.5">
                                               {subItem.badge && (
                                                 <span className="text-sm font-bold px-2 py-0.5 bg-[#B91C1C] text-white rounded-full">
@@ -514,8 +564,14 @@ export function Header() {
                                   <div className="flex items-center gap-1.5">
                                     <ShieldCheck className="w-4 h-4 text-[#B45309] shrink-0" />
                                     <span>
-                                      CBSE Affiliation No. <strong className="text-gray-700">{SCHOOL_INFO.affiliationNo}</strong> • School Code:{" "}
-                                      <strong className="text-gray-700">{SCHOOL_INFO.schoolCode}</strong>
+                                      CBSE Affiliation No.{" "}
+                                      <strong className="text-gray-700">
+                                        {SCHOOL_INFO.affiliationNo}
+                                      </strong>{" "}
+                                      • School Code:{" "}
+                                      <strong className="text-gray-700">
+                                        {SCHOOL_INFO.schoolCode}
+                                      </strong>
                                     </span>
                                   </div>
                                   <Link
@@ -531,7 +587,9 @@ export function Header() {
 
                               {link.name === "Admissions" && (
                                 <div className="mt-5 pt-3.5 border-t border-gray-100 flex flex-wrap items-center justify-between gap-2 text-sm text-gray-500">
-                                  <span className="text-gray-600 font-medium">Session 2026–27 Nursery to Class IX &amp; XI</span>
+                                  <span className="text-gray-600 font-medium">
+                                    Session 2026–27 Nursery to Class IX &amp; XI
+                                  </span>
                                   <Link
                                     href="/online-admission-form"
                                     onClick={() => setOpenDesktopMenu(null)}
@@ -570,7 +628,9 @@ export function Header() {
                                       : "text-gray-700 hover:text-[#B91C1C] hover:bg-red-50/60"
                                   }`}
                                 >
-                                  <span className="break-words leading-snug">{subItem.name}</span>
+                                  <span className="break-words leading-snug">
+                                    {subItem.name}
+                                  </span>
                                   <ChevronRight className="w-3.5 h-3.5 text-gray-300 group-hover/item:text-[#B91C1C] group-hover/item:translate-x-0.5 transition-all shrink-0 mt-1" />
                                 </Link>
                               );
@@ -578,29 +638,29 @@ export function Header() {
                           </div>
                         </div>
                       </div>
-                    )
-                  )}
+                    ))}
                 </div>
               );
             })}
           </nav>
 
           {/* Right CTA Buttons */}
-          <div className="hidden lg:flex items-center gap-2.5 2xl:gap-3 shrink-0">
+          <div className="hidden lg:flex items-center gap-2.5 shrink-0">
             <Link
               href={`https://wa.me/${SCHOOL_INFO.contacts.whatsappNumber}?text=Hello%20Devasthaly%20Vidyapeeth,%20I%20would%20like%20to%20enquire%20about%20admissions.`}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-full bg-[#F3F4F6] text-[#111827] font-semibold text-sm border border-[#E5E7EB] hover:border-[#B91C1C] hover:text-[#B91C1C] focus-visible:outline-2 focus-visible:outline-[#B91C1C] transition-all whitespace-nowrap shrink-0 shadow-2xs hover:shadow-xs"
+              aria-label="Chat with Admissions on WhatsApp"
+              className="inline-flex items-center gap-1.5 px-3.5 py-2.5 2xl:w-11 2xl:h-11 2xl:justify-center 2xl:px-0 2xl:py-0 rounded-full bg-[#F3F4F6] text-[#111827] font-semibold text-sm border border-[#E5E7EB] hover:border-[#B91C1C] hover:text-[#B91C1C] focus-visible:outline-2 focus-visible:outline-[#B91C1C] transition-all whitespace-nowrap shrink-0 shadow-2xs hover:shadow-xs"
             >
               <MessageCircle className="w-3.5 h-3.5 text-[#25D366]" />
-              <span className="hidden 2xl:inline">WhatsApp</span>
+              <span className="sr-only">WhatsApp</span>
             </Link>
 
             {/* Primary Admission Button */}
             <Link
               href="/admissions"
-              className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-full bg-[#B91C1C] hover:bg-[#991B1B] text-white font-heading font-bold text-sm uppercase tracking-wider shadow-sm hover:shadow-md transition-all border border-[#991B1B] whitespace-nowrap shrink-0 hover:-translate-y-0.5 focus-visible:outline-2 focus-visible:outline-white"
+              className="inline-flex items-center gap-1.5 px-5 py-2.5 2xl:hidden rounded-full bg-[#B91C1C] hover:bg-[#991B1B] text-white font-heading font-bold text-sm uppercase tracking-wider shadow-sm hover:shadow-md transition-all border border-[#991B1B] whitespace-nowrap shrink-0 hover:-translate-y-0.5 focus-visible:outline-2 focus-visible:outline-white"
             >
               <Sparkles className="w-3.5 h-3.5 text-white" />
               <span>Apply 2026–27</span>
@@ -612,12 +672,16 @@ export function Header() {
             ref={mobileMenuButtonRef}
             type="button"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="xl:hidden p-2.5 rounded-xl text-gray-700 hover:bg-[#F3F4F6] focus-visible:outline-2 focus-visible:outline-[#B91C1C] focus-visible:outline-offset-2 transition-colors"
+            className="2xl:hidden p-2.5 rounded-xl text-gray-700 hover:bg-[#F3F4F6] focus-visible:outline-2 focus-visible:outline-[#B91C1C] focus-visible:outline-offset-2 transition-colors"
             aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
             aria-expanded={mobileMenuOpen}
             aria-controls="mobile-navigation-drawer"
           >
-            {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+            {mobileMenuOpen ? (
+              <X className="w-6 h-6" />
+            ) : (
+              <Menu className="w-6 h-6" />
+            )}
           </button>
         </div>
       </div>
@@ -630,13 +694,15 @@ export function Header() {
           role="dialog"
           aria-modal="true"
           aria-label="Mobile Navigation Menu"
-          className="xl:hidden absolute top-full left-0 right-0 w-full h-[calc(100dvh-100%)] bg-white z-40 overflow-y-auto border-t border-[#E5E7EB] px-4 sm:px-6 py-6 pb-32 shadow-2xl animate-in fade-in slide-in-from-top-2 duration-200"
+          className="2xl:hidden absolute top-full left-0 right-0 w-full h-[calc(100dvh-100%)] bg-white z-40 overflow-y-auto border-t border-[#E5E7EB] px-4 sm:px-6 py-6 pb-32 shadow-2xl animate-in fade-in slide-in-from-top-2 duration-200"
         >
           <div className="w-full max-w-xl mx-auto flex flex-col gap-3 font-heading">
             {navItems.map((link) => {
               const menuId = `mobile-sub-${link.name.toLowerCase().replace(/[^a-z0-9]/g, "-")}`;
               const isAccordionOpen = activeDropdown === link.name;
-              const hasChildren = Boolean(link.columns && link.columns.length > 0);
+              const hasChildren = Boolean(
+                link.columns && link.columns.length > 0,
+              );
 
               return (
                 <div key={link.name} className="border-b border-gray-100 pb-2">
@@ -686,7 +752,9 @@ export function Header() {
                                   onClick={() => setMobileMenuOpen(false)}
                                   className="py-2.5 px-3 text-[15px] font-medium text-gray-700 hover:text-[#B91C1C] hover:bg-white rounded-lg flex items-start justify-between gap-2.5 transition-colors focus-visible:outline-2 focus-visible:outline-[#B91C1C]"
                                 >
-                                  <span className="break-words leading-snug">{sub.name}</span>
+                                  <span className="break-words leading-snug">
+                                    {sub.name}
+                                  </span>
                                   {sub.badge && (
                                     <span className="text-sm font-bold px-2 py-0.5 bg-[#B91C1C] text-white rounded-full shrink-0 mt-0.5">
                                       {sub.badge}

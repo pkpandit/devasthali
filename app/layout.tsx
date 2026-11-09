@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Poppins, Open_Sans } from "next/font/google";
+import { Parkinsans, Poppins } from "next/font/google";
 import "./globals.css";
 import { Header } from "@/components/layout/Header";
 import { NoticeTicker } from "@/components/layout/NoticeTicker";
@@ -16,11 +16,12 @@ const poppins = Poppins({
   display: "swap",
 });
 
-const openSans = Open_Sans({
+const parkinsans = Parkinsans({
   weight: ["400", "500", "600", "700"],
   subsets: ["latin"],
-  variable: "--font-open-sans",
+  variable: "--font-parkinsans",
   display: "swap",
+  adjustFontFallback: false,
 });
 
 export const viewport: Viewport = {
@@ -96,7 +97,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${poppins.variable} ${openSans.variable} scroll-smooth`} suppressHydrationWarning>
+    <html lang="en" className={`${poppins.variable} ${parkinsans.variable} scroll-smooth`} suppressHydrationWarning>
       <head>
         <LocalSeoSchema />
       </head>

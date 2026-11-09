@@ -115,7 +115,7 @@ export default function AdmissionsPage() {
         </div>
 
         {/* Age Criteria & Eligibility Table */}
-        <div className="bg-white p-8 sm:p-10 rounded-3xl border border-gray-200/90 shadow-xs space-y-4">
+        <div className="bg-white p-4 sm:p-10 rounded-3xl border border-gray-200/90 shadow-xs space-y-4">
           <h2 className="font-heading text-2xl font-bold text-[#111827]">
             Age Criteria & Eligibility Table (Session 2026–27)
           </h2>

@@ -145,7 +145,7 @@ export default function ContactPage() {
         </div>
 
         {/* Authorities & Coordinators Table */}
-        <div className="bg-white p-6 sm:p-8 rounded-3xl border border-gray-200/90 shadow-sm space-y-4">
+        <div className="bg-white p-4 sm:p-8 rounded-3xl border border-gray-200/90 shadow-sm space-y-4">
           <h2 className="font-heading text-xl font-bold text-[#111827] flex items-center gap-2">
             <UserCheck className="w-5 h-5 text-[#B91C1C]" />
             <span>Authorities &amp; Class Coordinators Contact Numbers</span>
@@ -181,7 +181,7 @@ export default function ContactPage() {
         </div>
 
         {/* Hostel Contact Numbers Table */}
-        <div className="bg-white p-6 sm:p-8 rounded-3xl border border-gray-200/90 shadow-sm space-y-4">
+        <div className="bg-white p-4 sm:p-8 rounded-3xl border border-gray-200/90 shadow-sm space-y-4">
           <h2 className="font-heading text-xl font-bold text-[#111827]">
             Hostel Wardens &amp; Campus Reception Directory
           </h2>
@@ -217,7 +217,7 @@ export default function ContactPage() {
         </div>
 
         {/* Office & Fee Counters Table */}
-        <div className="bg-white p-6 sm:p-8 rounded-3xl border border-gray-200/90 shadow-sm space-y-4">
+        <div className="bg-white p-4 sm:p-8 rounded-3xl border border-gray-200/90 shadow-sm space-y-4">
           <h2 className="font-heading text-xl font-bold text-[#111827]">
             Office &amp; Fee Counter Contacts
           </h2>

@@ -145,7 +145,7 @@ export default function AdminDashboardPage() {
 
         {/* TAB 1: ADMISSION ENQUIRIES */}
         {activeTab === "enquiries" && (
-          <div className="bg-white p-6 sm:p-8 rounded-2xl border border-[#E5E7EB] shadow-xs space-y-6">
+          <div className="bg-white p-4 sm:p-8 rounded-2xl border border-[#E5E7EB] shadow-xs space-y-6">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div>
                 <h2 className="font-heading text-xl font-bold text-[#111827]">
