@@ -1,0 +1,46 @@
+import type { SchoolInfo } from "@/types/content";
+
+export const SCHOOL_INFO: SchoolInfo = {
+  name: "Devasthaly Vidyapeeth",
+  tagline: "Nurturing Academic Rigour, Moral Character & Leadership Since 1988",
+  shortDesc: "Ballia's premier CBSE co-educational residential and day-boarding institution.",
+  affiliationNo: "2130238",
+  schoolCode: "70184",
+  establishedYear: 1988,
+  legacyYears: "38+",
+  type: "Co-educational, Residential & Day-Boarding",
+  medium: "English Medium (CBSE Affiliated, New Delhi)",
+  grades: "LKG to Class XII (Science, Commerce, Humanities)",
+  address: {
+    campus: "Chilkahar",
+    tehsil: "Rasra",
+    district: "Ballia",
+    state: "Uttar Pradesh",
+    pinCode: "277123",
+    landmark: "Near Chilkahar Railway Crossing / Ballia-Rasra State Highway",
+  },
+  contacts: {
+    primaryPhone: "9554960408",
+    admissionsPhone: "9554960408",
+    hostelWardenPhone: "6307010040",
+    receptionPhone: "9554960415",
+    vicePrincipalPhone: "6306580532",
+    whatsappNumber: "919554960408",
+    email: "principaldvp@gmail.com",
+    officeEmail: "principaldvp@gmail.com",
+    workingHours: "Monday – Saturday: 8:00 AM – 3:30 PM",
+  },
+  social: {
+    facebook: "https://facebook.com/devasthalyvidyapeeth",
+    youtube: "https://youtube.com/devasthalyvidyapeeth",
+    instagram: "https://instagram.com/devasthalyvidyapeeth",
+  },
+  stats: [
+    { label: "Years of Heritage", value: "36+", subtext: "Established in 1988", image: "/images/about/campus-showcase.jpg", badge: "Legacy" },
+    { label: "CBSE Board Pass Rate", value: "100%", subtext: "Consistent Merit Ranks", image: "/images/home/hero/hero-students.jpg", badge: "Excellence" },
+    { label: "Lush Green Campus", value: "15+ Acres", subtext: "Eco-Friendly & Safe", image: "/images/facilities/campus-grounds.jpg", badge: "Environment" },
+    { label: "Student-Teacher Ratio", value: "1 : 25", subtext: "Personal Mentorship", image: "/images/leadership/principal-mentor.jpg", badge: "Care" },
+    { label: "Alumni Across India", value: "3,500+", subtext: "IITs, AIIMS, Armed Forces", image: "/images/alumni/alumni-graduates.jpg", badge: "Network" },
+    { label: "Transport Nodes", value: "40+ Stops", subtext: "Ballia & Rasra Network", image: "/images/facilities/school-bus-fleet.jpg", badge: "Reach" },
+  ],
+};
