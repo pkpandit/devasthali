@@ -103,9 +103,9 @@ export function AdmissionEnquiryForm({ className = "" }: FormProps) {
   return (
     <div className={`bg-white rounded-3xl shadow-xl overflow-hidden border border-gray-100 ${className}`}>
       {/* Header Banner (#111827 Dark Surface) */}
-      <div className="bg-[#111827] p-6 text-white text-left flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-gray-800">
+      <div className="bg-[#111827] p-5 sm:p-6 text-white text-left flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-gray-800">
         <div>
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 text-white text-sm font-heading font-bold uppercase tracking-wider mb-2 border border-white/15">
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 text-white text-xs sm:text-sm font-heading font-bold uppercase tracking-wider mb-2 border border-white/15">
             <Sparkles className="w-3.5 h-3.5 text-[#B91C1C]" />
             Admissions Session 2026–27
           </span>
@@ -124,8 +124,8 @@ export function AdmissionEnquiryForm({ className = "" }: FormProps) {
       </div>
 
       {status === "notice" ? (
-        <div className="p-6 sm:p-10 space-y-6">
-          <div className="p-5 rounded-2xl bg-amber-50 border border-amber-200 text-amber-900 flex items-start gap-3">
+        <div className="p-5 sm:p-8 space-y-6">
+          <div className="p-4 sm:p-5 rounded-2xl bg-amber-50 border border-amber-200 text-amber-900 flex items-start gap-3">
             <Info className="w-5 h-5 shrink-0 text-amber-700 mt-0.5" />
             <div>
               <h4 className="font-heading text-base font-bold text-amber-950">
@@ -138,7 +138,7 @@ export function AdmissionEnquiryForm({ className = "" }: FormProps) {
           </div>
 
           {/* Enquiry Summary */}
-          <div className="p-5 rounded-2xl bg-[#F9FAFB] border border-gray-200 text-sm space-y-2">
+          <div className="p-4 sm:p-5 rounded-2xl bg-[#F9FAFB] border border-gray-200 text-sm space-y-2">
             <h5 className="font-heading font-bold text-xs uppercase tracking-wider text-gray-500">
               Enquiry Summary
             </h5>
@@ -157,7 +157,7 @@ export function AdmissionEnquiryForm({ className = "" }: FormProps) {
               href={`https://wa.me/${SCHOOL_INFO.contacts.whatsappNumber}?text=${whatsappMessage}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 hover:bg-emerald-100/70 transition-colors flex items-center gap-3.5 group"
+              className="p-4 min-h-[52px] rounded-2xl bg-emerald-50 border border-emerald-200 hover:bg-emerald-100/70 transition-colors flex items-center gap-3.5 group focus-visible:outline-2 focus-visible:outline-[#25D366]"
             >
               <div className="w-10 h-10 rounded-xl bg-[#25D366] text-white flex items-center justify-center shrink-0">
                 <MessageCircle className="w-5 h-5" />
@@ -170,7 +170,7 @@ export function AdmissionEnquiryForm({ className = "" }: FormProps) {
 
             <a
               href={`tel:${SCHOOL_INFO.contacts.admissionsPhone}`}
-              className="p-4 rounded-2xl bg-red-50 border border-red-200 hover:bg-red-100/70 transition-colors flex items-center gap-3.5 group"
+              className="p-4 min-h-[52px] rounded-2xl bg-red-50 border border-red-200 hover:bg-red-100/70 transition-colors flex items-center gap-3.5 group focus-visible:outline-2 focus-visible:outline-[#B91C1C]"
             >
               <div className="w-10 h-10 rounded-xl bg-[#B91C1C] text-white flex items-center justify-center shrink-0">
                 <Phone className="w-5 h-5" />
@@ -185,7 +185,7 @@ export function AdmissionEnquiryForm({ className = "" }: FormProps) {
 
             <a
               href={`mailto:${SCHOOL_INFO.contacts.email}?subject=Admission Enquiry for ${encodeURIComponent(formData.studentName || "Student")}`}
-              className="p-4 rounded-2xl bg-gray-50 border border-gray-200 hover:bg-gray-100 transition-colors flex items-center gap-3.5 group"
+              className="p-4 min-h-[52px] rounded-2xl bg-gray-50 border border-gray-200 hover:bg-gray-100 transition-colors flex items-center gap-3.5 group focus-visible:outline-2 focus-visible:outline-[#111827]"
             >
               <div className="w-10 h-10 rounded-xl bg-gray-700 text-white flex items-center justify-center shrink-0">
                 <Mail className="w-5 h-5" />
@@ -196,7 +196,7 @@ export function AdmissionEnquiryForm({ className = "" }: FormProps) {
               </div>
             </a>
 
-            <div className="p-4 rounded-2xl bg-gray-50 border border-gray-200 flex items-center gap-3.5">
+            <div className="p-4 min-h-[52px] rounded-2xl bg-gray-50 border border-gray-200 flex items-center gap-3.5">
               <div className="w-10 h-10 rounded-xl bg-gray-700 text-white flex items-center justify-center shrink-0">
                 <MapPin className="w-5 h-5" />
               </div>
@@ -211,7 +211,7 @@ export function AdmissionEnquiryForm({ className = "" }: FormProps) {
             <button
               type="button"
               onClick={() => setStatus("idle")}
-              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl border border-gray-300 text-sm font-bold text-[#111827] hover:bg-gray-100 transition-colors"
+              className="inline-flex items-center gap-2 px-5 py-2.5 min-h-[44px] rounded-xl border border-gray-300 text-sm font-bold text-[#111827] hover:bg-gray-100 transition-colors focus-visible:outline-2 focus-visible:outline-[#B91C1C]"
             >
               <ArrowLeft className="w-4 h-4" />
               <span>Edit Details / Back to Form</span>
@@ -219,7 +219,7 @@ export function AdmissionEnquiryForm({ className = "" }: FormProps) {
           </div>
         </div>
       ) : (
-        <form onSubmit={handleSubmit} className="p-6 sm:p-8 space-y-5">
+        <form onSubmit={handleSubmit} className="p-5 sm:p-8 space-y-5">
           {/* Honeypot field hidden from real humans */}
           <div className="hidden" aria-hidden="true">
             <label htmlFor="website_honey">Leave this field blank</label>
@@ -243,7 +243,11 @@ export function AdmissionEnquiryForm({ className = "" }: FormProps) {
           </div>
 
           {status === "error" && (
-            <div className="p-3.5 rounded-xl bg-red-50 border border-red-200 text-red-700 text-sm flex items-center gap-2">
+            <div
+              id="enquiry-error-msg"
+              role="alert"
+              className="p-3.5 rounded-xl bg-red-50 border border-red-200 text-red-700 text-sm flex items-center gap-2"
+            >
               <AlertCircle className="w-4 h-4 shrink-0 text-red-600" />
               <span>{errorMessage}</span>
             </div>
@@ -264,10 +268,13 @@ export function AdmissionEnquiryForm({ className = "" }: FormProps) {
                 name="studentName"
                 autoComplete="name"
                 required
+                aria-required="true"
+                aria-invalid={status === "error" && !formData.studentName.trim()}
+                aria-describedby={status === "error" ? "enquiry-error-msg" : undefined}
                 value={formData.studentName}
                 onChange={handleChange}
                 placeholder="e.g. Aryan Pandey"
-                className="w-full px-3.5 py-3 rounded-xl border border-[#E5E7EB] text-base text-[#111827] focus:border-[#B91C1C] focus:ring-2 focus:ring-[#B91C1C]/20 focus-visible:outline-hidden transition-all bg-white"
+                className="w-full px-3.5 py-3 min-h-[44px] rounded-xl border border-[#E5E7EB] text-base text-[#111827] focus:border-[#B91C1C] focus:ring-2 focus:ring-[#B91C1C]/20 focus-visible:outline-hidden transition-all bg-white"
               />
             </div>
 
@@ -285,10 +292,13 @@ export function AdmissionEnquiryForm({ className = "" }: FormProps) {
                 name="parentName"
                 autoComplete="name"
                 required
+                aria-required="true"
+                aria-invalid={status === "error" && !formData.parentName.trim()}
+                aria-describedby={status === "error" ? "enquiry-error-msg" : undefined}
                 value={formData.parentName}
                 onChange={handleChange}
                 placeholder="e.g. Rameshwar Pandey"
-                className="w-full px-3.5 py-3 rounded-xl border border-[#E5E7EB] text-base text-[#111827] focus:border-[#B91C1C] focus:ring-2 focus:ring-[#B91C1C]/20 focus-visible:outline-hidden transition-all bg-white"
+                className="w-full px-3.5 py-3 min-h-[44px] rounded-xl border border-[#E5E7EB] text-base text-[#111827] focus:border-[#B91C1C] focus:ring-2 focus:ring-[#B91C1C]/20 focus-visible:outline-hidden transition-all bg-white"
               />
             </div>
           </div>
@@ -312,10 +322,13 @@ export function AdmissionEnquiryForm({ className = "" }: FormProps) {
                   name="phone"
                   autoComplete="tel"
                   required
+                  aria-required="true"
+                  aria-invalid={status === "error" && formData.phone.replace(/[^0-9]/g, "").length < 10}
+                  aria-describedby={status === "error" ? "enquiry-error-msg" : undefined}
                   value={formData.phone}
                   onChange={handleChange}
                   placeholder="98765 43210"
-                  className="w-full pl-12 pr-3.5 py-3 rounded-xl border border-[#E5E7EB] text-base text-[#111827] focus:border-[#B91C1C] focus:ring-2 focus:ring-[#B91C1C]/20 transition-all outline-none bg-white"
+                  className="w-full pl-12 pr-3.5 py-3 min-h-[44px] rounded-xl border border-[#E5E7EB] text-base text-[#111827] focus:border-[#B91C1C] focus:ring-2 focus:ring-[#B91C1C]/20 transition-all outline-none bg-white"
                 />
               </div>
             </div>
@@ -333,7 +346,7 @@ export function AdmissionEnquiryForm({ className = "" }: FormProps) {
                 name="grade"
                 value={formData.grade}
                 onChange={handleChange}
-                className="w-full px-3.5 py-3 rounded-xl border border-[#E5E7EB] text-base text-[#111827] focus:border-[#B91C1C] focus:ring-2 focus:ring-[#B91C1C]/20 focus-visible:outline-hidden transition-all bg-white"
+                className="w-full px-3.5 py-3 min-h-[44px] rounded-xl border border-[#E5E7EB] text-base text-[#111827] focus:border-[#B91C1C] focus:ring-2 focus:ring-[#B91C1C]/20 focus-visible:outline-hidden transition-all bg-white"
               >
                 {grades.map((g) => (
                   <option key={g} value={g}>
@@ -354,7 +367,7 @@ export function AdmissionEnquiryForm({ className = "" }: FormProps) {
                 {["Day-Scholar", "Residential Boarder"].map((type) => (
                   <label
                     key={type}
-                    className={`flex items-center justify-center px-3 py-2.5 rounded-xl border text-sm font-heading font-bold cursor-pointer transition-all ${
+                    className={`flex items-center justify-center min-h-[44px] px-3 py-2.5 rounded-xl border text-sm font-heading font-bold cursor-pointer transition-all ${
                       formData.admissionType === type
                         ? "bg-[#B91C1C] text-white border-[#B91C1C] shadow-xs"
                         : "bg-[#F3F4F6] text-[#111827] border-[#E5E7EB] hover:bg-gray-100"
@@ -387,7 +400,7 @@ export function AdmissionEnquiryForm({ className = "" }: FormProps) {
                 name="city"
                 value={formData.city}
                 onChange={handleChange}
-                className="w-full px-3.5 py-3 rounded-xl border border-[#E5E7EB] text-base text-[#111827] focus:border-[#B91C1C] focus:ring-2 focus:ring-[#B91C1C]/20 focus-visible:outline-hidden transition-all bg-white"
+                className="w-full px-3.5 py-3 min-h-[44px] rounded-xl border border-[#E5E7EB] text-base text-[#111827] focus:border-[#B91C1C] focus:ring-2 focus:ring-[#B91C1C]/20 focus-visible:outline-hidden transition-all bg-white"
               >
                 {cities.map((c) => (
                   <option key={c} value={c}>
@@ -402,7 +415,7 @@ export function AdmissionEnquiryForm({ className = "" }: FormProps) {
           <div className="pt-1">
             <label
               htmlFor="enquiry-whatsapp-sync"
-              className="flex items-center gap-2.5 cursor-pointer text-sm text-gray-700"
+              className="flex items-center gap-2.5 cursor-pointer text-sm text-gray-700 min-h-[36px]"
             >
               <input
                 type="checkbox"
@@ -422,11 +435,11 @@ export function AdmissionEnquiryForm({ className = "" }: FormProps) {
           <div className="pt-2">
             <button
               type="submit"
-              className="w-full py-4 px-6 rounded-full bg-[#B91C1C] text-white font-heading font-bold text-sm tracking-wide uppercase hover:bg-[#991B1B] active:scale-[0.99] transition-all flex items-center justify-center gap-2 shadow-md hover:shadow-lg border border-[#991B1B] focus-visible:outline-2 focus-visible:outline-[#B91C1C] focus-visible:outline-offset-2 cursor-pointer"
+              className="w-full py-3.5 sm:py-4 px-6 min-h-[48px] rounded-full bg-[#B91C1C] text-white font-heading font-bold text-sm tracking-wide uppercase hover:bg-[#991B1B] active:scale-[0.99] transition-all flex items-center justify-center gap-2 shadow-md hover:shadow-lg border border-[#991B1B] focus-visible:outline-2 focus-visible:outline-[#B91C1C] focus-visible:outline-offset-2 cursor-pointer"
             >
               <span>Connect with Admissions Desk</span>
             </button>
-            <p className="text-center text-sm text-gray-500 mt-2">
+            <p className="text-center text-xs sm:text-sm text-gray-500 mt-2">
               Admissions Helpline: {SCHOOL_INFO.contacts.admissionsPhone} • Mon–Sat: 8:00 AM – 3:30 PM
             </p>
           </div>

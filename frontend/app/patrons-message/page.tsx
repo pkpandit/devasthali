@@ -72,16 +72,16 @@ export default function PatronsMessagePage() {
             </div>
 
             <div className="space-y-5 text-gray-700 text-sm sm:text-base leading-relaxed font-sans pt-2">
-              <p className="text-justify leading-relaxed">
+              <p className="text-left max-w-[72ch] leading-relaxed">
                 My father late Chandrashekhar Ji would always dream of progressing his native land in multidirectional aspects. He thought deeply and was firmly determined to impart the upcoming generation the quality education and to enrich their life so that they could lead the nation on the path of unprecedented glory. To materialise his this thought he decided to establish Devasthaly Vidyapeeth, a co-educational, English medium institution, which was founded on Oct. 2, 1988 at Devasthaly.
               </p>
-              <p className="text-justify leading-relaxed">
+              <p className="text-left max-w-[72ch] leading-relaxed">
                 It was an inevitable need of that time of the district and purvanchal along with neighboring states like Bihar to have such a leading and dedicated institution. Since the day of its inception, it has achieved unprecedented success in its noble mission.
               </p>
-              <p className="text-justify leading-relaxed">
+              <p className="text-left max-w-[72ch] leading-relaxed">
                 Since then it has been inclined to achieve his desired motive providing its best services to make the children competent and to enrich their capability to lead a dignified and successful life.
               </p>
-              <p className="text-justify leading-relaxed">
+              <p className="text-left max-w-[72ch] leading-relaxed">
                 It is a motif of grandiose to me that I have been inherited the devoir to patron the institution. It is not an institution but an embodiment of ideal education. It always tries to imbibe valuable Indian ethos along with modern education in children. In fact, it is an institution where values and knowledge run in same vein. May the Almighty empower us with his divine blessings to maintain the dignity and standard of the institution.
               </p>
             </div>

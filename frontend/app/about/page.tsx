@@ -83,13 +83,13 @@ export default function AboutPage() {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-14 items-start">
           <div className="lg:col-span-7 bg-white p-8 sm:p-12 rounded-3xl border border-gray-200/90 shadow-sm space-y-6 text-left">
             <div className="space-y-4 text-[#111827] text-sm sm:text-base leading-relaxed font-sans">
-              <p className="text-justify font-medium">
+              <p className="text-left max-w-[72ch] font-medium">
                 Devasthaly Vidyapeeth was founded on the 2nd October 1988 with the prime aim of imparting a comprehensive modern education to the children with valuable Indian tradition of education , irrespective of caste, creed and community. &quot;Devasthaly Vidyapeeth was established under the vision of our founder, Ex-Prime Minister of India, Mr. Chandra Shekhar .&quot;
               </p>
-              <p className="text-justify text-gray-700">
+              <p className="text-left max-w-[72ch] text-gray-700">
                 The institute is located in plush premises at Devasthaly, surrounded by attractive healthy, natural environment that creates favourable academic conditions for alround development of children. Since the day of inception it has been determined to scale an unparalleled new graph of success to impart it to the children.
               </p>
-              <p className="text-justify text-gray-700">
+              <p className="text-left max-w-[72ch] text-gray-700">
                 We want our children to imbibe moral values in life. At present the rapid changes in technology and accelerated pace of privatisation and liberalisation created a new sense of uncertainity about the future of society. Thus education should respond meaningfully and effectively to address the crucial academic burning issues. Devasthaly Vidyapeeth in its efforts is providing need-based quality education to the blossoming knowledge which has decided to equip the children will pragmatic skills so that they can face the future with renewed confidence and matchless courage. The president of school is always nurturing the institute keeping sight and presenting all the facilities with help of management committee.
               </p>
             </div>

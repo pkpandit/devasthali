@@ -100,6 +100,11 @@ export default function RootLayout({
     <html lang="en" className={`${poppins.variable} ${parkinsans.variable} scroll-smooth`} suppressHydrationWarning>
       <body className="font-sans antialiased bg-[#F9FAFB] text-gray-900 selection:bg-[#B91C1C] selection:text-white min-h-screen flex flex-col">
         <ThemeProvider>
+          {/* Accessibility Skip Link */}
+          <a href="#main-content" className="skip-link">
+            Skip to main content
+          </a>
+
           {/* JSON-LD Rich Structured Snippets for Local School Authority */}
           <LocalSeoSchema />
 

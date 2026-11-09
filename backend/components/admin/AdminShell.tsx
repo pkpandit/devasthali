@@ -34,6 +34,21 @@ export function AdminShell({ children }: AdminShellProps) {
     document.getElementById("admin-workspace-title")?.focus();
   }, [pathname]);
 
+  // Close drawer and clear lock when viewport expands to desktop width (>=1024px)
+  useEffect(() => {
+    if (!mobileMenuOpen) return;
+    const mediaQuery = window.matchMedia("(min-width: 1024px)");
+    const handleViewportChange = (e: MediaQueryListEvent) => {
+      if (e.matches) {
+        setMobileMenuOpen(false);
+      }
+    };
+    mediaQuery.addEventListener("change", handleViewportChange);
+    return () => {
+      mediaQuery.removeEventListener("change", handleViewportChange);
+    };
+  }, [mobileMenuOpen]);
+
   // Trap focus, lock scroll, and handle Escape key for mobile drawer
   useEffect(() => {
     if (!mobileMenuOpen) return;
@@ -94,6 +109,9 @@ export function AdminShell({ children }: AdminShellProps) {
 
   return (
     <div className="admin-shell">
+      <a href="#admin-main" className="skip-to-content">
+        Skip to main content
+      </a>
       <AdminHeader
         mobileMenuOpen={mobileMenuOpen}
         onToggleMenu={() => setMobileMenuOpen((open) => !open)}

@@ -27,12 +27,12 @@ const buttonVariants = cva(
       },
       size: {
         sm: "h-9 px-3.5 text-sm rounded-lg font-medium",
-        default: "h-11 px-5 py-2.5 text-base rounded-xl font-semibold",
-        lg: "h-12 px-6 text-base rounded-xl font-bold",
-        pill: "h-12 px-7 text-sm rounded-full font-heading font-bold uppercase tracking-wider",
-        icon: "h-10 w-10 p-0 rounded-xl",
-        "icon-sm": "h-8 w-8 p-0 rounded-lg",
-        "icon-pill": "h-12 w-12 p-0 rounded-full",
+        default: "h-11 min-h-[44px] px-5 py-2.5 text-base rounded-xl font-semibold",
+        lg: "h-12 min-h-[48px] px-6 text-base rounded-xl font-bold",
+        pill: "h-12 min-h-[48px] px-7 text-sm rounded-full font-heading font-bold uppercase tracking-wider",
+        icon: "h-11 w-11 min-w-[44px] min-h-[44px] p-0 rounded-xl",
+        "icon-sm": "h-9 w-9 min-w-[36px] min-h-[36px] p-0 rounded-lg",
+        "icon-pill": "h-12 w-12 min-w-[48px] min-h-[48px] p-0 rounded-full",
       },
     },
     defaultVariants: {

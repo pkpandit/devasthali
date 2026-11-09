@@ -136,7 +136,7 @@ export default function GalleryClient() {
             Moments of academic rigor, athletic triumph, cultural joy, and student camaraderie captured on our 15-acre green estate in Chilkahar, Ballia.
           </p>
 
-          {/* Category Filter Tabs (UI/UX enhancement) */}
+          {/* Category Filter Tabs (UI/UX enhancement with 44px min touch target) */}
           <div className="flex items-center gap-2 mt-6 overflow-x-auto pb-2 scrollbar-none">
             {CATEGORIES.map((cat) => {
               const isActive = activeCategory === cat;
@@ -144,7 +144,7 @@ export default function GalleryClient() {
                 <button
                   key={cat}
                   onClick={() => setActiveCategory(cat)}
-                  className={`px-4 py-2 rounded-full text-sm font-heading font-bold transition-all whitespace-nowrap cursor-pointer ${
+                  className={`px-4 py-2.5 min-h-[44px] inline-flex items-center justify-center rounded-full text-sm font-heading font-bold transition-all whitespace-nowrap cursor-pointer focus-visible:outline-2 focus-visible:outline-[#B91C1C] ${
                     isActive
                       ? "bg-[#B91C1C] text-white shadow-sm ring-2 ring-[#B91C1C]/30"
                       : "bg-[#F3F4F6] text-gray-600 hover:text-[#111827] hover:bg-gray-200/80 border border-gray-200"
@@ -158,51 +158,57 @@ export default function GalleryClient() {
         </div>
       </div>
 
-      <div className="site-container space-y-10">
-
-        {/* Gallery Grid - 4 Columns */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="site-container">
+        {/* Photo Albums Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
           {filteredAlbums.map((album) => (
             <div
               key={album.id}
-              onClick={() => handleOpenAlbum(album)}
-              className="bg-white rounded-3xl overflow-hidden shadow-xs hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between group cursor-pointer border border-gray-200/90 hover:border-red-300"
+              onClick={() => handleOpenAlbum(album, 0)}
+              className="bg-white rounded-3xl overflow-hidden border border-gray-200/90 shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col group cursor-pointer hover:-translate-y-1"
             >
-              <div>
-                {/* Image Visual Container */}
-                <div className="relative w-full aspect-[16/10] bg-[#111827] overflow-hidden">
-                  <Image
-                    src={album.coverImage}
-                    alt={album.title}
-                    fill
-                    sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
-                    className="object-cover group-hover:scale-105 transition-transform duration-500"
-                  />
-                  {/* Subtle dark gradient overlay */}
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent opacity-70 group-hover:opacity-40 transition-opacity" />
+              <div className="relative aspect-[16/11] w-full overflow-hidden bg-gray-900">
+                <Image
+                  src={album.coverImage}
+                  alt={album.title}
+                  fill
+                  sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                  className="object-cover group-hover:scale-105 transition-transform duration-500 ease-out"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-transparent to-transparent pointer-events-none" />
 
-                  {/* Photo Count Badge */}
-                  <span className="absolute bottom-2.5 right-2.5 text-sm bg-black/75 backdrop-blur-xs px-2.5 py-1 rounded-full text-white font-semibold flex items-center gap-1 shadow-sm border border-white/10">
-                    <Camera className="w-3 h-3 text-[#F4CD13]" />
-                    <span>{album.photos.length} Photos</span>
-                  </span>
-
-                  {/* Category Pill */}
-                  <span className="absolute top-2.5 left-2.5 text-sm font-bold uppercase tracking-wider text-white bg-[#B91C1C] px-2.5 py-0.5 rounded-full shadow-sm">
+                {/* Badge Category */}
+                <div className="absolute top-4 left-4 z-10">
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#B91C1C] text-white font-heading font-bold text-xs uppercase tracking-wider shadow-sm">
                     {album.category}
                   </span>
                 </div>
 
-                <div className="p-5">
-                  <h3 className="font-heading font-bold text-sm sm:text-base text-[#111827] group-hover:text-[#B91C1C] transition-colors line-clamp-2 leading-snug">
+                {/* Photo Count Pill */}
+                <div className="absolute top-4 right-4 z-10">
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-black/60 backdrop-blur-md text-white font-heading font-semibold text-xs border border-white/20">
+                    <Camera className="w-3 h-3 text-[#F4CD13]" />
+                    <span>{album.photos.length} Photos</span>
+                  </span>
+                </div>
+
+                {/* Title in Cover */}
+                <div className="absolute bottom-4 inset-x-4 z-10">
+                  <h2 className="font-heading font-bold text-lg text-white group-hover:text-[#F4CD13] transition-colors leading-snug drop-shadow-sm">
                     {album.title}
-                  </h3>
+                  </h2>
                 </div>
               </div>
 
-              <div className="px-5 pb-4 pt-2 border-t border-gray-100 flex items-center justify-between text-sm font-bold text-[#B91C1C] group-hover:translate-x-1 transition-transform">
-                <span>View Full Album</span>
-                <ChevronRight className="w-3.5 h-3.5 ml-1" />
+              <div className="p-5 flex-1 flex flex-col justify-between space-y-4">
+                <p className="text-sm text-gray-600 line-clamp-2 leading-relaxed font-sans">
+                  {album.description}
+                </p>
+
+                <div className="pt-2 border-t border-gray-100 flex items-center justify-between text-sm font-heading font-bold text-[#B91C1C]">
+                  <span>Explore Album</span>
+                  <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                </div>
               </div>
             </div>
           ))}
@@ -210,14 +216,15 @@ export default function GalleryClient() {
       </div>
 
       {/* =========================================================================
-          LIGHTBOX / GALLERY MODAL (With Full-Screen View Option)
+          FULLSCREEN MODAL VIEWER / LIGHTBOX
       ========================================================================= */}
       {selectedAlbum && (
         <div
           ref={modalRef}
           role="dialog"
           aria-modal="true"
-          className={`fixed inset-0 z-50 bg-black/95 backdrop-blur-md flex flex-col justify-between animate-in fade-in duration-200 ${
+          aria-label={`Photo Gallery: ${selectedAlbum.title}`}
+          className={`fixed inset-0 z-50 bg-black/95 backdrop-blur-md flex flex-col justify-between transition-all duration-200 ${
             isFullscreen ? "p-2 sm:p-4" : "p-3 sm:p-6"
           }`}
           onClick={(e) => {
@@ -234,13 +241,13 @@ export default function GalleryClient() {
             }`}
           >
             <div className="flex items-center gap-2 sm:gap-3 truncate">
-              <span className="text-sm font-bold uppercase tracking-wider bg-[#B91C1C] text-white px-2.5 py-1 rounded-full shrink-0 shadow-sm">
+              <span className="text-xs sm:text-sm font-bold uppercase tracking-wider bg-[#B91C1C] text-white px-2.5 py-1 rounded-full shrink-0 shadow-sm">
                 {selectedAlbum.category}
               </span>
               <h2 className="font-heading font-bold text-sm sm:text-base text-white truncate">
                 {selectedAlbum.title}
               </h2>
-              <span className="text-sm text-gray-400 hidden sm:inline-block">
+              <span className="text-xs sm:text-sm text-gray-400 hidden sm:inline-block">
                 • Photo {activePhotoIdx + 1} of {selectedAlbum.photos.length}
               </span>
             </div>
@@ -252,7 +259,7 @@ export default function GalleryClient() {
                 onClick={toggleFullscreen}
                 aria-label={isFullscreen ? "Exit Fullscreen View" : "Enter Fullscreen View"}
                 title={isFullscreen ? "Exit Fullscreen (F)" : "Full Screen View (F)"}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/10 hover:bg-white/20 text-white text-sm font-semibold transition-all cursor-pointer border border-white/15 hover:scale-105 active:scale-95 focus-visible:outline-2 focus-visible:outline-white focus-visible:outline-offset-2"
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 min-h-[44px] rounded-full bg-white/10 hover:bg-white/20 text-white text-xs sm:text-sm font-semibold transition-all cursor-pointer border border-white/15 hover:scale-105 active:scale-95 focus-visible:outline-2 focus-visible:outline-white focus-visible:outline-offset-2"
               >
                 {isFullscreen ? (
                   <>
@@ -267,16 +274,16 @@ export default function GalleryClient() {
                 )}
               </button>
 
-              <span className="text-sm text-gray-400 hidden md:inline-block bg-white/5 border border-white/10 px-2 py-1 rounded">
+              <span className="text-xs text-gray-400 hidden md:inline-block bg-white/5 border border-white/10 px-2 py-1 rounded">
                 Esc to close
               </span>
 
-              {/* Close Button */}
+              {/* Close Button (Accessible 44x44 target) */}
               <button
                 type="button"
                 onClick={handleClose}
                 aria-label="Close photo gallery modal"
-                className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-all cursor-pointer border border-white/15 hover:scale-105 active:scale-95 focus-visible:outline-2 focus-visible:outline-white focus-visible:outline-offset-2"
+                className="w-11 h-11 min-w-[44px] min-h-[44px] rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-all cursor-pointer border border-white/15 hover:scale-105 active:scale-95 focus-visible:outline-2 focus-visible:outline-white focus-visible:outline-offset-2"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -289,12 +296,12 @@ export default function GalleryClient() {
               isFullscreen ? "max-w-7xl" : "max-w-5xl"
             }`}
           >
-            {/* Left Nav Button */}
+            {/* Left Nav Button (Accessible 44x44 target) */}
             <button
               type="button"
               onClick={handlePrevPhoto}
               aria-label="Previous photograph"
-              className="absolute left-1 sm:left-3 z-20 w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-black/55 hover:bg-black/85 backdrop-blur-md text-white flex items-center justify-center transition-all cursor-pointer border border-white/20 hover:scale-105 active:scale-95 shadow-lg"
+              className="absolute left-1 sm:left-3 z-20 w-11 h-11 sm:w-12 sm:h-12 min-w-[44px] min-h-[44px] rounded-full bg-black/55 hover:bg-black/85 backdrop-blur-md text-white flex items-center justify-center transition-all cursor-pointer border border-white/20 hover:scale-105 active:scale-95 shadow-lg focus-visible:outline-2 focus-visible:outline-white"
             >
               <ChevronLeft className="w-6 h-6" />
             </button>
@@ -323,28 +330,28 @@ export default function GalleryClient() {
                 onClick={toggleFullscreen}
                 aria-label={isFullscreen ? "Exit Fullscreen" : "Full Screen View"}
                 title={isFullscreen ? "Exit Fullscreen (F)" : "Full Screen View (F)"}
-                className="absolute top-3 right-3 z-20 p-2 rounded-full bg-black/60 hover:bg-black/90 text-white/90 hover:text-white transition-all cursor-pointer border border-white/15 backdrop-blur-xs shadow-md"
+                className="absolute top-3 right-3 z-20 w-10 h-10 flex items-center justify-center rounded-full bg-black/60 hover:bg-black/90 text-white/90 hover:text-white transition-all cursor-pointer border border-white/15 backdrop-blur-xs shadow-md focus-visible:outline-2 focus-visible:outline-white"
               >
                 {isFullscreen ? <Minimize2 className="w-4 h-4 text-[#F4CD13]" /> : <Maximize2 className="w-4 h-4 text-[#F4CD13]" />}
               </button>
 
               {/* Caption Overlay */}
               <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/95 via-black/75 to-transparent p-4 sm:p-5 text-white z-10 flex items-center justify-between gap-4">
-                <p className="text-base font-medium text-white/95 leading-relaxed">
+                <p className="text-sm sm:text-base font-medium text-white/95 leading-relaxed">
                   {selectedAlbum.photos[activePhotoIdx].caption}
                 </p>
-                <span className="text-sm text-gray-300 font-semibold shrink-0 sm:hidden">
+                <span className="text-xs sm:text-sm text-gray-300 font-semibold shrink-0 sm:hidden">
                   {activePhotoIdx + 1}/{selectedAlbum.photos.length}
                 </span>
               </div>
             </div>
 
-            {/* Right Nav Button */}
+            {/* Right Nav Button (Accessible 44x44 target) */}
             <button
               type="button"
               onClick={handleNextPhoto}
               aria-label="Next photograph"
-              className="absolute right-1 sm:right-3 z-20 w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-black/55 hover:bg-black/85 backdrop-blur-md text-white flex items-center justify-center transition-all cursor-pointer border border-white/20 hover:scale-105 active:scale-95 shadow-lg"
+              className="absolute right-1 sm:right-3 z-20 w-11 h-11 sm:w-12 sm:h-12 min-w-[44px] min-h-[44px] rounded-full bg-black/55 hover:bg-black/85 backdrop-blur-md text-white flex items-center justify-center transition-all cursor-pointer border border-white/20 hover:scale-105 active:scale-95 shadow-lg focus-visible:outline-2 focus-visible:outline-white"
             >
               <ChevronRight className="w-6 h-6" />
             </button>
@@ -365,7 +372,7 @@ export default function GalleryClient() {
                     type="button"
                     onClick={() => setActivePhotoIdx(pIdx)}
                     aria-label={`Jump to photo ${pIdx + 1}`}
-                    className={`relative w-16 h-12 sm:w-20 sm:h-14 rounded-lg overflow-hidden shrink-0 transition-all cursor-pointer border ${
+                    className={`relative w-16 h-12 sm:w-20 sm:h-14 rounded-lg overflow-hidden shrink-0 transition-all cursor-pointer border focus-visible:outline-2 focus-visible:outline-[#B91C1C] ${
                       isActive
                         ? "ring-2 ring-[#B91C1C] border-white scale-105 opacity-100 shadow-md"
                         : "border-white/20 opacity-40 hover:opacity-80"
@@ -388,4 +395,3 @@ export default function GalleryClient() {
     </div>
   );
 }
-

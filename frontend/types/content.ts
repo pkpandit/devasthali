@@ -205,6 +205,7 @@ export interface GalleryAlbum {
   category: GalleryCategory;
   coverImage: string;
   photos: GalleryPhoto[];
+  description?: string;
 }
 
 // ==========================================

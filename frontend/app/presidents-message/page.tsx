@@ -72,7 +72,7 @@ export default function PresidentsMessagePage() {
             </div>
 
             <div className="space-y-5 text-gray-700 text-sm sm:text-base leading-relaxed font-sans pt-2">
-              <p className="text-justify leading-relaxed">
+              <p className="text-left max-w-[72ch] leading-relaxed">
                 Devasthaly Vidyapeeth, was one of the dream project of my Baba (Late Chandrashekhar Ji) because he believes that educational Institutions are the last rayof hope for the humanity. I would like to quote one of his statements through which we would feel his approach about children who are not getting proper nourishment and putting a big question mark to the society.
               </p>
 

@@ -66,10 +66,10 @@ export default function CoCurricularActivitiesPage() {
 
           {/* Verbatim Source Text Preserved */}
           <div className="space-y-4 text-sm sm:text-base text-[#111827] leading-relaxed font-sans">
-            <p className="text-justify">
+            <p className="text-left max-w-[72ch]">
               Devasthaly Vidyapeeth provides a wide variety of extra-curricular activities catering to each individual’s needs, talents and interest. Devasthaly Vidyapeeth works towards enhancing the personality of each child for all-round development, thereby nurturing the students to become a global citizen, who can compete and reside worldwide. Devasthaly Vidyapeeth, at regular intervals organises different activities and competitions in its separately built up area of 22000 sq ft.
             </p>
-            <p className="text-justify">
+            <p className="text-left max-w-[72ch]">
               Devasthaly Vidyapeeth encourages its students to have a balanced involvement in the academic and extra curricular activities. Students are exposed to dance, music and other cultural events by number of inter House competitions and club activities including fine arts, computer graphics, nature club, vocal &amp; instrumental music, western &amp; Indian classical dance, house keeping and cooking club.
             </p>
           </div>

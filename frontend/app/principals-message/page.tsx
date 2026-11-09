@@ -72,16 +72,16 @@ export default function PrincipalsMessagePage() {
             </div>
 
             <div className="space-y-5 text-gray-700 text-sm sm:text-base leading-relaxed font-sans pt-2">
-              <p className="text-justify leading-relaxed">
+              <p className="text-left max-w-[72ch] leading-relaxed">
                 Devasthaly Vidyapeeth is an amalgamation of competent teachers, state-of-the-art infrastructure, an idyllic setting and an experienced and efficient administration. The school came into existence with the vision of creating a safe and supportive environment for its students – to provide a perfect balance of academics, sports, artistic and social opportunities. Childhood, youth and learning should be a joy and we strive for that.
               </p>
-              <p className="text-justify leading-relaxed">
+              <p className="text-left max-w-[72ch] leading-relaxed">
                 Devasthaly Vidyapeeth aims at holistic growth and development of its students. The school&apos;s genuine concern ensures student&apos;s emotional growth along with intellectual excellence. This empowers them to develop their self esteem, self-awareness and self-confidence. Sharing ideas, analysing situations and expressing them confidently are essential skills which are honed here, through experiential learning. The school takes leadership seriously and our concern for character is a point of distinction. Our mission has never been narrow to prepare students for college, but rather to provide an experience which goes far beyond college requirements, addressing important personal aspects of growth and maturity.
               </p>
-              <p className="text-justify leading-relaxed">
+              <p className="text-left max-w-[72ch] leading-relaxed">
                 Modern and secure infrastructure, pollution free environment, excellent pastoral care, nutritious and sumptuous vegetarian food are some of our strengths. While studying at Devasthaly Vidyapeeth, your ward is groomed to become a confident, articulate and enlightened young citizen, ready to step into global society with dignity, honour and integrity.
               </p>
-              <p className="text-justify leading-relaxed">
+              <p className="text-left max-w-[72ch] leading-relaxed">
                 We believe in giving our students deep roots along with a set of strong wings which may carry them far and wide but still continue nourishing with rich moral values. In other words, our students are equipped to face the challenges of the rapidly changing world.
               </p>
 
