@@ -10,6 +10,7 @@ import {
 } from "@/lib/school-data";
 import { Container } from "@/components/ui/Container";
 import { TestimonialSection } from "@/components/features/testimonials/TestimonialSection";
+import { HomeAnnouncement } from "@/components/features/announcements/HomeAnnouncement";
 import {
   ShieldCheck,
   Award,
@@ -194,6 +195,7 @@ const QUICK_ACTIONS = [
 export default function HomePage() {
   return (
     <div className="flex flex-col w-full bg-white">
+      <HomeAnnouncement />
       {/* =========================================================================
           SECTION 1: HERO & ADMISSION HOOK (Faithful Edplus Distance Recreation)
       ========================================================================= */}
