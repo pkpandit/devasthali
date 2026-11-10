@@ -1,12 +1,15 @@
-import { ArrowUpRight, Menu } from "lucide-react";
+import { ArrowUpRight, LogOut, Menu } from "lucide-react";
 import Link from "next/link";
 import type { RefObject } from "react";
+import { logoutAction } from "@/lib/server/auth-actions";
+import type { SafeUser } from "@/lib/server/session";
 
 interface AdminHeaderProps {
   workspaceTitle: string;
   mobileMenuOpen: boolean;
   onToggleMenu: () => void;
   toggleButtonRef: RefObject<HTMLButtonElement | null>;
+  user?: SafeUser | null;
 }
 
 export function AdminHeader({
@@ -14,6 +17,7 @@ export function AdminHeader({
   mobileMenuOpen,
   onToggleMenu,
   toggleButtonRef,
+  user,
 }: AdminHeaderProps) {
   const frontendUrl = process.env.NEXT_PUBLIC_FRONTEND_URL || "http://localhost:3000";
 
@@ -53,6 +57,26 @@ export function AdminHeader({
       </div>
 
       <div className="admin-header__actions">
+        {user && (
+          <div className="admin-user-menu">
+            <div className="admin-user-badge">
+              <span className="admin-user-name">{user.name}</span>
+              <span className="admin-user-role">{user.role}</span>
+            </div>
+            <form action={logoutAction}>
+              <button
+                type="submit"
+                className="admin-logout-button"
+                aria-label="Sign out of administrative session"
+                title="Sign out"
+              >
+                <LogOut size={15} aria-hidden="true" />
+                <span>Sign out</span>
+              </button>
+            </form>
+          </div>
+        )}
+
         <a
           aria-label="Open public site (opens in new tab)"
           className="public-site-link"

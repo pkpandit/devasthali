@@ -6,12 +6,14 @@ import { AdminFooter } from "@/components/admin/AdminFooter";
 import { AdminHeader } from "@/components/admin/AdminHeader";
 import { AdminSidebar } from "@/components/admin/AdminSidebar";
 import { getAdminSectionId, getAdminWorkspace } from "@/lib/admin-navigation";
+import type { SafeUser } from "@/lib/server/session";
 
 interface AdminShellProps {
   children: React.ReactNode;
+  user?: SafeUser | null;
 }
 
-export function AdminShell({ children }: AdminShellProps) {
+export function AdminShell({ children, user }: AdminShellProps) {
   const pathname = usePathname();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [userToggledSections, setUserToggledSections] = useState<Record<string, boolean>>({});
@@ -117,6 +119,7 @@ export function AdminShell({ children }: AdminShellProps) {
         onToggleMenu={() => setMobileMenuOpen((open) => !open)}
         toggleButtonRef={toggleButtonRef}
         workspaceTitle={workspaceTitle}
+        user={user}
       />
       <div className="admin-body">
         {mobileMenuOpen && (

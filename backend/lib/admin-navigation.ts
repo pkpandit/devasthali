@@ -1,37 +1,10 @@
-export interface AdminLink {
-  label: string;
-  href: string;
-  publicHref: string;
-  badge?: string;
-  description?: string;
-  isDownloadOrDocument?: boolean;
-}
-
-export interface AdminLinkGroup {
-  heading?: string;
-  items: AdminLink[];
-}
-
-export interface AdminSection {
-  id: string;
-  label: string;
-  href: string;
-  publicHref: string;
-  description?: string;
-  groups: AdminLinkGroup[];
-}
-
-export interface AdminWorkspace {
-  title: string;
-  href: string;
-  publicHref: string;
-  breadcrumbs: string[];
-  badge?: string;
-  sectionId?: string;
-  description?: string;
-  isDownloadOrDocument?: boolean;
-  childItems?: { label: string; href: string; badge?: string }[];
-}
+export type {
+  AdminLink,
+  AdminLinkGroup,
+  AdminSection,
+  AdminWorkspace,
+} from "@/types/admin";
+import type { AdminSection, AdminWorkspace } from "@/types/admin";
 
 export const adminSections: AdminSection[] = [
   {
@@ -107,45 +80,40 @@ export const adminSections: AdminSection[] = [
     label: "Academics",
     href: "/admin/academics",
     publicHref: "/academics",
-    description: "Manage curriculum frameworks, assessments, faculty roster, toppers, and events.",
+    description: "Manage curriculum frameworks, academic systems, faculty directory, board results, and student activities.",
     groups: [
       {
-        heading: "Curriculum & System",
+        heading: "Pedagogy & Structure",
         items: [
           {
-            label: "Curriculum & CBSE Framework",
-            href: "/admin/academics/curriculum",
-            publicHref: "/academics",
-            description: "Academic wings (Pre-Primary, Primary, Middle, Secondary, Senior Secondary).",
-          },
-          {
-            label: "Academic System & Assessment",
+            label: "Curriculum & Academic System",
             href: "/admin/academics/academic-system",
             publicHref: "/academic-system",
-            description: "Examination structure, grading pattern, and continuous evaluation system.",
+            description: "Curriculum structure, examination format, and continuous evaluation framework.",
+          },
+          {
+            label: "Faculty & Mentors Directory",
+            href: "/admin/academics/faculty",
+            publicHref: "/faculty",
+            description: "Teacher qualifications, department designations, and academic experience.",
           },
         ],
       },
       {
-        heading: "Faculty & Achievements",
+        heading: "Excellence & Achievements",
         items: [
           {
-            label: "Faculty & Academic Mentors",
-            href: "/admin/academics/faculty",
-            publicHref: "/faculty",
-            description: "Teacher qualifications, department designations, and experience.",
-          },
-          {
-            label: "Board Results & Toppers",
+            label: "Board Examination Results & Toppers",
             href: "/admin/academics/results",
             publicHref: "/results",
+            badge: "100% Pass",
             description: "CBSE Class X and XII board toppers, merit lists, and scores.",
           },
           {
-            label: "Academic Calendar & Events",
+            label: "Student Activities & Competitions",
             href: "/admin/academics/events",
             publicHref: "/events",
-            description: "Annual academic schedule, holiday calendar, and co-curricular milestones.",
+            description: "Annual academic schedule, holiday calendar, student competitions, and milestones.",
           },
         ],
       },
@@ -156,17 +124,11 @@ export const adminSections: AdminSection[] = [
     label: "Admissions",
     href: "/admin/admissions",
     publicHref: "/admissions",
-    description: "Manage admissions criteria, procedures, fee schedules, prospectus, and online forms.",
+    description: "Manage admissions criteria, procedures, fee schedules, prospectus, and online application form.",
     groups: [
       {
-        heading: "Guidelines & Fees",
+        heading: "Admission Information",
         items: [
-          {
-            label: "Admission Overview & Eligibility",
-            href: "/admin/admissions/overview",
-            publicHref: "/admissions",
-            description: "General eligibility rules, class availability, and age criteria.",
-          },
           {
             label: "Admission Procedure & Entrance",
             href: "/admin/admissions/procedure",
@@ -259,7 +221,6 @@ export const adminSections: AdminSection[] = [
     description: "Manage circulars, downloadable documents, student guidelines, and alumni network.",
     groups: [
       {
-        heading: "Notices & Records",
         items: [
           {
             label: "Official Notices & Circulars",
@@ -298,7 +259,6 @@ export const adminSections: AdminSection[] = [
     description: "Manage administrative directory, office phones, coordinators, and campus map directions.",
     groups: [
       {
-        heading: "Directory & Campus Location",
         items: [
           {
             label: "Contact Us & Directory",
@@ -317,6 +277,15 @@ export const adminSections: AdminSection[] = [
     ],
   },
 ];
+
+export const adminRedirects: Record<string, string> = {
+  "/admin/academics/curriculum": "/admin/academics",
+  "/admin/admissions/overview": "/admin/admissions",
+};
+
+export function getAdminRedirect(href: string): string | undefined {
+  return adminRedirects[href];
+}
 
 export const adminWorkspaces: AdminWorkspace[] = [
   {
@@ -373,13 +342,16 @@ export function getAdminWorkspace(href: string): AdminWorkspace | undefined {
 }
 
 export function getAdminSectionId(href: string): string | null {
+  const redirectTarget = getAdminRedirect(href);
+  const targetHref = redirectTarget ?? href;
+
   return (
     adminSections.find(
       (section) =>
-        href === section.href ||
-        href.startsWith(`${section.href}/`) ||
+        targetHref === section.href ||
+        targetHref.startsWith(`${section.href}/`) ||
         section.groups.some((group) =>
-          group.items.some((item) => item.href === href),
+          group.items.some((item) => item.href === targetHref),
         ),
     )?.id ?? null
   );

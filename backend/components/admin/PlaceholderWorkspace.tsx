@@ -1,6 +1,11 @@
-import { FileText, ChevronRight, ArrowUpRight, FolderTree, FileDown } from "lucide-react";
+import { FolderTree, FileDown } from "lucide-react";
 import Link from "next/link";
-import type { AdminWorkspace } from "@/lib/admin-navigation";
+import type { AdminWorkspace } from "@/types/admin";
+import { Breadcrumbs } from "@/components/ui/Breadcrumbs";
+import { Badge } from "@/components/ui/Badge";
+import { Card } from "@/components/ui/Card";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { PublicReferenceLink } from "@/components/ui/PublicReferenceLink";
 
 interface PlaceholderWorkspaceProps {
   workspace: AdminWorkspace;
@@ -12,25 +17,16 @@ export function PlaceholderWorkspace({ workspace }: PlaceholderWorkspaceProps) {
   const hasAnchor = workspace.publicHref.includes("#");
 
   return (
-    <section aria-labelledby="admin-workspace-title" className="workspace-card">
+    <Card as="section" aria-labelledby="admin-workspace-title">
       {/* 1. Breadcrumb navigation */}
-      <nav aria-label="Breadcrumb" className="workspace-breadcrumbs">
-        {workspace.breadcrumbs.map((crumb, index) => (
-          <span className="workspace-breadcrumb" key={`${crumb}-${index}`}>
-            {index > 0 && <ChevronRight aria-hidden="true" size={14} />}
-            <span>{crumb}</span>
-          </span>
-        ))}
-      </nav>
+      <Breadcrumbs items={workspace.breadcrumbs} />
 
       {/* 2. Workspace Title */}
       <div className="workspace-header">
         <h1 className="workspace-title" id="admin-workspace-title" tabIndex={-1}>
           {workspace.title}
         </h1>
-        {workspace.badge && (
-          <span className="admin-nav__badge">{workspace.badge}</span>
-        )}
+        {workspace.badge && <Badge>{workspace.badge}</Badge>}
       </div>
 
       {/* 3. Description & Public Site Context */}
@@ -40,31 +36,22 @@ export function PlaceholderWorkspace({ workspace }: PlaceholderWorkspaceProps) {
 
       {/* Public Site Mapping Context */}
       <div className="workspace-meta-bar">
-        <div className="workspace-meta">
-          <span className="workspace-meta__label">Public page:</span>
-          <a
-            href={`http://localhost:3000${workspace.publicHref}`}
-            target="_blank"
-            rel="noreferrer"
-            className="workspace-meta__link"
-            aria-label={`View public page for ${workspace.title} (opens in new tab)`}
-          >
-            <span>http://localhost:3000{workspace.publicHref}</span>
-            <ArrowUpRight size={13} aria-hidden="true" />
-          </a>
-        </div>
+        <PublicReferenceLink
+          publicHref={workspace.publicHref}
+          title={workspace.title}
+        />
 
         {hasAnchor && (
-          <span className="workspace-tag">
+          <Badge variant="subtle">
             Anchor target: {workspace.publicHref.split("#")[1]}
-          </span>
+          </Badge>
         )}
 
         {isDocument && (
-          <span className="workspace-tag workspace-tag--doc">
+          <Badge variant="doc">
             <FileDown size={13} aria-hidden="true" />
             <span>Document / PDF record</span>
-          </span>
+          </Badge>
         )}
       </div>
 
@@ -78,13 +65,10 @@ export function PlaceholderWorkspace({ workspace }: PlaceholderWorkspaceProps) {
       )}
 
       {/* 4. Main Placeholder Card (strictly states next stage without fake saves) */}
-      <div className="workspace-placeholder">
-        <span aria-hidden="true" className="workspace-placeholder__mark">
-          <FileText size={22} />
-        </span>
-        <h2>Content workspace</h2>
-        <p>Content editor will be added in the next stage.</p>
-      </div>
+      <EmptyState
+        title="Content workspace"
+        description="Content editor will be added in the next stage."
+      />
 
       {/* 5. Child Workspaces List for Section Landing Pages */}
       {isSectionLanding && workspace.childItems && (
@@ -102,9 +86,7 @@ export function PlaceholderWorkspace({ workspace }: PlaceholderWorkspaceProps) {
               >
                 <div className="workspace-child-card__title">
                   <span>{child.label}</span>
-                  {child.badge && (
-                    <span className="admin-nav__badge">{child.badge}</span>
-                  )}
+                  {child.badge && <Badge>{child.badge}</Badge>}
                 </div>
                 <span className="workspace-child-card__arrow">Open workspace →</span>
               </Link>
@@ -112,6 +94,6 @@ export function PlaceholderWorkspace({ workspace }: PlaceholderWorkspaceProps) {
           </div>
         </div>
       )}
-    </section>
+    </Card>
   );
 }

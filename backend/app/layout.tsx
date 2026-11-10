@@ -16,6 +16,7 @@ const parkinsans = Parkinsans({
   variable: "--font-parkinsans",
   display: "swap",
   adjustFontFallback: false,
+  fallback: ["ui-sans-serif", "system-ui", "sans-serif"],
 });
 
 export const metadata: Metadata = {
