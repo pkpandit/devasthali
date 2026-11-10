@@ -11,7 +11,6 @@ import {
   Clock,
   ShieldCheck,
   ChevronRight,
-  ExternalLink,
 } from "lucide-react";
 
 export function Footer() {
@@ -132,11 +131,11 @@ export function Footer() {
             </div>
 
             <Link
-              href="/contact"
+              href="/contact#location"
               className="inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-[#B91C1C] hover:bg-[#991B1B] text-white text-sm font-heading font-bold rounded-full transition-colors mt-2 shadow-sm border border-[#991B1B] focus-visible:outline-2 focus-visible:outline-white focus-visible:outline-offset-2"
             >
               <span>Get Driving Directions / Map</span>
-              <ExternalLink className="w-3.5 h-3.5" />
+              <MapPin className="w-3.5 h-3.5" />
             </Link>
           </div>
         </div>
@@ -152,10 +151,6 @@ export function Footer() {
             </Link>
             <span>•</span>
             <span>WCAG 2.2 AA Accessible</span>
-            <span>•</span>
-            <Link href="/admin" className="hover:text-white underline">
-              Staff / Admin Portal
-            </Link>
           </div>
         </div>
       </Container>
