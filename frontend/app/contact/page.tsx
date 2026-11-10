@@ -1,7 +1,6 @@
 import React from "react";
 import type { Metadata } from "next";
-import { SCHOOL_INFO } from "@/lib/school-data";
-import { MapPin, Phone, Mail, Clock, MessageCircle, Sparkles, Shield, UserCheck, HeartPulse } from "lucide-react";
+import { Phone, Mail, MessageCircle, Sparkles, Shield, UserCheck, HeartPulse } from "lucide-react";
 
 export const metadata: Metadata = {
   title: "Contact Us & Campus Directory | Devasthaly Vidyapeeth",

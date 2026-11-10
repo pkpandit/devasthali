@@ -1,7 +1,7 @@
 import React from "react";
 import type { Metadata } from "next";
 import Link from "next/link";
-import { CheckCircle2, FileText, ArrowRight, ShieldCheck, Sparkles, AlertCircle } from "lucide-react";
+import { CheckCircle2, ArrowRight, Sparkles } from "lucide-react";
 
 export const metadata: Metadata = {
   title: "Admission Procedure & Subject for Entrance Exam | Devasthaly Vidyapeeth",

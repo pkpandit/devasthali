@@ -192,12 +192,14 @@ export function Header() {
   const hoverTimerRef = useRef<NodeJS.Timeout | null>(null);
   const closeTimerRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Close menus when route changes
-  useEffect(() => {
+  // Close menus when route changes (render-time state adjustment without cascading effect renders)
+  const [prevPathname, setPrevPathname] = useState(pathname);
+  if (prevPathname !== pathname) {
+    setPrevPathname(pathname);
     setMobileMenuOpen(false);
     setOpenDesktopMenu(null);
     setActiveDropdown(null);
-  }, [pathname]);
+  }
 
   const toggleDropdown = (key: string) => {
     setActiveDropdown((prev) => (prev === key ? null : key));
@@ -384,13 +386,13 @@ export function Header() {
 
       {/* 2. PRIMARY NAVIGATION BAR (#FFFFFF Pure White Surface) */}
       <div className="w-full bg-white relative">
-        <div className="w-full px-4 sm:px-6 lg:px-8 xl:px-8 2xl:px-12 py-2.5 sm:py-3.5 flex items-center justify-between gap-3 xl:gap-4">
+        <div className="w-full px-2.5 sm:px-4 lg:px-6 xl:px-4 2xl:px-8 py-2 sm:py-3 flex flex-wrap sm:flex-nowrap items-center justify-between gap-2 sm:gap-2.5 xl:gap-2.5 2xl:gap-4">
           {/* School Identity & Crest */}
           <Link
             href="/"
-            className="flex min-w-0 items-center gap-2.5 sm:gap-3.5 group focus-visible:outline-2 focus-visible:outline-[#B91C1C] focus-visible:outline-offset-2 rounded-xl"
+            className="order-1 flex items-center gap-2 sm:gap-3 group focus-visible:outline-2 focus-visible:outline-[#B91C1C] focus-visible:outline-offset-2 rounded-xl min-w-0"
           >
-            <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-white flex items-center justify-center p-1 shadow-xs border border-[#E5E7EB] group-hover:border-[#B91C1C] transition-colors shrink-0 overflow-hidden">
+            <div className="w-9 h-9 sm:w-11 sm:h-11 xl:w-11 xl:h-11 2xl:w-12 2xl:h-12 rounded-xl sm:rounded-2xl bg-white flex items-center justify-center p-1 shadow-xs border border-[#E5E7EB] group-hover:border-[#B91C1C] transition-colors shrink-0 overflow-hidden">
               <Image
                 src="/images/branding/devasthalyballia.webp"
                 alt="Devasthaly Vidyapeeth Logo"
@@ -401,10 +403,10 @@ export function Header() {
               />
             </div>
             <div className="flex flex-col min-w-0">
-              <span className="font-heading font-bold text-base sm:text-xl xl:text-[21px] 2xl:text-2xl tracking-tight text-[#111827] leading-tight group-hover:text-[#B91C1C] transition-colors whitespace-normal sm:whitespace-nowrap">
+              <span className="font-heading font-bold text-sm sm:text-base md:text-lg xl:text-[17px] 2xl:text-[20px] tracking-tight text-[#111827] leading-tight group-hover:text-[#B91C1C] transition-colors whitespace-nowrap">
                 Devasthaly Vidyapeeth
               </span>
-              <span className="text-gray-500 font-medium tracking-normal mt-0.5 whitespace-nowrap text-xs hidden sm:block xl:hidden 2xl:block">
+              <span className="text-gray-500 font-medium tracking-normal mt-0.5 text-[11px] 2xl:text-xs hidden min-[1680px]:block whitespace-nowrap">
                 Estd. 1988 • CBSE Residential School • Chilkahar, Ballia
               </span>
             </div>
@@ -413,7 +415,7 @@ export function Header() {
           {/* Desktop Navigation Links (Cleanly active at xl 1280px+) */}
           <nav
             ref={desktopNavRef}
-            className="hidden xl:flex items-center gap-0.5 xl:gap-1 2xl:gap-1.5 shrink-0 font-heading"
+            className="order-2 hidden xl:flex items-center gap-0.5 2xl:gap-1 shrink-0 font-heading"
             aria-label="Main Navigation"
           >
             {navItems.map((link) => {
@@ -460,7 +462,7 @@ export function Header() {
                       {/* Direct Parent Link: Navigates to parent overview page */}
                       <Link
                         href={link.href}
-                        className="pl-2 xl:pl-2.5 2xl:pl-3 pr-0.5 py-2 min-h-[44px] flex items-center text-[13.5px] xl:text-[14px] 2xl:text-[15px] font-heading font-semibold whitespace-nowrap rounded-l-lg transition-colors focus-visible:outline-2 focus-visible:outline-[#B91C1C]"
+                        className="pl-1.5 xl:pl-2 2xl:pl-2.5 pr-0.5 py-2 min-h-[44px] flex items-center text-[13px] xl:text-[13px] 2xl:text-[14px] font-heading font-semibold whitespace-nowrap rounded-l-lg transition-colors focus-visible:outline-2 focus-visible:outline-[#B91C1C]"
                       >
                         {link.name}
                       </Link>
@@ -488,7 +490,7 @@ export function Header() {
                         aria-haspopup="true"
                         aria-controls={dropdownId}
                         aria-label={`Toggle ${link.name} submenu`}
-                        className="min-h-[44px] min-w-[34px] flex items-center justify-center pl-0.5 pr-2 py-2 text-gray-400 hover:text-[#B91C1C] rounded-r-lg transition-colors focus-visible:outline-2 focus-visible:outline-[#B91C1C]"
+                        className="min-h-[44px] min-w-[28px] w-[28px] xl:min-w-[28px] xl:w-[28px] 2xl:min-w-[32px] 2xl:w-[32px] flex items-center justify-center pl-0.5 pr-1 py-2 text-gray-400 hover:text-[#B91C1C] rounded-r-lg transition-colors focus-visible:outline-2 focus-visible:outline-[#B91C1C]"
                       >
                         <ChevronDown
                           className={`w-3.5 h-3.5 transition-transform duration-200 shrink-0 ${
@@ -500,7 +502,7 @@ export function Header() {
                   ) : (
                     <Link
                       href={link.href}
-                      className={`text-[13.5px] xl:text-[14px] 2xl:text-[15px] font-heading font-semibold px-2 xl:px-2.5 2xl:px-3 py-2 min-h-[44px] flex items-center rounded-lg transition-all whitespace-nowrap focus-visible:outline-2 focus-visible:outline-[#B91C1C] ${
+                      className={`text-[13px] xl:text-[13px] 2xl:text-[14px] font-heading font-semibold px-1.5 xl:px-2 2xl:px-2.5 py-2 min-h-[44px] flex items-center rounded-lg transition-all whitespace-nowrap focus-visible:outline-2 focus-visible:outline-[#B91C1C] ${
                         isCurrentPage
                           ? "text-[#B91C1C] bg-red-50/80 font-bold"
                           : "text-[#111827] hover:text-[#B91C1C] hover:bg-gray-50"
@@ -645,44 +647,44 @@ export function Header() {
             })}
           </nav>
 
-          {/* Right CTA Buttons */}
-          <div className="hidden lg:flex items-center gap-2 2xl:gap-2.5 shrink-0">
+          {/* Right CTA Actions (Always visible across viewports) */}
+          <div className="order-3 contents sm:flex sm:items-center sm:order-3 gap-1 sm:gap-1.5 xl:gap-2 2xl:gap-2.5 shrink-0">
             <Link
               href={`https://wa.me/${SCHOOL_INFO.contacts.whatsappNumber}?text=Hello%20Devasthaly%20Vidyapeeth,%20I%20would%20like%20to%20enquire%20about%20admissions.`}
               target="_blank"
               rel="noopener noreferrer"
               aria-label="Chat with Admissions on WhatsApp"
-              className="inline-flex items-center justify-center w-11 h-11 rounded-full bg-[#F3F4F6] text-[#111827] font-semibold text-sm border border-[#E5E7EB] hover:border-[#B91C1C] hover:text-[#B91C1C] focus-visible:outline-2 focus-visible:outline-[#B91C1C] transition-all whitespace-nowrap shrink-0 shadow-2xs hover:shadow-xs"
+              className="hidden sm:inline-flex items-center justify-center w-9 h-9 xl:w-9 xl:h-9 2xl:w-10 2xl:h-10 rounded-full bg-[#F3F4F6] text-[#111827] font-semibold text-sm border border-[#E5E7EB] hover:border-[#B91C1C] hover:text-[#B91C1C] focus-visible:outline-2 focus-visible:outline-[#B91C1C] transition-all whitespace-nowrap shrink-0 shadow-2xs hover:shadow-xs"
             >
-              <MessageCircle className="w-5 h-5 text-[#25D366]" />
+              <MessageCircle className="w-4 h-4 2xl:w-5 2xl:h-5 text-[#25D366]" />
             </Link>
 
             {/* Primary Admission Button */}
             <Link
               href="/admissions"
-              className="inline-flex items-center gap-1.5 px-4 xl:px-4 2xl:px-5 py-2.5 min-h-[44px] rounded-full bg-[#B91C1C] hover:bg-[#991B1B] text-white font-heading font-bold text-xs 2xl:text-sm uppercase tracking-wider shadow-sm hover:shadow-md transition-all border border-[#991B1B] whitespace-nowrap shrink-0 hover:-translate-y-0.5 focus-visible:outline-2 focus-visible:outline-white"
+              className="order-3 sm:order-2 w-full sm:w-auto justify-center inline-flex items-center gap-1 sm:gap-1.5 px-3 sm:px-3.5 xl:px-3.5 2xl:px-4 py-2 sm:py-2.5 min-h-[38px] sm:min-h-[42px] xl:min-h-[44px] rounded-full bg-[#B91C1C] hover:bg-[#991B1B] text-white font-heading font-bold text-xs sm:text-xs xl:text-[13px] 2xl:text-sm uppercase tracking-wider shadow-sm hover:shadow-md transition-all border border-[#991B1B] whitespace-nowrap shrink-0 hover:-translate-y-0.5 focus-visible:outline-2 focus-visible:outline-white"
             >
-              <Sparkles className="w-3.5 h-3.5 text-white" />
+              <Sparkles className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-white shrink-0" />
               <span>Apply 2026–27</span>
             </Link>
-          </div>
 
-          {/* Mobile Menu Button (Accessible 44x44 target, active below xl) */}
-          <button
-            ref={mobileMenuButtonRef}
-            type="button"
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="xl:hidden p-2.5 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-xl text-gray-700 hover:bg-[#F3F4F6] focus-visible:outline-2 focus-visible:outline-[#B91C1C] focus-visible:outline-offset-2 transition-colors"
-            aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
-            aria-expanded={mobileMenuOpen}
-            aria-controls="mobile-navigation-drawer"
-          >
-            {mobileMenuOpen ? (
-              <X className="w-6 h-6" />
-            ) : (
-              <Menu className="w-6 h-6" />
-            )}
-          </button>
+            {/* Mobile Menu Button (Accessible 44x44 target, active below xl) */}
+            <button
+              ref={mobileMenuButtonRef}
+              type="button"
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="order-2 sm:order-3 xl:hidden p-2 sm:p-2.5 min-w-[40px] sm:min-w-[44px] min-h-[40px] sm:min-h-[44px] flex items-center justify-center rounded-xl text-gray-700 hover:bg-[#F3F4F6] focus-visible:outline-2 focus-visible:outline-[#B91C1C] focus-visible:outline-offset-2 transition-colors shrink-0 ml-auto sm:ml-0.5"
+              aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
+              aria-expanded={mobileMenuOpen}
+              aria-controls="mobile-navigation-drawer"
+            >
+              {mobileMenuOpen ? (
+                <X className="w-5 h-5 sm:w-6 sm:h-6" />
+              ) : (
+                <Menu className="w-5 h-5 sm:w-6 sm:h-6" />
+              )}
+            </button>
+          </div>
         </div>
       </div>
 

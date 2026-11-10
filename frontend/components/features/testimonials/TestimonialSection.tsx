@@ -18,6 +18,17 @@ export function TestimonialSection({
   showDraftPlaceholder = false,
 }: TestimonialSectionProps) {
   const [activeIndex, setActiveIndex] = useState(0);
+  const count = testimonials?.length ?? 0;
+
+  const handlePrev = useCallback(() => {
+    if (count <= 0) return;
+    setActiveIndex((prev) => (prev === 0 ? count - 1 : prev - 1));
+  }, [count]);
+
+  const handleNext = useCallback(() => {
+    if (count <= 0) return;
+    setActiveIndex((prev) => (prev === count - 1 ? 0 : prev + 1));
+  }, [count]);
 
   // If no testimonials exist and draft placeholder is requested
   if (!testimonials || testimonials.length === 0) {
@@ -48,16 +59,6 @@ export function TestimonialSection({
     // Do not publish fabricated reviews; keep empty section out of production
     return null;
   }
-
-  const count = testimonials.length;
-
-  const handlePrev = useCallback(() => {
-    setActiveIndex((prev) => (prev === 0 ? count - 1 : prev - 1));
-  }, [count]);
-
-  const handleNext = useCallback(() => {
-    setActiveIndex((prev) => (prev === count - 1 ? 0 : prev + 1));
-  }, [count]);
 
   // Accessible keyboard controls
   const handleKeyDown = (e: React.KeyboardEvent) => {

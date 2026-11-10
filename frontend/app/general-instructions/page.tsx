@@ -1,6 +1,6 @@
 import React from "react";
 import type { Metadata } from "next";
-import { Sparkles, CheckCircle2, ShieldAlert } from "lucide-react";
+import { Sparkles, ShieldAlert } from "lucide-react";
 
 export const metadata: Metadata = {
   title: "General Instructions | Devasthaly Vidyapeeth",

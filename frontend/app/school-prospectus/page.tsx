@@ -1,6 +1,6 @@
 import React from "react";
 import type { Metadata } from "next";
-import { Sparkles, Download, FileText, CheckCircle2, ShieldCheck } from "lucide-react";
+import { Sparkles, Download, FileText, CheckCircle2 } from "lucide-react";
 
 export const metadata: Metadata = {
   title: "School Prospectus (Session 2026–27) | Devasthaly Vidyapeeth",

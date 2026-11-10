@@ -1,6 +1,6 @@
 import React from "react";
 import type { Metadata } from "next";
-import { ShieldCheck, Lock, HeartHandshake, Sparkles } from "lucide-react";
+import { Sparkles } from "lucide-react";
 
 export const metadata: Metadata = {
   title: "Privacy Policy, Child Safety & Anti-Ragging Policies",
@@ -61,7 +61,7 @@ export default function PrivacyPolicyPage() {
               4. Media & Photography Safeguarding
             </h2>
             <p>
-              Photographs and videos captured during school functions, sports days, or laboratory sessions are published only for institutional documentation and school achievements. No individual student's sensitive identity details are publicly disclosed.
+              Photographs and videos captured during school functions, sports days, or laboratory sessions are published only for institutional documentation and school achievements. No individual student&apos;s sensitive identity details are publicly disclosed.
             </p>
           </section>
         </div>

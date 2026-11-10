@@ -5,13 +5,7 @@ import { SCHOOL_INFO, FAQ_DATA } from "@/lib/school-data";
 import { AdmissionEnquiryForm } from "@/components/features/admissions/AdmissionEnquiryForm";
 import {
   Sparkles,
-  Download,
-  CheckCircle2,
-  Phone,
   MessageCircle,
-  FileText,
-  Calendar,
-  Clock,
   HelpCircle,
 } from "lucide-react";
 

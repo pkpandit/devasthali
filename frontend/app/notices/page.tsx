@@ -2,7 +2,7 @@ import React from "react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { NOTICES_DATA } from "@/lib/school-data";
-import { FileText, Download, Calendar, Bell, Filter, Sparkles } from "lucide-react";
+import { FileText, Download, Calendar, Sparkles } from "lucide-react";
 
 export const metadata: Metadata = {
   title: "Notices & Official Circulars | Devasthaly Vidyapeeth",

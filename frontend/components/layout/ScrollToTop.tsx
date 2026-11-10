@@ -45,11 +45,15 @@ export function ScrollToTop() {
     };
   }, [isAdmin]);
 
-  // When route changes, update visibility without forcing scroll
+  // When route changes, update visibility asynchronously via requestAnimationFrame
   useEffect(() => {
     if (isAdmin) return;
-    const currentScrollY = window.scrollY || document.documentElement.scrollTop;
-    setIsVisible(currentScrollY > SCROLL_THRESHOLD);
+    const rafId = window.requestAnimationFrame(() => {
+      const currentScrollY = window.scrollY || document.documentElement.scrollTop;
+      const shouldBeVisible = currentScrollY > SCROLL_THRESHOLD;
+      setIsVisible((prev) => (prev !== shouldBeVisible ? shouldBeVisible : prev));
+    });
+    return () => window.cancelAnimationFrame(rafId);
   }, [pathname, isAdmin]);
 
   const handleScrollToTop = () => {

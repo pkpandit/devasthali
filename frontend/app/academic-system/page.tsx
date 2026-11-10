@@ -1,7 +1,6 @@
 import React from "react";
 import type { Metadata } from "next";
-import Link from "next/link";
-import { Sparkles, BookOpen, CheckCircle2, Download, AlertCircle } from "lucide-react";
+import { Sparkles, BookOpen, Download } from "lucide-react";
 
 export const metadata: Metadata = {
   title: "Academic System | Devasthaly Vidyapeeth",
