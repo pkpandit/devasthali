@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
 import { PlaceholderWorkspace } from "@/components/admin/PlaceholderWorkspace";
-import { TopperList } from "@/components/admin/toppers/TopperList";
+import { TopperWorkspace } from "@/components/admin/toppers/TopperWorkspace";
 import { Breadcrumbs } from "@/components/ui/Breadcrumbs";
 import { Badge } from "@/components/ui/Badge";
 import { Card } from "@/components/ui/Card";
@@ -52,9 +52,9 @@ export default async function AdminWorkspacePage({
 
   if (!workspace) notFound();
 
-  // Specialization: /admin/academics/results renders read-only BoardResultTopper workspace
+  // Specialization: /admin/academics/results renders interactive BoardResultTopper workspace
   if (href === "/admin/academics/results") {
-    // Restricted strictly to SUPER_ADMIN in this increment
+    // Restricted strictly to SUPER_ADMIN
     await requireRole(["SUPER_ADMIN"], href);
 
     const toppers = await prisma.boardResultTopper.findMany({
@@ -63,6 +63,13 @@ export default async function AdminWorkspacePage({
         { displayOrder: "asc" },
       ],
     });
+
+    const serializedToppers = toppers.map((topper) => ({
+      ...topper,
+      scorePercent: Number(topper.scorePercent),
+      createdAt: topper.createdAt.toISOString(),
+      updatedAt: topper.updatedAt.toISOString(),
+    }));
 
     return (
       <Card as="section" aria-labelledby="admin-workspace-title">
@@ -87,7 +94,7 @@ export default async function AdminWorkspacePage({
         </div>
 
         <div className="workspace-content pt-4">
-          <TopperList toppers={toppers} />
+          <TopperWorkspace toppers={serializedToppers} />
         </div>
       </Card>
     );
