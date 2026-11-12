@@ -10,10 +10,17 @@ export type AuthAuditAction =
   | "AUTH_STATUS_CHANGE"
   | "AUTH_USER_PROVISIONED";
 
+export type TopperAuditAction =
+  | "TOPPER_CREATED"
+  | "TOPPER_UPDATED"
+  | "TOPPER_DELETED";
+
+export type AuditAction = AuthAuditAction | TopperAuditAction;
+
 export interface CreateAuditLogParams {
   userId?: string | null;
-  action: AuthAuditAction;
-  entityType: "User" | "Session" | "System";
+  action: AuditAction;
+  entityType: "User" | "Session" | "System" | "BoardResultTopper";
   entityId: string;
   metadata?: Record<string, unknown> | null;
   ipAddress?: string | null;
@@ -23,7 +30,7 @@ export interface CreateAuditLogParams {
  * Strips sensitive keys (passwords, tokens, cookies, secrets) from any metadata object
  * to prevent accidental security leakage into audit logs.
  */
-function sanitizeAuditMetadata(
+export function sanitizeAuditMetadata(
   meta?: Record<string, unknown> | null
 ): Prisma.InputJsonValue | undefined {
   if (!meta) return undefined;
@@ -37,13 +44,24 @@ function sanitizeAuditMetadata(
     "cookie",
     "cookies",
     "secret",
+    "secretkey",
     "credential",
     "authorization",
+    "apikey",
+    "api_key",
   ]);
 
   const sanitized: Record<string, unknown> = {};
   for (const [key, value] of Object.entries(meta)) {
-    if (forbiddenKeys.has(key.toLowerCase())) {
+    const lowerKey = key.toLowerCase();
+    const isForbidden =
+      forbiddenKeys.has(lowerKey) ||
+      lowerKey.includes("password") ||
+      lowerKey.includes("token") ||
+      lowerKey.includes("secret") ||
+      lowerKey.includes("cookie");
+
+    if (isForbidden) {
       sanitized[key] = "[REDACTED]";
     } else if (typeof value === "object" && value !== null && !Array.isArray(value)) {
       sanitized[key] = sanitizeAuditMetadata(value as Record<string, unknown>);

@@ -65,7 +65,7 @@ export const photoUrlSchema = z
   );
 
 /**
- * Canonical BoardResultTopper input schema for create/update validation.
+ * Canonical BoardResultTopper input schema for record creation.
  */
 export const topperInputSchema = z
   .object({
@@ -97,4 +97,266 @@ export const topperInputSchema = z
     isFeatured: z.boolean().default(true),
   });
 
+/**
+ * Distinct update schema requiring non-empty ID and the full editable payload.
+ * Intentionally contains NO silent defaults to prevent accidental overwrites.
+ */
+export const topperUpdateSchema = z
+  .object({
+    id: z
+      .string()
+      .trim()
+      .min(1, "Record ID is required for update."),
+    studentName: z
+      .string()
+      .trim()
+      .min(TOPPER_POLICY.STUDENT_NAME_MIN_LENGTH, `Student name must be at least ${TOPPER_POLICY.STUDENT_NAME_MIN_LENGTH} characters.`)
+      .max(TOPPER_POLICY.STUDENT_NAME_MAX_LENGTH, `Student name must not exceed ${TOPPER_POLICY.STUDENT_NAME_MAX_LENGTH} characters.`),
+    scorePercent: scorePercentSchema,
+    grade: gradeEnum,
+    stream: z
+      .string()
+      .trim()
+      .max(TOPPER_POLICY.STREAM_MAX_LENGTH, `Stream must not exceed ${TOPPER_POLICY.STREAM_MAX_LENGTH} characters.`)
+      .optional()
+      .nullable(),
+    academicYear: academicYearSchema,
+    achievement: z
+      .string()
+      .trim()
+      .min(TOPPER_POLICY.ACHIEVEMENT_MIN_LENGTH, `Achievement must be at least ${TOPPER_POLICY.ACHIEVEMENT_MIN_LENGTH} characters.`)
+      .max(TOPPER_POLICY.ACHIEVEMENT_MAX_LENGTH, `Achievement must not exceed ${TOPPER_POLICY.ACHIEVEMENT_MAX_LENGTH} characters.`),
+    photoUrl: photoUrlSchema,
+    displayOrder: z
+      .number()
+      .int("Display order must be an integer.")
+      .min(0, "Display order must be a non-negative integer."),
+    isFeatured: z.boolean(),
+  });
+
+/**
+ * Delete schema requiring a non-empty ID.
+ */
+export const topperDeleteSchema = z
+  .object({
+    id: z
+      .string()
+      .trim()
+      .min(1, "Record ID is required for deletion."),
+  });
+
 export type TopperInput = z.infer<typeof topperInputSchema>;
+export type TopperUpdateInput = z.infer<typeof topperUpdateSchema>;
+export type TopperDeleteInput = z.infer<typeof topperDeleteSchema>;
+
+/**
+ * Maps Zod issues to a structured fieldErrors dictionary.
+ */
+export function formatZodErrors(error: z.ZodError): Record<string, string[]> {
+  const fieldErrors: Record<string, string[]> = {};
+  for (const issue of error.issues) {
+    const key = issue.path[0] ? String(issue.path[0]) : "form";
+    if (!fieldErrors[key]) fieldErrors[key] = [];
+    fieldErrors[key].push(issue.message);
+  }
+  return fieldErrors;
+}
+
+/**
+ * Normalizes input coming from FormData or raw JSON object into typed primitives
+ * so Zod validation schemas can parse them cleanly.
+ */
+export function normalizeTopperPayload(
+  rawInput: FormData | Record<string, unknown>
+): Record<string, unknown> {
+  const raw: Record<string, unknown> = {};
+
+  if (typeof FormData !== "undefined" && rawInput instanceof FormData) {
+    rawInput.forEach((value, key) => {
+      raw[key] = value;
+    });
+  } else {
+    Object.assign(raw, rawInput);
+  }
+
+  // Parse numeric scorePercent if provided as string
+  if (typeof raw.scorePercent === "string") {
+    const trimmed = raw.scorePercent.trim();
+    if (trimmed !== "") {
+      const num = Number(trimmed);
+      raw.scorePercent = Number.isNaN(num) ? raw.scorePercent : num;
+    }
+  }
+
+  // Parse numeric displayOrder if provided as string
+  if (typeof raw.displayOrder === "string") {
+    const trimmed = raw.displayOrder.trim();
+    if (trimmed !== "") {
+      const num = Number(trimmed);
+      raw.displayOrder = Number.isNaN(num) ? raw.displayOrder : num;
+    }
+  }
+
+  // Parse boolean isFeatured if provided as string
+  if (typeof raw.isFeatured === "string") {
+    const trimmed = raw.isFeatured.trim().toLowerCase();
+    if (trimmed === "true" || trimmed === "on" || trimmed === "1") {
+      raw.isFeatured = true;
+    } else if (trimmed === "false" || trimmed === "0") {
+      raw.isFeatured = false;
+    }
+  }
+
+  // Normalize empty strings to null for optional fields
+  if (typeof raw.stream === "string" && raw.stream.trim() === "") {
+    raw.stream = null;
+  }
+  if (typeof raw.photoUrl === "string" && raw.photoUrl.trim() === "") {
+    raw.photoUrl = null;
+  }
+
+  return raw;
+}
+
+export interface TopperDiffResult {
+  changedFields: string[];
+  diff: Record<string, { from: unknown; to: unknown }>;
+}
+
+/**
+ * Pure diffing utility comparing existing database record with validated update payload.
+ * Masking rule: Photo URLs are NEVER exposed in diffs, only marked [NONE] or [PRESENT].
+ */
+export function computeTopperDiff(
+  existing: {
+    studentName: string;
+    scorePercent: unknown;
+    grade: string;
+    stream: string | null;
+    academicYear: string;
+    achievement: string;
+    photoUrl: string | null;
+    displayOrder: number;
+    isFeatured: boolean;
+  },
+  updated: {
+    studentName: string;
+    scorePercent: number;
+    grade: string;
+    stream?: string | null;
+    academicYear: string;
+    achievement: string;
+    photoUrl?: string | null;
+    displayOrder: number;
+    isFeatured: boolean;
+  }
+): TopperDiffResult {
+  const changedFields: string[] = [];
+  const diff: Record<string, { from: unknown; to: unknown }> = {};
+
+  if (existing.studentName !== updated.studentName) {
+    changedFields.push("studentName");
+    diff.studentName = { from: existing.studentName, to: updated.studentName };
+  }
+
+  const existingScore = Number(existing.scorePercent);
+  const updatedScore = Number(updated.scorePercent);
+  if (Math.abs(existingScore - updatedScore) >= 0.001) {
+    changedFields.push("scorePercent");
+    diff.scorePercent = {
+      from: Number(existingScore.toFixed(2)),
+      to: Number(updatedScore.toFixed(2)),
+    };
+  }
+
+  if (existing.grade !== updated.grade) {
+    changedFields.push("grade");
+    diff.grade = { from: existing.grade, to: updated.grade };
+  }
+
+  const existingStream = existing.stream ?? null;
+  const updatedStream = updated.stream ?? null;
+  if (existingStream !== updatedStream) {
+    changedFields.push("stream");
+    diff.stream = { from: existingStream, to: updatedStream };
+  }
+
+  if (existing.academicYear !== updated.academicYear) {
+    changedFields.push("academicYear");
+    diff.academicYear = { from: existing.academicYear, to: updated.academicYear };
+  }
+
+  if (existing.achievement !== updated.achievement) {
+    changedFields.push("achievement");
+    diff.achievement = { from: existing.achievement, to: updated.achievement };
+  }
+
+  const existingHasPhoto = Boolean(existing.photoUrl && existing.photoUrl.trim() !== "");
+  const updatedHasPhoto = Boolean(updated.photoUrl && updated.photoUrl.trim() !== "");
+  if (existingHasPhoto !== updatedHasPhoto) {
+    changedFields.push("photoUrl");
+    diff.photoUrl = {
+      from: existingHasPhoto ? "[PRESENT]" : "[NONE]",
+      to: updatedHasPhoto ? "[PRESENT]" : "[NONE]",
+    };
+  }
+
+  if (existing.displayOrder !== updated.displayOrder) {
+    changedFields.push("displayOrder");
+    diff.displayOrder = { from: existing.displayOrder, to: updated.displayOrder };
+  }
+
+  if (existing.isFeatured !== updated.isFeatured) {
+    changedFields.push("isFeatured");
+    diff.isFeatured = { from: existing.isFeatured, to: updated.isFeatured };
+  }
+
+  return { changedFields, diff };
+}
+
+/**
+ * Strips sensitive keys (passwords, tokens, cookies, secrets) from any metadata object
+ * to prevent accidental security leakage into audit logs.
+ */
+export function sanitizeAuditMetadata(
+  meta?: Record<string, unknown> | null
+): Record<string, unknown> | undefined {
+  if (!meta) return undefined;
+
+  const forbiddenKeys = new Set([
+    "password",
+    "passwordhash",
+    "token",
+    "rawtoken",
+    "sessiontoken",
+    "cookie",
+    "cookies",
+    "secret",
+    "secretkey",
+    "credential",
+    "authorization",
+    "apikey",
+    "api_key",
+  ]);
+
+  const sanitized: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(meta)) {
+    const lowerKey = key.toLowerCase();
+    const isForbidden =
+      forbiddenKeys.has(lowerKey) ||
+      lowerKey.includes("password") ||
+      lowerKey.includes("token") ||
+      lowerKey.includes("secret") ||
+      lowerKey.includes("cookie");
+
+    if (isForbidden) {
+      sanitized[key] = "[REDACTED]";
+    } else if (typeof value === "object" && value !== null && !Array.isArray(value)) {
+      sanitized[key] = sanitizeAuditMetadata(value as Record<string, unknown>);
+    } else {
+      sanitized[key] = value;
+    }
+  }
+
+  return sanitized;
+}
