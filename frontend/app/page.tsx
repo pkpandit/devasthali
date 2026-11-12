@@ -1,16 +1,16 @@
-import React from "react";
+import React, { Suspense } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import {
   SCHOOL_INFO,
   NOTICES_DATA,
-  TOPPERS_DATA,
   FACILITIES_DATA,
   FAQ_DATA,
 } from "@/lib/school-data";
 import { Container } from "@/components/ui/Container";
 import { TestimonialSection } from "@/components/features/testimonials/TestimonialSection";
 import { HomeAnnouncement } from "@/components/features/announcements/HomeAnnouncement";
+import { HomeToppersShowcase } from "@/components/features/home/HomeToppersShowcase";
 import {
   ShieldCheck,
   Award,
@@ -57,13 +57,6 @@ const FACILITY_ICONS: Record<string, React.ElementType> = {
   Bus,
   BookOpen,
   HeartPulse,
-};
-
-const TOPPER_IMAGES: Record<string, string> = {
-  "Priya Singh": "/images/academics/toppers/topper-priya.jpg",
-  "Aman Kumar Verma": "/images/academics/toppers/topper-aman.jpg",
-  "Shweta Tiwari": "/images/academics/toppers/topper-shweta.jpg",
-  "Rohan Upadhyay": "/images/academics/toppers/topper-rohan.jpg",
 };
 
 const STAT_METRICS = [
@@ -1076,72 +1069,9 @@ export default function HomePage() {
       {/* =========================================================================
           SECTION 8: PROOF OF EXCELLENCE: TOPPERS & TESTIMONIALS
       ========================================================================= */}
-      <section className="w-full py-16 sm:py-24 bg-[#F3F4F6] border-b border-[#E5E7EB]">
-        <Container>
-          <div className="max-w-3xl mb-12 text-left">
-            <span className="text-sm font-heading font-bold uppercase tracking-widest text-[#B91C1C] bg-white border border-[#E5E7EB] px-3.5 py-1.5 rounded-full inline-block shadow-xs">
-              CBSE Merit &amp; Excellence
-            </span>
-            <h2 className="font-heading text-2xl sm:text-[30px] sm:leading-[40px] lg:text-[35px] lg:leading-[47px] font-semibold text-[#111827] mt-3 mb-4 tracking-tight">
-              Consistent CBSE Board Results &amp; Academic Toppers
-            </h2>
-            <p className="text-sm sm:text-base text-gray-600 leading-relaxed font-sans">
-              Consistently leading Ballia district board merit lists while grooming students for national entrance examinations and leadership careers.
-            </p>
-          </div>
-
-          {/* Board Toppers Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-0">
-            {TOPPERS_DATA.map((topper, idx) => (
-              <div
-                key={idx}
-                className="bg-white rounded-2xl sm:rounded-3xl border border-gray-200/90 hover:border-red-300 shadow-xs hover:shadow-xl hover:-translate-y-1 p-4 sm:p-5 transition-all duration-300 flex flex-col justify-between group cursor-pointer"
-              >
-                <div>
-                  {/* Top Image Container */}
-                  <div className="relative w-full aspect-[4/3] rounded-xl sm:rounded-2xl overflow-hidden bg-gray-100 mb-4 shadow-xs">
-                    <Image
-                      src={TOPPER_IMAGES[topper.name] || "/images/home/hero/hero-students.jpg"}
-                      alt={`${topper.name} - ${topper.grade} CBSE Topper`}
-                      fill
-                      sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
-                      className="object-cover object-top group-hover:scale-105 transition-transform duration-500"
-                    />
-                    {/* Top-Left Grade Badge */}
-                    <div className="absolute top-3 left-3 z-10 inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#B91C1C] text-white text-sm font-heading font-bold shadow-sm">
-                      <GraduationCap className="w-3.5 h-3.5 text-white" />
-                      <span>{topper.grade}</span>
-                    </div>
-                    {/* Top-Right Year Badge */}
-                    <div className="absolute top-3 right-3 z-10 inline-flex items-center px-2.5 py-1 rounded-full bg-white/95 backdrop-blur-sm text-[#111827] text-sm font-heading font-bold shadow-xs">
-                      <span>{topper.year}</span>
-                    </div>
-                  </div>
-
-                  {/* Sub-header / Stream Capsule Pill with Dashed Border */}
-                  <div className="rounded-full border border-dashed border-[#CBD5E1] px-3 py-1 inline-flex items-center gap-1.5 w-fit bg-slate-50 mb-3 transition-colors duration-300">
-                    <Award className="w-3.5 h-3.5 text-[#B91C1C]" />
-                    <span className="text-sm font-medium text-gray-700">
-                      {topper.stream || "Board Distinction"}
-                    </span>
-                  </div>
-
-                  {/* Score & Name */}
-                  <div className="font-heading font-black text-3xl sm:text-4xl text-[#B91C1C] mb-1.5 tracking-tight">
-                    {topper.score}
-                  </div>
-                  <h4 className="font-heading font-bold text-lg text-[#111827] group-hover:text-[#B91C1C] transition-colors mb-2">
-                    {topper.name}
-                  </h4>
-                  <p className="text-sm text-gray-600 bg-[#F3F4F6] p-3 rounded-xl border border-[#E5E7EB] font-sans leading-relaxed">
-                    {topper.achievement}
-                  </p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </Container>
-      </section>
+      <Suspense fallback={null}>
+        <HomeToppersShowcase />
+      </Suspense>
 
       {/* =========================================================================
           SECTION 9: DEDICATED PARENT & COMMUNITY TESTIMONIALS (Edplus Reference)
