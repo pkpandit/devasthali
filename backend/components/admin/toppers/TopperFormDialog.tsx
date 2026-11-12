@@ -334,22 +334,27 @@ function TopperFormInner({
             )}
           </div>
 
-          {/* Is Featured Checkbox - Horizontally aligned beside label */}
-          <div className="topper-field topper-field--full topper-field--checkbox">
-            <label htmlFor="isFeatured" className="topper-checkbox-wrapper">
-              <input
-                id="isFeatured"
-                name="isFeatured"
-                type="checkbox"
-                disabled={isPending}
-                checked={isFeatured}
-                onChange={(e) => setIsFeatured(e.target.checked)}
-                className="topper-checkbox"
-              />
-              <span className="topper-checkbox-label">
-                Highlight on Homepage / Featured Badges
-              </span>
-            </label>
+          {/* Publication Notice & Homepage Feature Checkbox */}
+          <div className="topper-field topper-field--full bg-slate-50 border border-slate-200 rounded-lg p-3 space-y-2">
+            <p className="text-xs text-slate-600 font-sans leading-relaxed">
+              <strong>Publication Notice:</strong> Saving this record publishes it on the public Results page. Administrators are responsible for entering only content approved for public display.
+            </p>
+            <div className="pt-2 border-t border-slate-200/80">
+              <label htmlFor="isFeatured" className="topper-checkbox-wrapper">
+                <input
+                  id="isFeatured"
+                  name="isFeatured"
+                  type="checkbox"
+                  disabled={isPending}
+                  checked={isFeatured}
+                  onChange={(e) => setIsFeatured(e.target.checked)}
+                  className="topper-checkbox"
+                />
+                <span className="topper-checkbox-label">
+                  Also feature on homepage
+                </span>
+              </label>
+            </div>
           </div>
         </div>
       </div>
