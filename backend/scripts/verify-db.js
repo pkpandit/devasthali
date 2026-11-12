@@ -46,10 +46,12 @@ async function verifyDatabase() {
     const userCount = await prisma.user.count();
     const sessionCount = await prisma.session.count();
     const auditLogCount = await prisma.auditLog.count();
+    const topperCount = await prisma.boardResultTopper.count();
     console.log("--> Application table row counts:", {
       users: userCount,
       sessions: sessionCount,
       audit_logs: auditLogCount,
+      board_result_toppers: topperCount,
     });
 
     // Check indexes
@@ -62,7 +64,7 @@ async function verifyDatabase() {
     console.log(`--> Indexes present (${indexes.length}):`, indexes);
 
     // Check foreign keys
-    const fkeys = await prisma.$queryRawUnsafe(`
+    const foreignKeys = await prisma.$queryRawUnsafe(`
       SELECT
         tc.constraint_name,
         tc.table_name,
@@ -79,16 +81,22 @@ async function verifyDatabase() {
         AND ccu.table_schema = tc.table_schema
       JOIN information_schema.referential_constraints AS rc
         ON rc.constraint_name = tc.constraint_name
-      WHERE tc.constraint_type = 'FOREIGN KEY' AND tc.table_schema = current_schema()
+        AND rc.constraint_schema = tc.table_schema
+      WHERE tc.constraint_type = 'FOREIGN KEY'
+        AND tc.table_schema = current_schema()
       ORDER BY tc.table_name, tc.constraint_name
     `);
-    console.log("--> Foreign keys present:", fkeys);
+    console.log("--> Foreign keys present:", foreignKeys);
   } catch (err) {
-    console.error("--> Database verification failed:", err.message);
+    console.error("[FATAL ERROR] Database verification failed:", err);
     process.exitCode = 1;
   } finally {
     await prisma.$disconnect();
   }
 }
 
-verifyDatabase();
+if (require.main === module) {
+  verifyDatabase();
+}
+
+module.exports = { verifyDatabase };
