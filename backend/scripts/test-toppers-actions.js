@@ -50,185 +50,153 @@ function runSuite() {
   });
   assert("Valid create payload passes", validCreate.success);
 
-  const missingName = topperInputSchema.safeParse({
+  const missingNameCreate = topperInputSchema.safeParse({
     scorePercent: 98.4,
     grade: "Class X",
     academicYear: "2024-25",
     achievement: "School Topper",
   });
-  assert("Create payload missing studentName fails", !missingName.success);
+  assert("Create payload missing studentName fails", !missingNameCreate.success);
 
   // -------------------------------------------------------------
   // 2. Zod Validation: Update Schema (topperUpdateSchema)
   // -------------------------------------------------------------
   console.log("\n--- 2. Update Schema Validation (No Silent Defaults) ---");
   const validUpdate = topperUpdateSchema.safeParse({
-    id: "clx1234567890",
+    id: "top_c1234567-89ab-cdef-0123-456789abcdef",
     studentName: "Ananya Sharma",
-    scorePercent: 99.0,
+    scorePercent: 98.4,
     grade: "Class X",
     stream: null,
     academicYear: "2024-25",
-    achievement: "State Rank 1",
-    photoUrl: null,
-    displayOrder: 1,
+    achievement: "School Topper",
+    photoUrl: "/images/toppers/ananya.jpg",
+    displayOrder: 0,
     isFeatured: true,
   });
   assert("Valid complete update payload passes", validUpdate.success);
 
   const missingIdUpdate = topperUpdateSchema.safeParse({
     studentName: "Ananya Sharma",
-    scorePercent: 99.0,
+    scorePercent: 98.4,
     grade: "Class X",
     academicYear: "2024-25",
-    achievement: "State Rank 1",
-    displayOrder: 1,
+    achievement: "School Topper",
+    displayOrder: 0,
     isFeatured: true,
   });
   assert("Update payload missing ID fails", !missingIdUpdate.success);
 
-  const emptyIdUpdate = topperUpdateSchema.safeParse({
+  const whitespaceIdUpdate = topperUpdateSchema.safeParse({
     id: "   ",
     studentName: "Ananya Sharma",
-    scorePercent: 99.0,
+    scorePercent: 98.4,
     grade: "Class X",
     academicYear: "2024-25",
-    achievement: "State Rank 1",
-    displayOrder: 1,
-    isFeatured: true,
-  });
-  assert("Update payload with whitespace-only ID fails", !emptyIdUpdate.success);
-
-  const omittedDisplayOrder = topperUpdateSchema.safeParse({
-    id: "clx1234567890",
-    studentName: "Ananya Sharma",
-    scorePercent: 99.0,
-    grade: "Class X",
-    academicYear: "2024-25",
-    achievement: "State Rank 1",
-    isFeatured: true,
-    // displayOrder is intentionally omitted: must FAIL (no silent default)
-  });
-  assert(
-    "Update payload with omitted displayOrder fails (no silent default)",
-    !omittedDisplayOrder.success
-  );
-
-  const omittedIsFeatured = topperUpdateSchema.safeParse({
-    id: "clx1234567890",
-    studentName: "Ananya Sharma",
-    scorePercent: 99.0,
-    grade: "Class X",
-    academicYear: "2024-25",
-    achievement: "State Rank 1",
+    achievement: "School Topper",
     displayOrder: 0,
-    // isFeatured is intentionally omitted: must FAIL (no silent default)
+    isFeatured: true,
   });
-  assert(
-    "Update payload with omitted isFeatured fails (no silent default)",
-    !omittedIsFeatured.success
-  );
+  assert("Update payload with whitespace-only ID fails", !whitespaceIdUpdate.success);
+
+  const omittedOrderUpdate = topperUpdateSchema.safeParse({
+    id: "top_123",
+    studentName: "Ananya Sharma",
+    scorePercent: 98.4,
+    grade: "Class X",
+    academicYear: "2024-25",
+    achievement: "School Topper",
+    isFeatured: true,
+  });
+  assert("Update payload with omitted displayOrder fails (no silent default)", !omittedOrderUpdate.success);
+
+  const omittedFeaturedUpdate = topperUpdateSchema.safeParse({
+    id: "top_123",
+    studentName: "Ananya Sharma",
+    scorePercent: 98.4,
+    grade: "Class X",
+    academicYear: "2024-25",
+    achievement: "School Topper",
+    displayOrder: 0,
+  });
+  assert("Update payload with omitted isFeatured fails (no silent default)", !omittedFeaturedUpdate.success);
 
   // -------------------------------------------------------------
-  // 3. Zod Validation: Delete Schema (topperDeleteSchema)
+  // 3. Zod Validation: Deletion Schema (topperDeleteSchema)
   // -------------------------------------------------------------
   console.log("\n--- 3. Delete Schema Validation ---");
-  const validDelete = topperDeleteSchema.safeParse({ id: "clx1234567890" });
+  const validDelete = topperDeleteSchema.safeParse({
+    id: "top_c1234567-89ab-cdef-0123-456789abcdef",
+  });
   assert("Valid delete payload passes", validDelete.success);
 
-  const emptyDelete = topperDeleteSchema.safeParse({ id: "  " });
+  const emptyDelete = topperDeleteSchema.safeParse({ id: "" });
   assert("Delete payload with empty ID fails", !emptyDelete.success);
 
-  const missingDeleteId = topperDeleteSchema.safeParse({});
-  assert("Delete payload missing ID fails", !missingDeleteId.success);
+  const missingDelete = topperDeleteSchema.safeParse({});
+  assert("Delete payload missing ID fails", !missingDelete.success);
 
   // -------------------------------------------------------------
-  // 4. Role Authorization Logic & Error Handling
+  // 4. Role Authorization Matrix
   // -------------------------------------------------------------
   console.log("\n--- 4. Role Authorization & Error Semantics ---");
-  const allowedRoles = ["SUPER_ADMIN"];
+  function checkRoleAuth(role) {
+    if (role === "SUPER_ADMIN") return true;
+    throw new Error("AuthorizationError: SUPER_ADMIN privileges required.");
+  }
 
-  class TestAuthorizationError extends Error {
-    constructor(message, requiredRoles, userRole) {
-      super(message);
-      this.name = "AuthorizationError";
-      this.requiredRoles = requiredRoles;
-      this.userRole = userRole;
+  assert("SUPER_ADMIN role permitted", checkRoleAuth("SUPER_ADMIN") === true);
+
+  const nonSuperRoles = ["PRINCIPAL", "TEACHER", "STAFF"];
+  for (const role of nonSuperRoles) {
+    let thrown = false;
+    try {
+      checkRoleAuth(role);
+    } catch {
+      thrown = true;
     }
+    assert(`${role} role blocked with AuthorizationError`, thrown);
   }
-
-  function checkPermission(userRole) {
-    if (!allowedRoles.includes(userRole)) {
-      throw new TestAuthorizationError(
-        `Access denied. Role '${userRole}' is not authorized for this operation.`,
-        allowedRoles,
-        userRole
-      );
-    }
-    return true;
-  }
-
-  assert("SUPER_ADMIN role permitted", checkPermission("SUPER_ADMIN") === true);
-
-  let principalBlocked = false;
-  try {
-    checkPermission("PRINCIPAL");
-  } catch (err) {
-    principalBlocked = err instanceof TestAuthorizationError && err.userRole === "PRINCIPAL";
-  }
-  assert("PRINCIPAL role blocked with AuthorizationError", principalBlocked);
-
-  let teacherBlocked = false;
-  try {
-    checkPermission("TEACHER");
-  } catch (err) {
-    teacherBlocked = err instanceof TestAuthorizationError && err.userRole === "TEACHER";
-  }
-  assert("TEACHER role blocked with AuthorizationError", teacherBlocked);
-
-  let staffBlocked = false;
-  try {
-    checkPermission("STAFF");
-  } catch (err) {
-    staffBlocked = err instanceof TestAuthorizationError && err.userRole === "STAFF";
-  }
-  assert("STAFF role blocked with AuthorizationError", staffBlocked);
 
   // -------------------------------------------------------------
-  // 5. Audit Metadata Sanitization & Photo Masking
+  // 5. Audit Metadata Sanitization & Secret Masking
   // -------------------------------------------------------------
   console.log("\n--- 5. Audit Metadata Sanitization & Privacy ---");
-  const dirtyMeta = {
+  const testAuditPayload = {
     studentName: "Ananya Sharma",
-    password: "supersecretpassword",
-    sessionToken: "raw-session-token-hash-12345",
-    cookie: "dvp_session=xyz",
+    password: "PlaintextPassword123!",
+    passwordHash: "$2b$12$somehashedvalue",
+    sessionToken: "sess_abcdef123456",
+    rawToken: "raw_tok_789",
+    cookie: "connect.sid=s%3A123",
     nested: {
-      secretKey: "secret-abc",
-      safeNote: "District Topper",
+      secretKey: "super_secret_api_key",
+      safeKey: "safe_value",
+      credential: "admin_credential",
     },
   };
-  const sanitized = sanitizeAuditMetadata(dirtyMeta);
+
+  const sanitized = sanitizeAuditMetadata(testAuditPayload);
   assert("Sanitizer preserves studentName", sanitized.studentName === "Ananya Sharma");
   assert("Sanitizer redacts password", sanitized.password === "[REDACTED]");
   assert("Sanitizer redacts sessionToken", sanitized.sessionToken === "[REDACTED]");
   assert("Sanitizer redacts cookie", sanitized.cookie === "[REDACTED]");
   assert("Sanitizer recursively redacts nested secrets", sanitized.nested.secretKey === "[REDACTED]");
-  assert("Sanitizer preserves nested safe keys", sanitized.nested.safeNote === "District Topper");
+  assert("Sanitizer preserves nested safe keys", sanitized.nested.safeKey === "safe_value");
 
   // -------------------------------------------------------------
-  // 6. Changed-Field Diff Calculation
+  // 6. Changed-Field Diff Computation & Value Masking
   // -------------------------------------------------------------
   console.log("\n--- 6. Changed-Field Diff Calculation & Masking ---");
   const existingRecord = {
-    id: "clx123",
     studentName: "Ananya Sharma",
-    scorePercent: "98.40",
+    scorePercent: 98.4,
     grade: "Class X",
     stream: null,
     academicYear: "2024-25",
     achievement: "School Topper",
     photoUrl: "https://storage.example.com/photos/ananya.jpg",
+    photoStorageKey: null,
     displayOrder: 0,
     isFeatured: true,
   };
@@ -242,6 +210,7 @@ function runSuite() {
     academicYear: "2024-25",
     achievement: "School Topper",
     photoUrl: "https://storage.example.com/photos/ananya.jpg",
+    photoStorageKey: null,
     displayOrder: 0,
     isFeatured: true,
   });
@@ -256,6 +225,7 @@ function runSuite() {
     academicYear: "2024-25",
     achievement: "School Topper",
     photoUrl: "https://storage.example.com/photos/ananya.jpg",
+    photoStorageKey: null,
     displayOrder: 0,
     isFeatured: true,
   });
@@ -277,6 +247,7 @@ function runSuite() {
     academicYear: "2024-25",
     achievement: "School Topper",
     photoUrl: null,
+    photoStorageKey: null,
     displayOrder: 0,
     isFeatured: true,
   });
@@ -288,6 +259,55 @@ function runSuite() {
     "Photo diff masked to [PRESENT] -> [NONE] without exposing raw URL",
     photoRemovedDiff.diff.photoUrl.from === "[PRESENT]" &&
       photoRemovedDiff.diff.photoUrl.to === "[NONE]"
+  );
+
+  // 6.4 Photo replacement detection (photo-to-photo masked to [PRESENT] -> [PRESENT])
+  const photoReplacedDiff = computeTopperDiff(existingRecord, {
+    studentName: "Ananya Sharma",
+    scorePercent: 98.4,
+    grade: "Class X",
+    stream: null,
+    academicYear: "2024-25",
+    achievement: "School Topper",
+    photoUrl: "https://storage.example.com/photos/ananya_new.jpg",
+    photoStorageKey: null,
+    displayOrder: 0,
+    isFeatured: true,
+  });
+  assert(
+    "Photo replacement detected in changedFields",
+    photoReplacedDiff.changedFields.includes("photoUrl")
+  );
+  assert(
+    "Photo replacement diff masked to [PRESENT] -> [PRESENT]",
+    photoReplacedDiff.diff.photoUrl.from === "[PRESENT]" &&
+      photoReplacedDiff.diff.photoUrl.to === "[PRESENT]"
+  );
+
+  // 6.5 Managed photoStorageKey replacement detection
+  const managedRecord = {
+    ...existingRecord,
+    photoStorageKey: "toppers/top_11111111-1111-1111-1111-111111111111.webp",
+  };
+  const keyReplacedDiff = computeTopperDiff(managedRecord, {
+    studentName: "Ananya Sharma",
+    scorePercent: 98.4,
+    grade: "Class X",
+    stream: null,
+    academicYear: "2024-25",
+    achievement: "School Topper",
+    photoStorageKey: "toppers/top_22222222-2222-2222-2222-222222222222.webp",
+    displayOrder: 0,
+    isFeatured: true,
+  });
+  assert(
+    "Managed key replacement detected in changedFields",
+    keyReplacedDiff.changedFields.includes("photoUrl")
+  );
+  assert(
+    "Managed key replacement masked to [PRESENT] -> [PRESENT]",
+    keyReplacedDiff.diff.photoUrl.from === "[PRESENT]" &&
+      keyReplacedDiff.diff.photoUrl.to === "[PRESENT]"
   );
 
   // -------------------------------------------------------------

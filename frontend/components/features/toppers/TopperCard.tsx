@@ -16,24 +16,45 @@ function getInitials(name: string): string {
 
 /**
  * Validates that photoUrl is a safe, root-relative local path (e.g. /images/...)
- * to adhere strictly to Next.js image domain configurations and prevent arbitrary remote loading.
+ * or an authorized backend media URL to adhere strictly to Next.js image domain configurations.
  */
-function isValidRootRelativePath(url: string | null | undefined): boolean {
+function isDisplayablePhotoUrl(url: string | null | undefined): boolean {
   if (!url) return false;
   const trimmed = url.trim();
-  return trimmed.startsWith("/") && !trimmed.startsWith("//") && !trimmed.startsWith("/\\");
+
+  // Root-relative static assets
+  if (trimmed.startsWith("/") && !trimmed.startsWith("//") && !trimmed.startsWith("/\\")) {
+    return true;
+  }
+
+  // Allowed backend media URL
+  try {
+    const parsed = new URL(trimmed);
+    if (parsed.protocol === "http:" || parsed.protocol === "https:") {
+      if (
+        (parsed.hostname === "127.0.0.1" || parsed.hostname === "localhost") &&
+        parsed.pathname.startsWith("/api/public/media/toppers/")
+      ) {
+        return true;
+      }
+    }
+  } catch {
+    return false;
+  }
+
+  return false;
 }
 
 export function TopperCard({ topper }: TopperCardProps) {
-  const hasValidLocalPhoto = isValidRootRelativePath(topper.photoUrl);
+  const hasValidPhoto = isDisplayablePhotoUrl(topper.photoUrl);
   const formattedScore = `${topper.scorePercent.toFixed(2)}%`;
 
   return (
     <div className="bg-white rounded-2xl sm:rounded-3xl border border-gray-200/90 hover:border-red-300 shadow-xs hover:shadow-xl hover:-translate-y-1 p-4 sm:p-5 transition-all duration-300 flex flex-col justify-between group cursor-pointer">
       <div>
-        {/* Top Image Container with Badges */}
-        <div className="relative w-full aspect-[4/3] rounded-xl sm:rounded-2xl overflow-hidden bg-gray-100 mb-4 shadow-xs">
-          {hasValidLocalPhoto && topper.photoUrl ? (
+        {/* Top Image Container with Badges - Deliberate 3:4 portrait crop for student photos */}
+        <div className="relative w-full aspect-[3/4] rounded-xl sm:rounded-2xl overflow-hidden bg-gray-100 mb-4 shadow-xs">
+          {hasValidPhoto && topper.photoUrl ? (
             <Image
               src={topper.photoUrl}
               alt={`${topper.studentName} - ${topper.grade} CBSE Topper`}

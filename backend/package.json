@@ -9,7 +9,8 @@
     "lint": "eslint",
     "db:verify": "node scripts/verify-db.js",
     "db:validate": "prisma validate",
-    "admin:provision": "node scripts/create-super-admin.js"
+    "admin:provision": "node scripts/create-super-admin.js",
+    "media:clean-orphans": "node scripts/clean-orphaned-photos.js"
   },
   "dependencies": {
     "@node-rs/argon2": "^2.2.2",
@@ -20,6 +21,7 @@
     "react": "19.3.0",
     "react-dom": "19.3.0",
     "server-only": "^0.0.1",
+    "sharp": "^0.35.5",
     "zod": "^4.6.7"
   },
   "devDependencies": {

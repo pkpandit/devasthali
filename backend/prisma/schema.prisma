@@ -89,18 +89,19 @@ model AuditLog {
 // ==========================================
 
 model BoardResultTopper {
-  id           String   @id @default(cuid())
-  studentName  String
-  scorePercent Decimal  @db.Decimal(5, 2)
-  grade        String   // "Class X" | "Class XII"
-  stream       String?  // Optional: "Science (PCM)", "Commerce", "Humanities"
-  academicYear String   // e.g. "2024-25"
-  achievement  String   // e.g. "School Topper - 98.4%"
-  photoUrl     String?
-  displayOrder Int      @default(0)
-  isFeatured   Boolean  @default(true)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id              String   @id @default(cuid())
+  studentName     String
+  scorePercent    Decimal  @db.Decimal(5, 2)
+  grade           String   // "Class X" | "Class XII"
+  stream          String?  // Optional: "Science (PCM)", "Commerce", "Humanities"
+  academicYear    String   // e.g. "2024-25"
+  achievement     String   // e.g. "School Topper - 98.4%"
+  photoUrl        String?
+  photoStorageKey String?
+  displayOrder    Int      @default(0)
+  isFeatured      Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 
   @@index([academicYear, grade])
   @@index([isFeatured, displayOrder])

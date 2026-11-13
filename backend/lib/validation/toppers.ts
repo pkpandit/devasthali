@@ -236,6 +236,7 @@ export function computeTopperDiff(
     academicYear: string;
     achievement: string;
     photoUrl: string | null;
+    photoStorageKey?: string | null;
     displayOrder: number;
     isFeatured: boolean;
   },
@@ -247,6 +248,7 @@ export function computeTopperDiff(
     academicYear: string;
     achievement: string;
     photoUrl?: string | null;
+    photoStorageKey?: string | null;
     displayOrder: number;
     isFeatured: boolean;
   }
@@ -291,9 +293,11 @@ export function computeTopperDiff(
     diff.achievement = { from: existing.achievement, to: updated.achievement };
   }
 
-  const existingHasPhoto = Boolean(existing.photoUrl && existing.photoUrl.trim() !== "");
-  const updatedHasPhoto = Boolean(updated.photoUrl && updated.photoUrl.trim() !== "");
-  if (existingHasPhoto !== updatedHasPhoto) {
+  const existingPhoto = (existing.photoStorageKey ?? existing.photoUrl ?? "").trim();
+  const updatedPhoto = (updated.photoStorageKey ?? updated.photoUrl ?? "").trim();
+  const existingHasPhoto = existingPhoto !== "";
+  const updatedHasPhoto = updatedPhoto !== "";
+  if (existingPhoto !== updatedPhoto) {
     changedFields.push("photoUrl");
     diff.photoUrl = {
       from: existingHasPhoto ? "[PRESENT]" : "[NONE]",

@@ -1,5 +1,7 @@
 import type { NextConfig } from "next";
 
+const isDev = process.env.NODE_ENV === "development";
+
 const nextConfig: NextConfig = {
   /* config options here */
   experimental: {
@@ -9,6 +11,23 @@ const nextConfig: NextConfig = {
   partialPrefetching: true,
   images: {
     qualities: [75, 85, 90, 95],
+    ...(isDev && {
+      dangerouslyAllowLocalIP: true,
+      remotePatterns: [
+        {
+          protocol: "http",
+          hostname: "127.0.0.1",
+          port: "3001",
+          pathname: "/api/public/media/toppers/**",
+        },
+        {
+          protocol: "http",
+          hostname: "localhost",
+          port: "3001",
+          pathname: "/api/public/media/toppers/**",
+        },
+      ],
+    }),
   },
   turbopack: {
     rules: {

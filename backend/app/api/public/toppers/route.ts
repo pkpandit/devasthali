@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/server/prisma";
+import { buildPublicMediaUrl, isValidManagedKey } from "@/lib/server/storage";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -32,20 +33,28 @@ export async function GET() {
         academicYear: true,
         achievement: true,
         photoUrl: true,
+        photoStorageKey: true,
         isFeatured: true,
       },
     });
 
-    const payload: PublicTopperDto[] = toppers.map((t) => ({
-      studentName: t.studentName,
-      scorePercent: Number(t.scorePercent),
-      grade: t.grade,
-      stream: t.stream,
-      academicYear: t.academicYear,
-      achievement: t.achievement,
-      photoUrl: t.photoUrl,
-      isFeatured: t.isFeatured,
-    }));
+    const payload: PublicTopperDto[] = toppers.map((t) => {
+      let resolvedPhotoUrl = t.photoUrl;
+      if (t.photoStorageKey && isValidManagedKey(t.photoStorageKey)) {
+        resolvedPhotoUrl = buildPublicMediaUrl(t.photoStorageKey);
+      }
+
+      return {
+        studentName: t.studentName,
+        scorePercent: Number(t.scorePercent),
+        grade: t.grade,
+        stream: t.stream,
+        academicYear: t.academicYear,
+        achievement: t.achievement,
+        photoUrl: resolvedPhotoUrl,
+        isFeatured: t.isFeatured,
+      };
+    });
 
     return NextResponse.json(payload, {
       status: 200,

@@ -64,12 +64,17 @@ export default async function AdminWorkspacePage({
       ],
     });
 
-    const serializedToppers = toppers.map((topper) => ({
-      ...topper,
-      scorePercent: Number(topper.scorePercent),
-      createdAt: topper.createdAt.toISOString(),
-      updatedAt: topper.updatedAt.toISOString(),
-    }));
+    const serializedToppers = toppers.map((topper) => {
+      // Explicitly omit internal photoStorageKey from serialized client props
+      const { photoStorageKey: _omittedKey, ...rest } = topper;
+      void _omittedKey;
+      return {
+        ...rest,
+        scorePercent: Number(topper.scorePercent),
+        createdAt: topper.createdAt.toISOString(),
+        updatedAt: topper.updatedAt.toISOString(),
+      };
+    });
 
     return (
       <Card as="section" aria-labelledby="admin-workspace-title">

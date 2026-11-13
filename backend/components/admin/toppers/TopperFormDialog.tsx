@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, useTransition } from "react";
-import { X, Loader2 } from "lucide-react";
+import { X, Loader2, Upload, Trash2, Image as ImageIcon } from "lucide-react";
 import {
   createTopperAction,
   updateTopperAction,
@@ -52,22 +52,74 @@ function TopperFormInner({
   const [stream, setStream] = useState(initialTopper?.stream ?? "");
   const [academicYear, setAcademicYear] = useState(initialTopper?.academicYear ?? "");
   const [achievement, setAchievement] = useState(initialTopper?.achievement ?? "");
-  const [photoUrl, setPhotoUrl] = useState(initialTopper?.photoUrl ?? "");
   const [displayOrder, setDisplayOrder] = useState(
     initialTopper ? String(initialTopper.displayOrder) : "0"
   );
   const [isFeatured, setIsFeatured] = useState(initialTopper?.isFeatured ?? true);
+
+  // Photo state
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(
+    initialTopper?.photoUrl ?? null
+  );
+  const [isPhotoRemoved, setIsPhotoRemoved] = useState(false);
 
   // Errors state
   const [generalError, setGeneralError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string[]>>({});
 
   const firstInputRef = useRef<HTMLInputElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const objectUrlRef = useRef<string | null>(null);
 
   // Focus first input on mount
   useEffect(() => {
     firstInputRef.current?.focus();
   }, []);
+
+  // Cleanup object URL on unmount
+  useEffect(() => {
+    return () => {
+      if (objectUrlRef.current) {
+        URL.revokeObjectURL(objectUrlRef.current);
+      }
+    };
+  }, []);
+
+  const handleFileSelect = (file: File | null) => {
+    if (objectUrlRef.current) {
+      URL.revokeObjectURL(objectUrlRef.current);
+      objectUrlRef.current = null;
+    }
+
+    if (file) {
+      const url = URL.createObjectURL(file);
+      objectUrlRef.current = url;
+      setSelectedFile(file);
+      setIsPhotoRemoved(false);
+      setPreviewUrl(url);
+    } else {
+      setSelectedFile(null);
+      if (!isPhotoRemoved && initialTopper?.photoUrl) {
+        setPreviewUrl(initialTopper.photoUrl);
+      } else {
+        setPreviewUrl(null);
+      }
+    }
+  };
+
+  const handleRemovePhoto = () => {
+    if (objectUrlRef.current) {
+      URL.revokeObjectURL(objectUrlRef.current);
+      objectUrlRef.current = null;
+    }
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+    setSelectedFile(null);
+    setIsPhotoRemoved(true);
+    setPreviewUrl(null);
+  };
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -75,21 +127,27 @@ function TopperFormInner({
     setFieldErrors({});
 
     startTransition(async () => {
-      const payload: Record<string, unknown> = {
-        studentName,
-        scorePercent: scorePercent.trim() !== "" ? Number(scorePercent) : scorePercent,
-        grade,
-        stream: stream.trim() === "" ? null : stream.trim(),
-        academicYear: academicYear.trim(),
-        achievement: achievement.trim(),
-        photoUrl: photoUrl.trim() === "" ? null : photoUrl.trim(),
-        displayOrder: displayOrder.trim() !== "" ? Number(displayOrder) : 0,
-        isFeatured,
-      };
+      const formData = new FormData();
+      formData.append("studentName", studentName.trim());
+      formData.append("scorePercent", scorePercent.trim());
+      formData.append("grade", grade);
+      if (stream.trim()) formData.append("stream", stream.trim());
+      formData.append("academicYear", academicYear.trim());
+      formData.append("achievement", achievement.trim());
+      formData.append("displayOrder", displayOrder.trim() || "0");
+      formData.append("isFeatured", String(isFeatured));
+
+      if (selectedFile) {
+        formData.append("photoFile", selectedFile);
+      } else if (isPhotoRemoved) {
+        formData.append("removePhoto", "true");
+      } else if (initialTopper?.photoUrl) {
+        formData.append("photoUrl", initialTopper.photoUrl);
+      }
 
       if (isEdit && initialTopper) {
-        payload.id = initialTopper.id;
-        const res = await updateTopperAction(null, payload);
+        formData.append("id", initialTopper.id);
+        const res = await updateTopperAction(null, formData);
         if (res.success) {
           onSuccess();
           onClose();
@@ -98,7 +156,7 @@ function TopperFormInner({
           if (res.fieldErrors) setFieldErrors(res.fieldErrors);
         }
       } else {
-        const res = await createTopperAction(null, payload);
+        const res = await createTopperAction(null, formData);
         if (res.success) {
           onSuccess();
           onClose();
@@ -283,26 +341,103 @@ function TopperFormInner({
             )}
           </div>
 
-          {/* Photo URL */}
+          {/* Student Photo Upload */}
           <div className="topper-field topper-field--full">
-            <label htmlFor="photoUrl" className="topper-label">
-              Photo Reference URL (Optional)
+            <label className="topper-label">
+              Student Photo (Optional)
             </label>
-            <input
-              id="photoUrl"
-              name="photoUrl"
-              type="text"
-              disabled={isPending}
-              value={photoUrl}
-              onChange={(e) => setPhotoUrl(e.target.value)}
-              className={`topper-input ${fieldErrors.photoUrl ? "topper-input--error" : ""}`}
-              aria-invalid={Boolean(fieldErrors.photoUrl)}
-              aria-describedby={fieldErrors.photoUrl ? "photoUrl-error" : "photoUrl-note"}
-              placeholder="HTTP(S) URL or root-relative path (e.g. /images/toppers/ananya.jpg)"
-            />
-            <p id="photoUrl-note" className="topper-field-note">
-              Optional reference path or public URL. Storage uploads are not enabled in this increment.
-            </p>
+            <div className="topper-photo-upload-container">
+              {/* Preview Box - Strictly bounded circular thumbnail */}
+              <div
+                className="topper-photo-preview-box"
+                style={{
+                  width: "80px",
+                  height: "80px",
+                  minWidth: "80px",
+                  minHeight: "80px",
+                  maxWidth: "80px",
+                  maxHeight: "80px",
+                }}
+              >
+                {previewUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={previewUrl}
+                    alt="Topper preview"
+                    className="topper-photo-preview-img"
+                    style={{
+                      width: "100%",
+                      height: "100%",
+                      objectFit: "cover",
+                      objectPosition: "top center",
+                    }}
+                  />
+                ) : (
+                  <div className="topper-photo-preview-placeholder">
+                    <ImageIcon size={28} />
+                  </div>
+                )}
+                {isPending && selectedFile && (
+                  <div className="topper-photo-preview-overlay">
+                    <Loader2 size={20} className="topper-photo-spinner" />
+                  </div>
+                )}
+              </div>
+
+              {/* Controls & Help */}
+              <div className="topper-photo-controls">
+                <div className="topper-photo-btn-group">
+                  <input
+                    ref={fileInputRef}
+                    id="photoFileInput"
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp"
+                    className="topper-photo-hidden-input"
+                    style={{ display: "none" }}
+                    disabled={isPending}
+                    onChange={(e) => {
+                      const file = e.target.files?.[0] || null;
+                      handleFileSelect(file);
+                    }}
+                  />
+                  <button
+                    type="button"
+                    disabled={isPending}
+                    onClick={() => fileInputRef.current?.click()}
+                    className="topper-button topper-button--secondary topper-photo-btn-sm"
+                  >
+                    <Upload size={14} />
+                    <span>{previewUrl ? "Replace Photo" : "Upload Photo"}</span>
+                  </button>
+
+                  {previewUrl && (
+                    <button
+                      type="button"
+                      disabled={isPending}
+                      onClick={handleRemovePhoto}
+                      className="topper-photo-remove-btn"
+                    >
+                      <Trash2 size={14} />
+                      <span>Remove Photo</span>
+                    </button>
+                  )}
+                </div>
+
+                <p className="topper-photo-help-text">
+                  Supported formats: JPEG, PNG, WebP (max 2 MiB). High-resolution photos are automatically resized and converted to optimized WebP.
+                </p>
+                {selectedFile && (
+                  <p className="topper-photo-status-text">
+                    Ready to upload: {selectedFile.name} ({Math.round(selectedFile.size / 1024)} KB)
+                  </p>
+                )}
+              </div>
+            </div>
+            {fieldErrors.photoFile && (
+              <p id="photoFile-error" className="topper-field-error">
+                {fieldErrors.photoFile[0]}
+              </p>
+            )}
             {fieldErrors.photoUrl && (
               <p id="photoUrl-error" className="topper-field-error">
                 {fieldErrors.photoUrl[0]}
@@ -375,7 +510,7 @@ function TopperFormInner({
           disabled={isPending}
           aria-busy={isPending}
         >
-          {isPending && <Loader2 size={16} className="animate-spin mr-2" />}
+          {isPending && <Loader2 size={16} className="topper-photo-spinner" style={{ marginRight: "8px" }} />}
           {isPending ? "Saving..." : isEdit ? "Update Topper" : "Add Topper"}
         </button>
       </div>

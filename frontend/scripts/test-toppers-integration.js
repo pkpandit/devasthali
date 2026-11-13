@@ -21,10 +21,26 @@ const publicTopperSchema = z.object({
 const publicToppersArraySchema = z.array(publicTopperSchema);
 
 // Photo helper logic
-function isValidRootRelativePath(url) {
+function isDisplayablePhotoUrl(url) {
   if (!url) return false;
   const trimmed = url.trim();
-  return trimmed.startsWith("/") && !trimmed.startsWith("//") && !trimmed.startsWith("/\\");
+  if (trimmed.startsWith("/") && !trimmed.startsWith("//") && !trimmed.startsWith("/\\")) {
+    return true;
+  }
+  try {
+    const parsed = new URL(trimmed);
+    if (parsed.protocol === "http:" || parsed.protocol === "https:") {
+      if (
+        (parsed.hostname === "127.0.0.1" || parsed.hostname === "localhost") &&
+        parsed.pathname.startsWith("/api/public/media/toppers/")
+      ) {
+        return true;
+      }
+    }
+  } catch {
+    return false;
+  }
+  return false;
 }
 
 function getInitials(name) {
@@ -54,7 +70,7 @@ function getInitials(name) {
       stream: "Science (PCM)",
       academicYear: "2024-25",
       achievement: "District Rank 2",
-      photoUrl: null,
+      photoUrl: "http://127.0.0.1:3001/api/public/media/toppers/top_12345678-1234-1234-1234-123456789abc.webp",
       isFeatured: false,
     },
   ];
@@ -62,7 +78,7 @@ function getInitials(name) {
   const parsed = publicToppersArraySchema.safeParse(rawPayload);
   assert.strictEqual(parsed.success, true);
   assert.strictEqual(parsed.data.length, 2);
-  console.log("  [PASS] Valid public toppers array parsed successfully");
+  console.log("  [PASS] Valid public toppers array with managed media URLs parsed successfully");
 }
 
 // 2. Schema Guard: Rejects Malformed or Sensitive Injections
@@ -110,20 +126,22 @@ function getInitials(name) {
   console.log("  [PASS] Percentage formatting accurately preserves two decimals (e.g. 98.40%)");
 }
 
-// 5. Local Photo vs Avatar Initials Fallback
+// 5. Photo URL Validation & Initials Fallback
 {
-  assert.strictEqual(isValidRootRelativePath("/images/toppers/ananya.jpg"), true);
-  assert.strictEqual(isValidRootRelativePath("https://external.com/photo.jpg"), false);
-  assert.strictEqual(isValidRootRelativePath("//malicious-domain.com/photo.jpg"), false);
-  assert.strictEqual(isValidRootRelativePath(null), false);
-  assert.strictEqual(isValidRootRelativePath(""), false);
+  assert.strictEqual(isDisplayablePhotoUrl("/images/toppers/ananya.jpg"), true);
+  assert.strictEqual(isDisplayablePhotoUrl("http://127.0.0.1:3001/api/public/media/toppers/top_123.webp"), true);
+  assert.strictEqual(isDisplayablePhotoUrl("http://localhost:3001/api/public/media/toppers/top_123.webp"), true);
+  assert.strictEqual(isDisplayablePhotoUrl("https://external-untrusted.com/photo.jpg"), false);
+  assert.strictEqual(isDisplayablePhotoUrl("//malicious-domain.com/photo.jpg"), false);
+  assert.strictEqual(isDisplayablePhotoUrl(null), false);
+  assert.strictEqual(isDisplayablePhotoUrl(""), false);
 
   assert.strictEqual(getInitials("Ananya Sharma"), "AS");
   assert.strictEqual(getInitials("Priya"), "PR");
   assert.strictEqual(getInitials("Rohan Kumar Upadhyay"), "RU");
   assert.strictEqual(getInitials(""), "S");
 
-  console.log("  [PASS] Local root-relative photo path validation and initials generation verified");
+  console.log("  [PASS] Managed media URL validation and initials generation verified");
 }
 
 // 6. Empty Array Behavior
