@@ -22,28 +22,28 @@ export function TopperWorkspace({ toppers }: TopperWorkspaceProps) {
   };
 
   return (
-    <div className="topper-workspace-wrapper space-y-6">
+    <div className="topper-workspace-wrapper">
       {/* Top Toolbar */}
-      <div className="topper-workspace-toolbar flex items-center justify-between pb-2 border-b border-slate-200">
-        <div>
-          <h2 className="text-sm font-semibold uppercase tracking-wider text-slate-500">
+      <div className="topper-workspace-toolbar">
+        <div className="topper-workspace-toolbar__info">
+          <h2 className="topper-workspace-toolbar__title">
             Merit Roster Management
           </h2>
-          <p className="text-xs text-slate-500">
+          <p className="topper-workspace-toolbar__count">
             {toppers.length} published merit {toppers.length === 1 ? "record" : "records"}
           </p>
         </div>
         <button
           type="button"
           onClick={() => setIsCreateOpen(true)}
-          className="topper-button topper-button--primary inline-flex items-center gap-1.5"
+          className="topper-button topper-button--primary topper-add-btn"
         >
           <Plus size={16} aria-hidden="true" />
           <span>Add Topper</span>
         </button>
       </div>
 
-      {/* Roster List or Empty State */}
+      {/* Semantic Table Roster or Empty State */}
       <TopperList
         toppers={toppers}
         onAdd={() => setIsCreateOpen(true)}

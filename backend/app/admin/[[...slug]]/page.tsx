@@ -98,7 +98,7 @@ export default async function AdminWorkspacePage({
           />
         </div>
 
-        <div className="workspace-content pt-4">
+        <div className="workspace-content">
           <TopperWorkspace toppers={serializedToppers} />
         </div>
       </Card>
