@@ -1,8 +1,9 @@
 import type { Metadata, Viewport } from "next";
+import { Suspense } from "react";
 import { Parkinsans, Poppins } from "next/font/google";
 import "./globals.css";
 import { Header } from "@/components/layout/Header";
-import { NoticeTicker } from "@/components/layout/NoticeTicker";
+import { NoticeTicker, NoticeTickerFallback } from "@/components/layout/NoticeTicker";
 import { Footer } from "@/components/layout/Footer";
 import { MobileStickyDock } from "@/components/layout/MobileStickyDock";
 import { ScrollToTop } from "@/components/layout/ScrollToTop";
@@ -113,7 +114,9 @@ export default function RootLayout({
           <Header />
 
           {/* Real-time Ticker for Critical Circulars & Entrance Results */}
-          <NoticeTicker />
+          <Suspense fallback={<NoticeTickerFallback />}>
+            <NoticeTicker />
+          </Suspense>
 
           {/* Primary Viewport Main Content Shell */}
           <main className="flex-1 w-full" id="main-content">

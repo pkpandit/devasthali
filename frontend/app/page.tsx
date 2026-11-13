@@ -186,10 +186,104 @@ const QUICK_ACTIONS = [
   },
 ];
 
-export default async function HomePage() {
+/**
+ * Deterministic skeleton fallback for Section 7: Latest Notices & Circulars.
+ * Pre-allocates space for 5 notice cards to eliminate Cumulative Layout Shift (CLS).
+ */
+function HomeNoticesFallback() {
+  return (
+    <div className="space-y-3.5" role="status" aria-label="Loading latest notices">
+      {[1, 2, 3, 4, 5].map((i) => (
+        <div
+          key={i}
+          className="bg-white p-4 sm:p-5 rounded-2xl shadow-sm border border-gray-100 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4"
+        >
+          <div className="flex items-start gap-3.5 w-full sm:w-auto flex-1">
+            <div className="p-3 rounded-xl bg-gray-100 shrink-0 border border-gray-200">
+              <div className="w-5 h-5 bg-gray-200 rounded" />
+            </div>
+            <div className="flex-1 space-y-2">
+              <div className="flex items-center gap-2">
+                <div className="h-4 bg-gray-200 rounded w-16" />
+                <div className="h-4 bg-gray-100 rounded w-20" />
+              </div>
+              <div className="h-5 bg-gray-200 rounded w-3/4 animate-pulse" />
+            </div>
+          </div>
+          <div className="shrink-0 w-24 h-9 bg-gray-100 rounded-full border border-gray-200" />
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/**
+ * Async server component to fetch and stream Section 7 homepage notices.
+ */
+async function HomeNoticesSection() {
   const { notices: liveNotices } = await getPublicNotices({ limit: 5 });
   const homeNotices = liveNotices && liveNotices.length > 0 ? liveNotices.slice(0, 5) : NOTICES_DATA.slice(0, 5);
 
+  return (
+    <div className="space-y-3.5">
+      {homeNotices.map((notice) => {
+        const hasDirectFile = Boolean(notice.fileUrl);
+
+        return (
+          <div
+            key={notice.id}
+            className="bg-white p-4 sm:p-5 rounded-2xl shadow-sm hover:shadow-md transition-shadow flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 group border border-gray-100 hover:border-gray-200"
+          >
+            <div className="flex items-start gap-3.5">
+              <div className="p-3 rounded-xl bg-[#F3F4F6] text-[#B91C1C] shrink-0 border border-[#E5E7EB] group-hover:bg-[#B91C1C] group-hover:text-white transition-colors">
+                <FileText className="w-5 h-5" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2 flex-wrap mb-1.5">
+                  <span className="text-sm font-heading font-bold uppercase tracking-wider bg-[#F3F4F6] px-2.5 py-0.5 rounded text-gray-700 border border-[#E5E7EB]">
+                    {notice.category}
+                  </span>
+                  {notice.isNew && (
+                    <span className="bg-[#B91C1C] text-white text-sm font-heading font-extrabold px-2 py-0.5 rounded uppercase shadow-xs">
+                      New
+                    </span>
+                  )}
+                  <span className="text-sm text-gray-500 font-sans">{notice.date}</span>
+                </div>
+                <h4 className="font-heading font-bold text-sm sm:text-base text-[#111827] group-hover:text-[#B91C1C] transition-colors leading-snug">
+                  {notice.title}
+                </h4>
+              </div>
+            </div>
+
+            {hasDirectFile ? (
+              <a
+                href={notice.fileUrl!}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="shrink-0 inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-white text-[#111827] border border-[#E5E7EB] text-sm font-heading font-bold hover:bg-[#B91C1C] hover:text-white hover:border-[#B91C1C] focus-visible:outline-2 focus-visible:outline-[#B91C1C] focus-visible:outline-offset-2 transition-colors shadow-2xs hover:shadow-xs"
+                aria-label={"Download document for " + notice.title}
+              >
+                <Download className="w-3.5 h-3.5" />
+                <span>Download</span>
+              </a>
+            ) : (
+              <Link
+                href="/downloads"
+                className="shrink-0 inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-white text-[#111827] border border-[#E5E7EB] text-sm font-heading font-bold hover:bg-[#B91C1C] hover:text-white hover:border-[#B91C1C] focus-visible:outline-2 focus-visible:outline-[#B91C1C] focus-visible:outline-offset-2 transition-colors shadow-2xs hover:shadow-xs"
+              >
+                <Download className="w-3.5 h-3.5" />
+                <span>Download</span>
+              </Link>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+export default function HomePage() {
   return (
     <div className="flex flex-col w-full bg-white">
       <HomeAnnouncement />
@@ -981,61 +1075,9 @@ export default async function HomePage() {
               </Link>
             </div>
 
-            <div className="space-y-3.5">
-              {homeNotices.map((notice) => {
-                const hasDirectFile = Boolean(notice.fileUrl);
-
-                return (
-                  <div
-                    key={notice.id}
-                    className="bg-white p-4 sm:p-5 rounded-2xl shadow-sm hover:shadow-md transition-shadow flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 group border border-gray-100 hover:border-gray-200"
-                  >
-                    <div className="flex items-start gap-3.5">
-                      <div className="p-3 rounded-xl bg-[#F3F4F6] text-[#B91C1C] shrink-0 border border-[#E5E7EB] group-hover:bg-[#B91C1C] group-hover:text-white transition-colors">
-                        <FileText className="w-5 h-5" />
-                      </div>
-                      <div>
-                        <div className="flex items-center gap-2 flex-wrap mb-1.5">
-                          <span className="text-sm font-heading font-bold uppercase tracking-wider bg-[#F3F4F6] px-2.5 py-0.5 rounded text-gray-700 border border-[#E5E7EB]">
-                            {notice.category}
-                          </span>
-                          {notice.isNew && (
-                            <span className="bg-[#B91C1C] text-white text-sm font-heading font-extrabold px-2 py-0.5 rounded uppercase shadow-xs">
-                              New
-                            </span>
-                          )}
-                          <span className="text-sm text-gray-500 font-sans">{notice.date}</span>
-                        </div>
-                        <h4 className="font-heading font-bold text-sm sm:text-base text-[#111827] group-hover:text-[#B91C1C] transition-colors leading-snug">
-                          {notice.title}
-                        </h4>
-                      </div>
-                    </div>
-
-                    {hasDirectFile ? (
-                      <a
-                        href={notice.fileUrl!}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="shrink-0 inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-white text-[#111827] border border-[#E5E7EB] text-sm font-heading font-bold hover:bg-[#B91C1C] hover:text-white hover:border-[#B91C1C] focus-visible:outline-2 focus-visible:outline-[#B91C1C] focus-visible:outline-offset-2 transition-colors shadow-2xs hover:shadow-xs"
-                        aria-label={`Download document for ${notice.title}`}
-                      >
-                        <Download className="w-3.5 h-3.5" />
-                        <span>Download</span>
-                      </a>
-                    ) : (
-                      <Link
-                        href="/downloads"
-                        className="shrink-0 inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-white text-[#111827] border border-[#E5E7EB] text-sm font-heading font-bold hover:bg-[#B91C1C] hover:text-white hover:border-[#B91C1C] focus-visible:outline-2 focus-visible:outline-[#B91C1C] focus-visible:outline-offset-2 transition-colors shadow-2xs hover:shadow-xs"
-                      >
-                        <Download className="w-3.5 h-3.5" />
-                        <span>Download</span>
-                      </Link>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
+            <Suspense fallback={<HomeNoticesFallback />}>
+              <HomeNoticesSection />
+            </Suspense>
           </div>
 
           {/* Right Column: CBSE Compliance & Quick Downloads */}
