@@ -2,6 +2,7 @@
 
 import { headers } from "next/headers";
 import { revalidatePath } from "next/cache";
+import path from "node:path";
 import { prisma } from "@/lib/server/prisma";
 import { recordAuditEvent } from "@/lib/server/audit";
 import { AuthorizationError, requireRole } from "@/lib/server/auth";
@@ -15,6 +16,14 @@ import {
 } from "@/lib/validation/notices";
 import { sanitizeRichText } from "@/lib/server/sanitizer";
 import { generateDeterministicSlug } from "@/lib/server/slug";
+import { validatePdfBuffer } from "@/lib/validation/pdf-validator";
+import {
+  stageDocument,
+  cleanupStagedDocument,
+  promoteStagedDocument,
+  deleteManagedDocument,
+} from "@/lib/server/document-storage";
+import { getMalwareScanner } from "@/lib/server/malware-scanner";
 
 export interface NoticeActionResponse<T = unknown> {
   success: boolean;
@@ -22,6 +31,26 @@ export interface NoticeActionResponse<T = unknown> {
   error?: string;
   fieldErrors?: Record<string, string[]>;
   noOp?: boolean;
+}
+
+// In-memory sliding rate limiter for upload actions (15 uploads / minute / admin)
+const uploadRateLimitMap = new Map<string, { count: number; resetAt: number }>();
+
+function checkUploadRateLimit(key: string, maxAttempts = 15, windowMs = 60 * 1000): boolean {
+  const now = Date.now();
+  const record = uploadRateLimitMap.get(key);
+
+  if (!record || now >= record.resetAt) {
+    uploadRateLimitMap.set(key, { count: 1, resetAt: now + windowMs });
+    return true;
+  }
+
+  if (record.count >= maxAttempts) {
+    return false;
+  }
+
+  record.count += 1;
+  return true;
 }
 
 /**
@@ -42,6 +71,219 @@ async function getClientIp(): Promise<string> {
     // Header access may fail in non-request contexts
   }
   return "127.0.0.1";
+}
+
+/**
+ * Generates safe display filename from user-supplied name.
+ */
+function sanitizeDisplayFilename(rawName: string | null | undefined): string {
+  if (!rawName) return "document.pdf";
+  const base = path.basename(rawName).trim();
+  const cleaned = base.replace(/[^a-zA-Z0-9._-]/g, "_");
+  if (!cleaned.toLowerCase().endsWith(".pdf")) {
+    return `${cleaned}.pdf`;
+  }
+  return cleaned.slice(0, 255);
+}
+
+/**
+ * Uploads, validates, scans, and atomically promotes a managed PDF attachment.
+ * Restricted strictly to SUPER_ADMIN.
+ */
+export async function uploadNoticeDocumentAction(
+  formData: FormData
+): Promise<NoticeActionResponse<{
+  fileStorageKey: string;
+  fileSizeBytes: number;
+  fileSha256: string;
+  fileOriginalName: string;
+  fileUploadedAt: Date;
+}>> {
+  // 1. Authorization check
+  let user;
+  try {
+    user = await requireRole(["SUPER_ADMIN"]);
+  } catch (err) {
+    if (err instanceof AuthorizationError) {
+      return { success: false, error: err.message };
+    }
+    return { success: false, error: "Unauthorized access" };
+  }
+
+  // 2. Rate limiting
+  const ipAddress = await getClientIp();
+  const rateLimitKey = `upload_doc_${user.id}_${ipAddress}`;
+  if (!checkUploadRateLimit(rateLimitKey, 15, 60 * 1000)) {
+    return {
+      success: false,
+      error: "Upload rate limit exceeded. Please wait a minute before uploading again.",
+    };
+  }
+
+  // 3. Extract and pre-validate file from FormData
+  const rawFile = formData.get("file");
+  if (!rawFile || !(rawFile instanceof Blob)) {
+    return { success: false, error: "No file provided for upload." };
+  }
+
+  const noticeId = formData.get("noticeId");
+  const targetNoticeId = typeof noticeId === "string" && noticeId.trim() ? noticeId.trim() : null;
+
+  const rawFilename = (rawFile as File).name || "document.pdf";
+  const fileOriginalName = sanitizeDisplayFilename(rawFilename);
+
+  // Size limit pre-check (10 MiB)
+  const MAX_SIZE = 10 * 1024 * 1024;
+  if (rawFile.size > MAX_SIZE) {
+    return {
+      success: false,
+      error: `File size (${(rawFile.size / (1024 * 1024)).toFixed(2)} MB) exceeds 10 MiB limit.`,
+    };
+  }
+
+  if (rawFile.size < 32) {
+    return { success: false, error: "File is too small to be a valid PDF document." };
+  }
+
+  const arrayBuffer = await rawFile.arrayBuffer();
+  const buffer = Buffer.from(arrayBuffer);
+
+  // 4. Stage to temporary directory
+  let stagingKey: string;
+  try {
+    const staged = await stageDocument(buffer);
+    stagingKey = staged.stagingKey;
+  } catch (err) {
+    console.error("[notice-actions] Document staging failed:", err);
+    return { success: false, error: "Failed to stage document upload." };
+  }
+
+  let permanentKey: string | null = null;
+
+  try {
+    // 5. PDF Core & Structural Validation
+    const valResult = validatePdfBuffer(buffer, {
+      mimeType: rawFile.type || "application/pdf",
+      originalFilename: fileOriginalName,
+      maxSizeBytes: MAX_SIZE,
+    });
+
+    if (!valResult.isValid) {
+      await cleanupStagedDocument(stagingKey);
+      return { success: false, error: valResult.error || "PDF validation failed." };
+    }
+
+    // 6. Malware Scanning (Fail-closed in production, gated synthetic in test)
+    const scanner = getMalwareScanner();
+    const scanResult = await scanner.scanBuffer(buffer);
+
+    if (!scanResult.isClean) {
+      await cleanupStagedDocument(stagingKey);
+      return {
+        success: false,
+        error: `Upload rejected: Malware threat detected (${scanResult.threatName || "Suspicious content"}).`,
+      };
+    }
+
+    // 7. Atomic Promotion
+    const promoted = await promoteStagedDocument(stagingKey);
+    permanentKey = promoted.permanentKey;
+
+    const fileSizeBytes = valResult.details!.byteSize;
+    const fileSha256 = valResult.details!.sha256;
+    const fileUploadedAt = new Date();
+
+    // 8. Transactional Notice Association (if noticeId provided)
+    let oldStorageKeyToDelete: string | null = null;
+
+    if (targetNoticeId) {
+      await prisma.$transaction(async (tx) => {
+        const existing = await tx.notice.findUnique({
+          where: { id: targetNoticeId },
+        });
+
+        if (!existing) {
+          throw new Error("Target notice not found.");
+        }
+
+        oldStorageKeyToDelete = existing.fileStorageKey;
+
+        await tx.notice.update({
+          where: { id: targetNoticeId },
+          data: {
+            fileStorageKey: permanentKey,
+            fileSizeBytes,
+            fileSha256,
+            fileOriginalName,
+            fileUploadedAt,
+          },
+        });
+
+        await recordAuditEvent(
+          {
+            action: "DOCUMENT_UPLOADED",
+            entityType: "Notice",
+            entityId: existing.id,
+            userId: user.id,
+            ipAddress,
+            metadata: {
+              fileStorageKey: permanentKey,
+              fileOriginalName,
+              fileSizeBytes,
+              fileSha256,
+              noticeTitle: existing.title,
+            },
+          },
+          tx
+        );
+      });
+
+      // Post-commit cleanup: unlink old replaced file only after transaction commits successfully
+      if (oldStorageKeyToDelete && oldStorageKeyToDelete !== permanentKey) {
+        await deleteManagedDocument(oldStorageKeyToDelete);
+      }
+    } else {
+      // Staged upload for new notice creation
+      await recordAuditEvent({
+        action: "DOCUMENT_UPLOADED",
+        entityType: "Notice",
+        entityId: "pending",
+        userId: user.id,
+        ipAddress,
+        metadata: {
+          fileStorageKey: permanentKey,
+          fileOriginalName,
+          fileSizeBytes,
+          fileSha256,
+        },
+      });
+    }
+
+    revalidatePath("/admin/students-parents/notices");
+    revalidatePath("/notices");
+
+    return {
+      success: true,
+      data: {
+        fileStorageKey: permanentKey,
+        fileSizeBytes,
+        fileSha256,
+        fileOriginalName,
+        fileUploadedAt,
+      },
+    };
+  } catch (err: unknown) {
+    // Error Rollback: Clean up promoted file if database update failed
+    if (permanentKey) {
+      await deleteManagedDocument(permanentKey);
+    } else {
+      await cleanupStagedDocument(stagingKey);
+    }
+
+    const msg = err instanceof Error ? err.message : "Document upload failed.";
+    console.error("[notice-actions] uploadNoticeDocumentAction failed:", err);
+    return { success: false, error: msg };
+  }
 }
 
 /**
@@ -101,6 +343,14 @@ export async function createNoticeAction(
           publishedAt,
           expiryDate: data.expiryDate || null,
           displayOrder: data.displayOrder,
+
+          // Managed attachment fields
+          fileStorageKey: data.fileStorageKey || null,
+          fileSizeBytes: data.fileSizeBytes || null,
+          fileSha256: data.fileSha256 || null,
+          fileOriginalName: data.fileOriginalName || null,
+          fileUploadedAt: data.fileUploadedAt || (data.fileStorageKey ? new Date() : null),
+
           authorId: user.id,
         },
       });
@@ -118,6 +368,7 @@ export async function createNoticeAction(
             category: notice.category,
             isPublished: notice.isPublished,
             isUrgent: notice.isUrgent,
+            hasManagedAttachment: Boolean(notice.fileStorageKey),
           },
         },
         tx
@@ -173,6 +424,8 @@ export async function updateNoticeAction(
   const cleanSummary = data.summary ? sanitizeRichText(data.summary) : null;
   const cleanContent = data.content ? sanitizeRichText(data.content) : null;
 
+  let oldStorageKeyToDelete: string | null = null;
+
   // 4. Transactional update & audit log
   try {
     const updatedNotice = await prisma.$transaction(async (tx) => {
@@ -184,6 +437,11 @@ export async function updateNoticeAction(
         throw new Error("Notice not found");
       }
 
+      // If attachment is being replaced or removed, track old key for post-commit deletion
+      if (existing.fileStorageKey && data.fileStorageKey !== existing.fileStorageKey) {
+        oldStorageKeyToDelete = existing.fileStorageKey;
+      }
+
       // If title changed, recompute deterministic slug
       let slug = existing.slug;
       if (data.title !== existing.title) {
@@ -193,10 +451,8 @@ export async function updateNoticeAction(
       // Handle publishedAt timestamp
       let publishedAt = existing.publishedAt;
       if (data.isPublished && !existing.isPublished) {
-        // Transitioning from draft to published
         publishedAt = new Date();
       } else if (!data.isPublished && existing.isPublished) {
-        // Transitioning from published to draft
         publishedAt = null;
       }
 
@@ -208,6 +464,9 @@ export async function updateNoticeAction(
       if (existing.isUrgent !== data.isUrgent) changedFields.isUrgent = { from: existing.isUrgent, to: data.isUrgent };
       if (existing.fileUrl !== (data.fileUrl || null)) changedFields.fileUrl = { from: existing.fileUrl, to: data.fileUrl || null };
       if (existing.displayOrder !== data.displayOrder) changedFields.displayOrder = { from: existing.displayOrder, to: data.displayOrder };
+      if (existing.fileStorageKey !== (data.fileStorageKey || null)) {
+        changedFields.fileStorageKey = { from: existing.fileStorageKey, to: data.fileStorageKey || null };
+      }
 
       const notice = await tx.notice.update({
         where: { id: data.id },
@@ -225,6 +484,13 @@ export async function updateNoticeAction(
           publishedAt,
           expiryDate: data.expiryDate || null,
           displayOrder: data.displayOrder,
+
+          // Managed attachment fields
+          fileStorageKey: data.fileStorageKey || null,
+          fileSizeBytes: data.fileSizeBytes || null,
+          fileSha256: data.fileSha256 || null,
+          fileOriginalName: data.fileOriginalName || null,
+          fileUploadedAt: data.fileUploadedAt || (data.fileStorageKey && !existing.fileStorageKey ? new Date() : existing.fileUploadedAt),
         },
       });
 
@@ -246,6 +512,21 @@ export async function updateNoticeAction(
 
       return notice;
     });
+
+    // 5. Post-commit cleanup: unlink replaced attachment only after transaction committed
+    if (oldStorageKeyToDelete) {
+      await deleteManagedDocument(oldStorageKeyToDelete);
+      await recordAuditEvent({
+        action: "DOCUMENT_REMOVED",
+        entityType: "Notice",
+        entityId: data.id,
+        userId: user.id,
+        ipAddress,
+        metadata: {
+          removedStorageKey: oldStorageKeyToDelete,
+        },
+      });
+    }
 
     revalidatePath("/admin/students-parents/notices");
     revalidatePath("/notices");
@@ -287,6 +568,8 @@ export async function deleteNoticeAction(
   const { id } = parseResult.data;
   const ipAddress = await getClientIp();
 
+  let storageKeyToDelete: string | null = null;
+
   // 3. Transactional deletion & audit log
   try {
     await prisma.$transaction(async (tx) => {
@@ -297,6 +580,8 @@ export async function deleteNoticeAction(
       if (!existing) {
         throw new Error("Notice not found");
       }
+
+      storageKeyToDelete = existing.fileStorageKey;
 
       await tx.notice.delete({
         where: { id },
@@ -313,11 +598,27 @@ export async function deleteNoticeAction(
             title: existing.title,
             slug: existing.slug,
             category: existing.category,
+            hadAttachment: Boolean(existing.fileStorageKey),
           },
         },
         tx
       );
     });
+
+    // 4. Post-commit cleanup: Delete managed document only after transaction committed
+    if (storageKeyToDelete) {
+      await deleteManagedDocument(storageKeyToDelete);
+      await recordAuditEvent({
+        action: "DOCUMENT_DELETED",
+        entityType: "Notice",
+        entityId: id,
+        userId: user.id,
+        ipAddress,
+        metadata: {
+          deletedStorageKey: storageKeyToDelete,
+        },
+      });
+    }
 
     revalidatePath("/admin/students-parents/notices");
     revalidatePath("/notices");

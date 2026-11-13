@@ -41,6 +41,13 @@ export interface PublicNoticesResponse {
   };
 }
 
+function formatByteSize(bytes: number): string {
+  if (bytes < 1024 * 1024) {
+    return `${Math.round(bytes / 1024)} KB`;
+  }
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
@@ -57,7 +64,7 @@ export async function GET(request: NextRequest) {
     const urgentParam = searchParams.get("urgentOnly");
     const urgentOnly = urgentParam === "true" || urgentParam === "1";
 
-    // 3. Build Prisma where clause
+    // 3. Build Prisma where clause (Active Published Notices only)
     const now = new Date();
     const where: Record<string, unknown> = {
       isPublished: true,
@@ -91,6 +98,8 @@ export async function GET(request: NextRequest) {
           isUrgent: true,
           fileUrl: true,
           fileSize: true,
+          fileStorageKey: true,
+          fileSizeBytes: true,
           publishDate: true,
           publishedAt: true,
           expiryDate: true,
@@ -108,22 +117,37 @@ export async function GET(request: NextRequest) {
 
     const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
 
-    const data: PublicNoticeDto[] = notices.map((n) => ({
-      id: n.id,
-      slug: n.slug,
-      title: n.title,
-      category: n.category,
-      categoryLabel: CATEGORY_LABEL_MAP[n.category] || n.category,
-      summary: n.summary,
-      content: n.content,
-      isUrgent: n.isUrgent,
-      fileUrl: n.fileUrl,
-      fileSize: n.fileSize,
-      publishDate: n.publishDate.toISOString(),
-      publishedAt: n.publishedAt ? n.publishedAt.toISOString() : null,
-      expiryDate: n.expiryDate ? n.expiryDate.toISOString() : null,
-      isNew: n.isUrgent || n.publishDate >= sevenDaysAgo,
-    }));
+    // 5. Strict DTO Whitelist Projection
+    // Never expose raw storage keys, SHA-256 hashes, original filenames, or author IDs
+    const data: PublicNoticeDto[] = notices.map((n) => {
+      // If notice has a managed attachment, route through controlled public document endpoint
+      const resolvedFileUrl = n.fileStorageKey
+        ? `/api/public/documents/${n.slug}`
+        : n.fileUrl;
+
+      const resolvedFileSize = n.fileSize
+        ? n.fileSize
+        : n.fileSizeBytes
+        ? formatByteSize(n.fileSizeBytes)
+        : null;
+
+      return {
+        id: n.id,
+        slug: n.slug,
+        title: n.title,
+        category: n.category,
+        categoryLabel: CATEGORY_LABEL_MAP[n.category] || n.category,
+        summary: n.summary,
+        content: n.content,
+        isUrgent: n.isUrgent,
+        fileUrl: resolvedFileUrl,
+        fileSize: resolvedFileSize,
+        publishDate: n.publishDate.toISOString(),
+        publishedAt: n.publishedAt ? n.publishedAt.toISOString() : null,
+        expiryDate: n.expiryDate ? n.expiryDate.toISOString() : null,
+        isNew: n.isUrgent || n.publishDate >= sevenDaysAgo,
+      };
+    });
 
     const totalPages = Math.ceil(totalItems / limit) || 1;
 

@@ -120,6 +120,7 @@ export default async function AdminWorkspacePage({
 
     const serializedNotices = notices.map((notice) => ({
       ...notice,
+      fileUploadedAt: notice.fileUploadedAt ? notice.fileUploadedAt.toISOString() : null,
       publishDate: notice.publishDate.toISOString(),
       publishedAt: notice.publishedAt ? notice.publishedAt.toISOString() : null,
       expiryDate: notice.expiryDate ? notice.expiryDate.toISOString() : null,

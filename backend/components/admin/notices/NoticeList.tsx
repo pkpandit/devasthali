@@ -82,15 +82,15 @@ export function NoticeList({
     return (
       <EmptyState
         title="No Notices or Circulars Found"
-        description="There are currently no official notices, circulars, or announcements recorded."
+        description="There are currently no official notices, circulars, or announcements matching the criteria."
         icon={FileText}
       >
         {onAdd && (
-          <div className="pt-4">
+          <div style={{ paddingTop: "16px" }}>
             <button
               type="button"
               onClick={onAdd}
-              className="topper-button topper-button--primary inline-flex items-center gap-1.5"
+              className="topper-button topper-button--primary topper-add-btn"
             >
               <Plus size={16} aria-hidden="true" />
               <span>Publish First Notice</span>
@@ -109,84 +109,94 @@ export function NoticeList({
         </caption>
         <thead>
           <tr>
-            <th scope="col" style={{ width: "110px" }}>Status</th>
-            <th scope="col" style={{ width: "100px" }}>Category</th>
-            <th scope="col" style={{ minWidth: "260px" }}>Title &amp; Summary</th>
-            <th scope="col" style={{ width: "120px" }}>Publish Date</th>
-            <th scope="col" style={{ width: "120px" }}>Expiry Date</th>
-            <th scope="col" style={{ width: "130px" }}>Document</th>
-            <th scope="col" style={{ width: "70px", textAlign: "center" }}>Order</th>
-            <th scope="col" style={{ width: "120px", textAlign: "right" }}>Actions</th>
+            <th scope="col" className="notice-table__status-col">Status</th>
+            <th scope="col" className="notice-table__category-col">Category</th>
+            <th scope="col" className="notice-table__title-col">Title &amp; Summary</th>
+            <th scope="col" className="notice-table__date-col">Publish Date</th>
+            <th scope="col" className="notice-table__date-col">Expiry Date</th>
+            <th scope="col" className="notice-table__doc-col">Document</th>
+            <th scope="col" className="notice-table__order-col">Order</th>
+            <th scope="col" className="notice-table__actions-col">Actions</th>
           </tr>
         </thead>
         <tbody>
           {notices.map((notice) => {
             const status = getNoticeStatus(notice);
-            const hasDocument = Boolean(notice.fileUrl);
+            const hasDocument = Boolean(notice.fileStorageKey || notice.fileUrl);
+            const docHref = notice.fileStorageKey
+              ? `/api/admin/notices/${notice.id}/document`
+              : notice.fileUrl;
+            const docLabel = notice.fileSize
+              ? notice.fileSize
+              : notice.fileSizeBytes
+              ? `${Math.round(notice.fileSizeBytes / 1024)} KB`
+              : "Attachment";
 
             return (
               <tr key={notice.id}>
-                <td>
-                  <div className="flex flex-col gap-1 items-start">
+                <td className="notice-table__status-col">
+                  <div className="notice-table__status-wrapper">
                     {renderStatusBadge(status)}
                     {notice.isUrgent && (
-                      <span className="admin-pill admin-pill--urgent flex items-center gap-1">
-                        <AlertCircle size={10} aria-hidden="true" />
-                        Urgent
+                      <span className="admin-pill admin-pill--urgent">
+                        <AlertCircle size={10} aria-hidden="true" style={{ marginRight: "3px" }} />
+                        <span>Urgent</span>
                       </span>
                     )}
                   </div>
                 </td>
-                <td>{renderCategoryBadge(notice.category)}</td>
-                <td>
-                  <div className="flex flex-col">
-                    <span className="font-semibold text-slate-900 leading-snug">
+                <td className="notice-table__category-col">
+                  {renderCategoryBadge(notice.category)}
+                </td>
+                <td className="notice-table__title-col">
+                  <div className="notice-table__title-wrapper">
+                    <span className="notice-table__title-text">
                       {notice.title}
                     </span>
                     {notice.summary && (
-                      <span className="text-xs text-slate-500 line-clamp-1 mt-0.5">
+                      <span className="notice-table__summary-text" title={notice.summary}>
                         {notice.summary}
                       </span>
                     )}
-                    <span className="text-[11px] font-mono text-slate-400 mt-0.5">
+                    <span className="notice-table__slug-text">
                       /{notice.slug}
                     </span>
                   </div>
                 </td>
-                <td>
-                  <span className="text-xs text-slate-700 whitespace-nowrap">
+                <td className="notice-table__date-col">
+                  <span className="notice-table__date-text">
                     {formatDate(notice.publishDate)}
                   </span>
                 </td>
-                <td>
-                  <span className="text-xs text-slate-600 whitespace-nowrap">
+                <td className="notice-table__date-col">
+                  <span className="notice-table__date-text">
                     {formatDate(notice.expiryDate)}
                   </span>
                 </td>
-                <td>
-                  {hasDocument ? (
+                <td className="notice-table__doc-col">
+                  {hasDocument && docHref ? (
                     <a
-                      href={notice.fileUrl!}
+                      href={docHref}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1 text-xs text-blue-600 hover:text-blue-800 hover:underline max-w-[120px] truncate"
-                      title={notice.fileUrl!}
+                      className="notice-table__doc-link"
+                      title={notice.fileOriginalName || docHref}
                     >
-                      <ExternalLink size={12} className="shrink-0" aria-hidden="true" />
-                      <span className="truncate">
-                        {notice.fileSize ? notice.fileSize : "Link"}
+                      <ExternalLink size={13} className="shrink-0" aria-hidden="true" />
+                      <span className="notice-table__doc-text">
+                        {docLabel}
                       </span>
                     </a>
                   ) : (
-                    <span className="text-slate-400 text-xs">—</span>
+                    <span className="admin-table__empty-dash">—</span>
                   )}
                 </td>
-                <td style={{ textAlign: "center" }}>
-                  <span className="text-xs font-mono text-slate-700">
+                <td className="notice-table__order-col">
+                  <span className="admin-table__order-text">
                     {notice.displayOrder}
                   </span>
                 </td>
-                <td style={{ textAlign: "right" }}>
+                <td className="notice-table__actions-col">
                   <div className="topper-card-actions justify-end">
                     {onToggleStatus && (
                       <button
@@ -201,9 +211,9 @@ export function NoticeList({
                         title={notice.isPublished ? "Unpublish to draft" : "Publish now"}
                       >
                         {notice.isPublished ? (
-                          <EyeOff size={15} className="text-slate-500" />
+                          <EyeOff size={15} style={{ color: "#64748b" }} />
                         ) : (
-                          <Eye size={15} className="text-emerald-600" />
+                          <Eye size={15} style={{ color: "#059669" }} />
                         )}
                       </button>
                     )}

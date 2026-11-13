@@ -19,7 +19,11 @@ export type NoticeAuditAction =
   | "NOTICE_CREATED"
   | "NOTICE_UPDATED"
   | "NOTICE_DELETED"
-  | "NOTICE_STATUS_CHANGED";
+  | "NOTICE_STATUS_CHANGED"
+  | "DOCUMENT_UPLOADED"
+  | "DOCUMENT_REPLACED"
+  | "DOCUMENT_REMOVED"
+  | "DOCUMENT_DELETED";
 
 export type AuditAction = AuthAuditAction | TopperAuditAction | NoticeAuditAction;
 

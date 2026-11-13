@@ -73,7 +73,7 @@ model AuditLog {
   id         String   @id @default(cuid())
   userId     String?
   user       User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
-  action     String   // E.g., 'AUTH_LOGIN_SUCCESS', 'AUTH_LOGIN_FAILED', 'AUTH_LOGOUT', 'AUTH_PASSWORD_CHANGE', 'AUTH_STATUS_CHANGE', 'NOTICE_CREATED', 'NOTICE_UPDATED', 'NOTICE_DELETED', 'NOTICE_STATUS_CHANGED'
+  action     String   // E.g., 'AUTH_LOGIN_SUCCESS', 'AUTH_LOGIN_FAILED', 'AUTH_LOGOUT', 'AUTH_PASSWORD_CHANGE', 'AUTH_STATUS_CHANGE', 'NOTICE_CREATED', 'NOTICE_UPDATED', 'NOTICE_DELETED', 'NOTICE_STATUS_CHANGED', 'DOCUMENT_UPLOADED', 'DOCUMENT_REMOVED'
   entityType String   // Target entity type: 'User', 'Session', 'BoardResultTopper', 'Notice'
   entityId   String   // Target entity ID
   metadata   Json?    // Structured diagnostic context (IP, user agent, failure reason, modified fields)
@@ -121,29 +121,37 @@ enum NoticeCategory {
 }
 
 model Notice {
-  id           String         @id @default(cuid())
-  title        String
-  slug         String         @unique
-  category     NoticeCategory @default(CIRCULAR)
-  summary      String?        @db.Text
-  content      String?        @db.Text
-  isUrgent     Boolean        @default(false)
-  isPublished  Boolean        @default(false)
-  fileUrl      String?        // Approved root-relative document path or HTTPS URL
-  fileSize     String?        // Human-readable size indicator (e.g. "245 KB")
-  publishDate  DateTime       @default(now())
-  publishedAt  DateTime?      // Exact timestamp when marked published
-  expiryDate   DateTime?      // Optional date after which notice is archived
-  displayOrder Int            @default(0)
+  id               String         @id @default(cuid())
+  title            String
+  slug             String         @unique
+  category         NoticeCategory @default(CIRCULAR)
+  summary          String?        @db.Text
+  content          String?        @db.Text
+  isUrgent         Boolean        @default(false)
+  isPublished      Boolean        @default(false)
+  fileUrl          String?        // Approved root-relative document path or HTTPS URL
+  fileSize         String?        // Human-readable size indicator (e.g. "245 KB")
+  publishDate      DateTime       @default(now())
+  publishedAt      DateTime?      // Exact timestamp when marked published
+  expiryDate       DateTime?      // Optional date after which notice is archived
+  displayOrder     Int            @default(0)
 
-  authorId     String?
-  author       User?          @relation("NoticesAuthored", fields: [authorId], references: [id], onDelete: SetNull)
+  // Managed document attachment metadata (Phase 2)
+  fileStorageKey   String?        @db.VarChar(255)
+  fileSizeBytes    Int?
+  fileSha256       String?        @db.VarChar(64)
+  fileOriginalName String?        @db.VarChar(255)
+  fileUploadedAt   DateTime?
 
-  createdAt    DateTime       @default(now())
-  updatedAt    DateTime       @updatedAt
+  authorId         String?
+  author           User?          @relation("NoticesAuthored", fields: [authorId], references: [id], onDelete: SetNull)
+
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
 
   @@index([isPublished, publishDate])
   @@index([category, isPublished])
   @@index([displayOrder, publishDate])
+  @@index([fileStorageKey])
   @@map("notices")
 }

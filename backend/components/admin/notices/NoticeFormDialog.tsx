@@ -7,6 +7,10 @@ import {
   updateNoticeAction,
 } from "@/lib/server/notice-actions";
 import { NOTICE_CATEGORIES, type NoticeCategoryType } from "@/lib/validation/notices";
+import {
+  NoticeAttachmentWidget,
+  type AttachmentWidgetValue,
+} from "./NoticeAttachmentWidget";
 
 export interface SerializedNotice {
   id: string;
@@ -19,6 +23,11 @@ export interface SerializedNotice {
   isPublished: boolean;
   fileUrl: string | null;
   fileSize: string | null;
+  fileStorageKey?: string | null;
+  fileSizeBytes?: number | null;
+  fileSha256?: string | null;
+  fileOriginalName?: string | null;
+  fileUploadedAt?: string | null;
   publishDate: string; // ISO string
   publishedAt: string | null; // ISO string
   expiryDate: string | null; // ISO string
@@ -66,8 +75,6 @@ function NoticeFormInner({
   );
   const [summary, setSummary] = useState(initialNotice?.summary ?? "");
   const [content, setContent] = useState(initialNotice?.content ?? "");
-  const [fileUrl, setFileUrl] = useState(initialNotice?.fileUrl ?? "");
-  const [fileSize, setFileSize] = useState(initialNotice?.fileSize ?? "");
   const [publishDate, setPublishDate] = useState(
     formatDateForInput(initialNotice?.publishDate) || new Date().toISOString().split("T")[0]
   );
@@ -80,15 +87,91 @@ function NoticeFormInner({
     initialNotice ? String(initialNotice.displayOrder) : "0"
   );
 
+  // Dual-mode attachment state
+  const [attachmentValue, setAttachmentValue] = useState<AttachmentWidgetValue>(() => {
+    if (initialNotice?.fileStorageKey) {
+      return {
+        mode: "upload",
+        fileStorageKey: initialNotice.fileStorageKey,
+        fileSizeBytes: initialNotice.fileSizeBytes ?? null,
+        fileSha256: initialNotice.fileSha256 ?? null,
+        fileOriginalName: initialNotice.fileOriginalName ?? "document.pdf",
+        fileUploadedAt: initialNotice.fileUploadedAt ?? null,
+        fileUrl: null,
+        fileSize: null,
+      };
+    }
+    if (initialNotice?.fileUrl) {
+      return {
+        mode: "link",
+        fileStorageKey: null,
+        fileSizeBytes: null,
+        fileSha256: null,
+        fileOriginalName: null,
+        fileUploadedAt: null,
+        fileUrl: initialNotice.fileUrl,
+        fileSize: initialNotice.fileSize ?? "",
+      };
+    }
+    return {
+      mode: "none",
+      fileStorageKey: null,
+      fileSizeBytes: null,
+      fileSha256: null,
+      fileOriginalName: null,
+      fileUploadedAt: null,
+      fileUrl: null,
+      fileSize: null,
+    };
+  });
+
   // Error states
   const [generalError, setGeneralError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string[]>>({});
 
+  const modalRef = useRef<HTMLDivElement>(null);
   const firstInputRef = useRef<HTMLInputElement>(null);
 
+  // Focus trapping and keyboard accessibility
   useEffect(() => {
+    const modal = modalRef.current;
+    if (!modal) return;
+
     firstInputRef.current?.focus();
-  }, []);
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        e.preventDefault();
+        onClose();
+        return;
+      }
+
+      if (e.key === "Tab") {
+        const focusable = modal.querySelectorAll<HTMLElement>(
+          'button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+        );
+        if (focusable.length === 0) return;
+
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+
+        if (e.shiftKey) {
+          if (document.activeElement === first) {
+            e.preventDefault();
+            last?.focus();
+          }
+        } else {
+          if (document.activeElement === last) {
+            e.preventDefault();
+            first?.focus();
+          }
+        }
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [onClose]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -97,19 +180,52 @@ function NoticeFormInner({
     setGeneralError(null);
     setFieldErrors({});
 
+    // Resolve attachment fields based on mutually exclusive mode
+    const attachmentPayload =
+      attachmentValue.mode === "upload"
+        ? {
+            fileStorageKey: attachmentValue.fileStorageKey,
+            fileSizeBytes: attachmentValue.fileSizeBytes,
+            fileSha256: attachmentValue.fileSha256,
+            fileOriginalName: attachmentValue.fileOriginalName,
+            fileUploadedAt: attachmentValue.fileUploadedAt
+              ? new Date(attachmentValue.fileUploadedAt)
+              : null,
+            fileUrl: null,
+            fileSize: null,
+          }
+        : attachmentValue.mode === "link"
+        ? {
+            fileUrl: attachmentValue.fileUrl?.trim() || null,
+            fileSize: attachmentValue.fileSize?.trim() || null,
+            fileStorageKey: null,
+            fileSizeBytes: null,
+            fileSha256: null,
+            fileOriginalName: null,
+            fileUploadedAt: null,
+          }
+        : {
+            fileUrl: null,
+            fileSize: null,
+            fileStorageKey: null,
+            fileSizeBytes: null,
+            fileSha256: null,
+            fileOriginalName: null,
+            fileUploadedAt: null,
+          };
+
     const payload = {
       ...(isEdit ? { id: initialNotice!.id } : {}),
       title: title.trim(),
       category,
       summary: summary.trim() || null,
       content: content.trim() || null,
-      fileUrl: fileUrl.trim() || null,
-      fileSize: fileSize.trim() || null,
       publishDate: publishDate ? new Date(publishDate) : new Date(),
       expiryDate: expiryDate ? new Date(expiryDate) : null,
       isUrgent,
       isPublished,
       displayOrder: parseInt(displayOrder, 10) || 0,
+      ...attachmentPayload,
     };
 
     startTransition(async () => {
@@ -136,7 +252,8 @@ function NoticeFormInner({
 
   return (
     <div
-      className="topper-dialog-container"
+      ref={modalRef}
+      className="topper-dialog-container topper-dialog-container--notice"
       role="dialog"
       aria-modal="true"
       aria-labelledby="notice-dialog-title"
@@ -145,8 +262,8 @@ function NoticeFormInner({
       <form onSubmit={handleSubmit} className="topper-dialog-form">
         {/* Header */}
         <div className="topper-dialog-header">
-          <div className="flex items-center gap-2">
-            <div className="p-1.5 bg-blue-50 text-blue-700 rounded-md">
+          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+            <div style={{ padding: "6px", backgroundColor: "#eff6ff", color: "#1d4ed8", borderRadius: "6px", display: "flex", alignItems: "center", justifyContent: "center" }}>
               <FileText size={18} aria-hidden="true" />
             </div>
             <h2 id="notice-dialog-title" className="topper-dialog-title">
@@ -170,14 +287,15 @@ function NoticeFormInner({
             className="topper-dialog-error-banner"
             role="alert"
             aria-live="assertive"
+            style={{ margin: "16px 24px 0" }}
           >
             {generalError}
           </div>
         )}
 
         {/* Scrollable Form Body */}
-        <div className="topper-dialog-body space-y-4">
-          {/* Title */}
+        <div className="topper-dialog-body notice-dialog-body">
+          {/* Row 1: Title (Full Width) */}
           <div className="topper-field topper-field--full">
             <label htmlFor="notice-title" className="topper-label">
               Notice Title <span className="topper-required">*</span>
@@ -203,7 +321,7 @@ function NoticeFormInner({
             )}
           </div>
 
-          {/* Category & Display Order Grid */}
+          {/* Row 2: Category & Display Order Grid */}
           <div className="topper-form-grid">
             <div className="topper-field">
               <label htmlFor="notice-category" className="topper-label">
@@ -250,7 +368,7 @@ function NoticeFormInner({
             </div>
           </div>
 
-          {/* Publish Date & Expiry Date Grid */}
+          {/* Row 3: Publish Date & Expiry Date Grid */}
           <div className="topper-form-grid">
             <div className="topper-field">
               <label htmlFor="notice-publishDate" className="topper-label">
@@ -277,7 +395,7 @@ function NoticeFormInner({
 
             <div className="topper-field">
               <label htmlFor="notice-expiryDate" className="topper-label">
-                Expiry Date <span className="text-slate-400 font-normal">(Optional)</span>
+                Expiry Date <span className="topper-label-optional">(Optional)</span>
               </label>
               <input
                 id="notice-expiryDate"
@@ -298,10 +416,10 @@ function NoticeFormInner({
             </div>
           </div>
 
-          {/* Summary / Excerpt */}
+          {/* Row 4: Summary / Excerpt (Full Width) */}
           <div className="topper-field topper-field--full">
             <label htmlFor="notice-summary" className="topper-label">
-              Short Summary / Excerpt <span className="text-slate-400 font-normal">(Optional)</span>
+              Short Summary / Excerpt <span className="topper-label-optional">(Optional)</span>
             </label>
             <textarea
               id="notice-summary"
@@ -320,10 +438,10 @@ function NoticeFormInner({
             )}
           </div>
 
-          {/* Detailed Content (Rich Text / Semantic HTML) */}
+          {/* Row 5: Detailed Content (Full Width) */}
           <div className="topper-field topper-field--full">
             <label htmlFor="notice-content" className="topper-label">
-              Detailed Content <span className="text-slate-400 font-normal">(HTML or Plain Text)</span>
+              Detailed Content <span className="topper-label-optional">(HTML or Plain Text)</span>
             </label>
             <textarea
               id="notice-content"
@@ -334,10 +452,10 @@ function NoticeFormInner({
               value={content}
               onChange={(e) => setContent(e.target.value)}
               placeholder="<p>Detailed notice announcement text, schedules, or instructions...</p>"
-              className={`topper-input font-mono text-xs ${fieldErrors.content ? "topper-input--error" : ""}`}
+              className={`topper-input notice-content-textarea ${fieldErrors.content ? "topper-input--error" : ""}`}
               aria-invalid={Boolean(fieldErrors.content)}
             />
-            <p className="text-[11px] text-slate-500 mt-1">
+            <p className="topper-field-note">
               Supports safe semantic tags: &lt;p&gt;, &lt;strong&gt;, &lt;em&gt;, &lt;ul&gt;, &lt;ol&gt;, &lt;li&gt;, &lt;a href=&quot;...&quot;&gt;. Script and style tags are sanitized.
             </p>
             {fieldErrors.content && (
@@ -345,58 +463,29 @@ function NoticeFormInner({
             )}
           </div>
 
-          {/* Document Link & Size Grid */}
-          <div className="topper-form-grid">
-            <div className="topper-field">
-              <label htmlFor="notice-fileUrl" className="topper-label">
-                Document URL / Link <span className="text-slate-400 font-normal">(Optional)</span>
-              </label>
-              <input
-                id="notice-fileUrl"
-                name="fileUrl"
-                type="text"
-                disabled={isPending}
-                value={fileUrl}
-                onChange={(e) => setFileUrl(e.target.value)}
-                placeholder="/documents/circular-2026.pdf or https://..."
-                className={`topper-input ${fieldErrors.fileUrl ? "topper-input--error" : ""}`}
-                aria-invalid={Boolean(fieldErrors.fileUrl)}
-                aria-describedby={fieldErrors.fileUrl ? "fileUrl-error" : undefined}
-              />
-              {fieldErrors.fileUrl && (
-                <p id="fileUrl-error" className="topper-field-error">
-                  {fieldErrors.fileUrl[0]}
-                </p>
-              )}
-            </div>
-
-            <div className="topper-field">
-              <label htmlFor="notice-fileSize" className="topper-label">
-                File Size Indicator <span className="text-slate-400 font-normal">(Optional)</span>
-              </label>
-              <input
-                id="notice-fileSize"
-                name="fileSize"
-                type="text"
-                disabled={isPending}
-                value={fileSize}
-                onChange={(e) => setFileSize(e.target.value)}
-                placeholder="e.g. 245 KB"
-                className={`topper-input ${fieldErrors.fileSize ? "topper-input--error" : ""}`}
-                aria-invalid={Boolean(fieldErrors.fileSize)}
-              />
-              {fieldErrors.fileSize && (
-                <p className="topper-field-error">{fieldErrors.fileSize[0]}</p>
-              )}
-            </div>
+          {/* Row 6: Dual-Mode Document Attachment Widget (Full Width) */}
+          <div className="topper-field topper-field--full">
+            <label className="topper-label">
+              Document Attachment <span className="topper-label-optional">(Optional)</span>
+            </label>
+            <NoticeAttachmentWidget
+              value={attachmentValue}
+              onChange={setAttachmentValue}
+              noticeId={initialNotice?.id}
+              disabled={isPending}
+              fieldErrors={fieldErrors}
+            />
           </div>
 
-          {/* Urgency & Publication Controls */}
-          <div className="topper-field topper-field--full bg-slate-50 border border-slate-200 rounded-lg p-3 space-y-3">
-            <div className="flex items-center justify-between">
-              <div>
-                <span className="text-sm font-semibold text-slate-800">Urgent Notice Flag</span>
-                <p className="text-xs text-slate-500">
+          {/* Row 7: Urgency & Publication Controls in 2-Card Grid */}
+          <div className="notice-toggle-grid">
+            <label
+              htmlFor="notice-isUrgent"
+              className={`notice-toggle-card ${isUrgent ? "notice-toggle-card--active" : ""}`}
+            >
+              <div className="notice-toggle-card__info">
+                <span className="notice-toggle-card__title">Urgent Notice Flag</span>
+                <p className="notice-toggle-card__desc">
                   Highlights this notice with an urgent badge in listings and public views.
                 </p>
               </div>
@@ -407,14 +496,17 @@ function NoticeFormInner({
                 checked={isUrgent}
                 disabled={isPending}
                 onChange={(e) => setIsUrgent(e.target.checked)}
-                className="w-4 h-4 text-red-600 rounded focus:ring-red-500"
+                className="notice-toggle-card__checkbox"
               />
-            </div>
+            </label>
 
-            <div className="pt-2 border-t border-slate-200 flex items-center justify-between">
-              <div>
-                <span className="text-sm font-semibold text-slate-800">Publish Immediately</span>
-                <p className="text-xs text-slate-500">
+            <label
+              htmlFor="notice-isPublished"
+              className={`notice-toggle-card ${isPublished ? "notice-toggle-card--active-publish" : ""}`}
+            >
+              <div className="notice-toggle-card__info">
+                <span className="notice-toggle-card__title">Publish Immediately</span>
+                <p className="notice-toggle-card__desc">
                   If unchecked, notice is saved as a Draft visible only to administrators.
                 </p>
               </div>
@@ -425,9 +517,9 @@ function NoticeFormInner({
                 checked={isPublished}
                 disabled={isPending}
                 onChange={(e) => setIsPublished(e.target.checked)}
-                className="w-4 h-4 text-emerald-600 rounded focus:ring-emerald-500"
+                className="notice-toggle-card__checkbox"
               />
-            </div>
+            </label>
           </div>
         </div>
 

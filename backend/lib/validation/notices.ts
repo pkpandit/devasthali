@@ -132,6 +132,9 @@ export const documentLinkSchema = z
   .nullable()
   .optional();
 
+export const MANAGED_STORAGE_KEY_REGEX =
+  /^documents\/notices\/doc_[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}\.pdf$/;
+
 export const createNoticeSchema = z
   .object({
     title: z
@@ -164,6 +167,35 @@ export const createNoticeSchema = z
     publishDate: z.coerce.date().default(() => new Date()),
     expiryDate: z.coerce.date().nullable().optional(),
     displayOrder: z.coerce.number().int().min(0).max(9999).default(0),
+
+    // Managed attachment metadata (Phase 2)
+    fileStorageKey: z
+      .string()
+      .trim()
+      .regex(MANAGED_STORAGE_KEY_REGEX, "Invalid managed storage key format")
+      .nullable()
+      .optional(),
+    fileSizeBytes: z
+      .coerce
+      .number()
+      .int()
+      .positive()
+      .max(10 * 1024 * 1024, "File size exceeds 10 MiB limit")
+      .nullable()
+      .optional(),
+    fileSha256: z
+      .string()
+      .trim()
+      .length(64, "SHA-256 must be 64 characters")
+      .nullable()
+      .optional(),
+    fileOriginalName: z
+      .string()
+      .trim()
+      .max(255)
+      .nullable()
+      .optional(),
+    fileUploadedAt: z.coerce.date().nullable().optional(),
   })
   .refine(
     (data) => {

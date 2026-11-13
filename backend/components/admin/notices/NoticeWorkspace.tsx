@@ -2,7 +2,7 @@
 
 import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Plus, Search } from "lucide-react";
+import { Plus, Search, ChevronDown, RotateCcw } from "lucide-react";
 import { NoticeList } from "./NoticeList";
 import { NoticeFormDialog, type SerializedNotice } from "./NoticeFormDialog";
 import { DeleteNoticeDialog } from "./DeleteNoticeDialog";
@@ -90,7 +90,7 @@ export function NoticeWorkspace({ notices }: NoticeWorkspaceProps) {
 
   return (
     <div className="topper-workspace-wrapper">
-      {/* Top Toolbar */}
+      {/* Top Workspace Header */}
       <div className="topper-workspace-toolbar">
         <div className="topper-workspace-toolbar__info">
           <h2 className="topper-workspace-toolbar__title">
@@ -100,72 +100,76 @@ export function NoticeWorkspace({ notices }: NoticeWorkspaceProps) {
             {notices.length} total recorded &bull; {publishedCount} currently published
           </p>
         </div>
-        <button
-          type="button"
-          onClick={() => setIsCreateOpen(true)}
-          className="topper-button topper-button--primary topper-add-btn"
-        >
-          <Plus size={16} aria-hidden="true" />
-          <span>Publish Notice</span>
-        </button>
       </div>
 
-      {/* Filter and Search Controls */}
-      <div className="bg-slate-50 border border-slate-200 rounded-lg p-3 my-4 flex flex-col md:flex-row gap-3 items-stretch md:items-center justify-between">
-        {/* Search Input */}
-        <div className="relative flex-1 max-w-md">
-          <Search
-            size={16}
-            className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
-            aria-hidden="true"
-          />
-          <input
-            type="search"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search by title, summary, or slug..."
-            className="w-full pl-9 pr-3 py-1.5 text-sm bg-white border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            aria-label="Filter notices by search keyword"
-          />
-        </div>
-
-        {/* Status and Category Filter Chips */}
-        <div className="flex flex-wrap items-center gap-2">
-          {/* Status Select */}
-          <div className="flex items-center gap-1.5">
-            <span className="text-xs font-medium text-slate-600">Status:</span>
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value as FilterStatus)}
-              className="text-xs py-1.5 px-2 bg-white border border-slate-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
-              aria-label="Filter by lifecycle status"
-            >
-              <option value="ALL">All Statuses</option>
-              <option value="PUBLISHED">Published</option>
-              <option value="DRAFT">Draft</option>
-              <option value="SCHEDULED">Scheduled</option>
-              <option value="EXPIRED">Expired</option>
-              <option value="URGENT">Urgent Only</option>
-            </select>
+      {/* Unified Toolbar: Search, Filters, and Actions on One Visual Baseline */}
+      <div className="notice-toolbar">
+        <div className="notice-toolbar__filters">
+          {/* Search Input */}
+          <div className="notice-toolbar__search-wrapper">
+            <Search
+              size={16}
+              className="notice-toolbar__search-icon"
+              aria-hidden="true"
+            />
+            <input
+              type="search"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search by title, summary, or slug..."
+              className="notice-toolbar__search-input"
+              aria-label="Filter notices by search keyword"
+            />
           </div>
 
-          {/* Category Select */}
-          <div className="flex items-center gap-1.5">
-            <span className="text-xs font-medium text-slate-600">Category:</span>
-            <select
-              value={categoryFilter}
-              onChange={(e) => setCategoryFilter(e.target.value)}
-              className="text-xs py-1.5 px-2 bg-white border border-slate-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
-              aria-label="Filter by category"
-            >
-              <option value="ALL">All Categories</option>
-              <option value="CIRCULAR">Circulars</option>
-              <option value="EXAMINATION">Examinations</option>
-              <option value="ADMISSION">Admissions</option>
-              <option value="EVENT">Events</option>
-            </select>
+          {/* Status Filter */}
+          <div className="notice-toolbar__filter-group">
+            <label htmlFor="notice-status-filter" className="notice-toolbar__filter-label">
+              Status:
+            </label>
+            <div className="notice-toolbar__select-wrapper">
+              <select
+                id="notice-status-filter"
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value as FilterStatus)}
+                className="notice-toolbar__select"
+                aria-label="Filter by lifecycle status"
+              >
+                <option value="ALL">All Statuses</option>
+                <option value="PUBLISHED">Published</option>
+                <option value="DRAFT">Draft</option>
+                <option value="SCHEDULED">Scheduled</option>
+                <option value="EXPIRED">Expired</option>
+                <option value="URGENT">Urgent Only</option>
+              </select>
+              <ChevronDown size={14} className="notice-toolbar__select-chevron" aria-hidden="true" />
+            </div>
           </div>
 
+          {/* Category Filter */}
+          <div className="notice-toolbar__filter-group">
+            <label htmlFor="notice-category-filter" className="notice-toolbar__filter-label">
+              Category:
+            </label>
+            <div className="notice-toolbar__select-wrapper">
+              <select
+                id="notice-category-filter"
+                value={categoryFilter}
+                onChange={(e) => setCategoryFilter(e.target.value)}
+                className="notice-toolbar__select"
+                aria-label="Filter by category"
+              >
+                <option value="ALL">All Categories</option>
+                <option value="CIRCULAR">Circulars</option>
+                <option value="EXAMINATION">Examinations</option>
+                <option value="ADMISSION">Admissions</option>
+                <option value="EVENT">Events</option>
+              </select>
+              <ChevronDown size={14} className="notice-toolbar__select-chevron" aria-hidden="true" />
+            </div>
+          </div>
+
+          {/* Reset Filters */}
           {(statusFilter !== "ALL" || categoryFilter !== "ALL" || searchQuery) && (
             <button
               type="button"
@@ -174,11 +178,25 @@ export function NoticeWorkspace({ notices }: NoticeWorkspaceProps) {
                 setCategoryFilter("ALL");
                 setSearchQuery("");
               }}
-              className="text-xs text-blue-600 hover:text-blue-800 underline ml-1"
+              className="notice-toolbar__reset-btn"
+              title="Reset all search and filter criteria"
             >
-              Reset
+              <RotateCcw size={13} aria-hidden="true" />
+              <span>Reset</span>
             </button>
           )}
+        </div>
+
+        {/* Action Button: Publish Notice */}
+        <div className="notice-toolbar__actions">
+          <button
+            type="button"
+            onClick={() => setIsCreateOpen(true)}
+            className="topper-button topper-button--primary topper-add-btn"
+          >
+            <Plus size={16} aria-hidden="true" />
+            <span>Publish Notice</span>
+          </button>
         </div>
       </div>
 

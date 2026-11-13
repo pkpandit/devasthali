@@ -69,8 +69,8 @@ function DeleteNoticeDialogInner({
         <AlertTriangle size={24} className="text-red-600" />
       </div>
 
-      <div className="topper-dialog-header">
-        <h2 id="delete-notice-dialog-title" className="topper-dialog-title text-red-900">
+      <div className="topper-dialog-header" style={{ padding: "0 0 12px 0", borderBottom: "none" }}>
+        <h2 id="delete-notice-dialog-title" className="topper-dialog-title" style={{ color: "#7f1d1d" }}>
           Permanently Delete Notice?
         </h2>
       </div>
@@ -85,17 +85,17 @@ function DeleteNoticeDialogInner({
         </div>
       )}
 
-      <div id="delete-notice-dialog-desc" className="topper-dialog-body space-y-2">
-        <p className="text-sm text-slate-700">
+      <div id="delete-notice-dialog-desc" className="topper-dialog-body" style={{ padding: 0 }}>
+        <p style={{ fontSize: "0.875rem", color: "#334155", lineHeight: 1.5, margin: "0 0 10px 0" }}>
           Are you sure you want to delete the notice:{" "}
-          <strong className="text-slate-900">{notice.title}</strong>?
+          <strong style={{ color: "#0f172a" }}>{notice.title}</strong>?
         </p>
-        <div className="topper-delete-warning-box text-xs text-red-800 bg-red-50 p-3 rounded border border-red-200">
+        <div className="topper-delete-warning-box">
           <strong>Warning:</strong> This permanently removes the notice and slug reference from the database. This action cannot be undone and will be logged in the security audit trail.
         </div>
       </div>
 
-      <div className="topper-dialog-actions mt-4">
+      <div className="topper-dialog-actions" style={{ padding: "16px 0 0 0", marginTop: "16px", background: "transparent" }}>
         <button
           ref={cancelButtonRef}
           type="button"
