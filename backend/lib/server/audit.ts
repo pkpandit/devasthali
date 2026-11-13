@@ -15,12 +15,18 @@ export type TopperAuditAction =
   | "TOPPER_UPDATED"
   | "TOPPER_DELETED";
 
-export type AuditAction = AuthAuditAction | TopperAuditAction;
+export type NoticeAuditAction =
+  | "NOTICE_CREATED"
+  | "NOTICE_UPDATED"
+  | "NOTICE_DELETED"
+  | "NOTICE_STATUS_CHANGED";
+
+export type AuditAction = AuthAuditAction | TopperAuditAction | NoticeAuditAction;
 
 export interface CreateAuditLogParams {
   userId?: string | null;
   action: AuditAction;
-  entityType: "User" | "Session" | "System" | "BoardResultTopper";
+  entityType: "User" | "Session" | "System" | "BoardResultTopper" | "Notice";
   entityId: string;
   metadata?: Record<string, unknown> | null;
   ipAddress?: string | null;
