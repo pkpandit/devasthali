@@ -174,8 +174,18 @@ export async function uploadNoticeDocumentAction(
     }
 
     // 6. Malware Scanning (Fail-closed in production, gated synthetic in test)
-    const scanner = getMalwareScanner();
-    const scanResult = await scanner.scanBuffer(buffer);
+    let scanResult;
+    try {
+      const scanner = getMalwareScanner();
+      scanResult = await scanner.scanBuffer(buffer);
+    } catch (scannerErr) {
+      await cleanupStagedDocument(stagingKey);
+      console.error("[notice-actions] Malware scanner execution failed:", scannerErr);
+      return {
+        success: false,
+        error: "Document scanning is unavailable in this environment. Contact the administrator.",
+      };
+    }
 
     if (!scanResult.isClean) {
       await cleanupStagedDocument(stagingKey);

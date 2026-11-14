@@ -48,6 +48,9 @@ const ATTACHMENT_MODES = [
 
 type AttachmentMode = (typeof ATTACHMENT_MODES)[number]["id"];
 
+const MAX_PDF_SIZE_BYTES = 10 * 1024 * 1024; // 10 MiB
+const MIN_PDF_SIZE_BYTES = 32;
+
 function formatByteSize(bytes: number | null | undefined): string {
   if (!bytes || bytes <= 0) return "";
   if (bytes < 1024 * 1024) {
@@ -194,19 +197,19 @@ export function NoticeAttachmentWidget({
         return;
       }
 
-      if (file.size > 10 * 1024 * 1024) {
+      if (file.size > MAX_PDF_SIZE_BYTES) {
         setErrorMessage(
           `File size (${(file.size / (1024 * 1024)).toFixed(
             2
-          )} MB) exceeds the 10 MiB limit.`
+          )} MB) exceeds the maximum permitted limit of 10 MiB.`
         );
         setActiveUploadPhase("error");
         return;
       }
 
-      if (file.size < 32) {
+      if (file.size < MIN_PDF_SIZE_BYTES) {
         setErrorMessage(
-          "File is too small to be a valid PDF document (minimum 32 bytes)."
+          `File is too small (${file.size} bytes) to be a valid PDF document (minimum ${MIN_PDF_SIZE_BYTES} bytes required).`
         );
         setActiveUploadPhase("error");
         return;
@@ -275,11 +278,21 @@ export function NoticeAttachmentWidget({
       } catch (err) {
         if (timerRef.current) clearInterval(timerRef.current);
         setActiveUploadPhase("error");
-        setErrorMessage(
-          err instanceof Error
-            ? err.message
-            : "An unexpected network or server error occurred."
-        );
+        const rawMessage = err instanceof Error ? err.message : String(err);
+        if (
+          rawMessage.toLowerCase().includes("body exceeded") ||
+          rawMessage.toLowerCase().includes("bodysizelimit") ||
+          rawMessage.toLowerCase().includes("payload too large") ||
+          rawMessage.toLowerCase().includes("request entity too large")
+        ) {
+          setErrorMessage(
+            "File size exceeds the server request limit. Maximum permitted PDF size is 10 MiB."
+          );
+        } else {
+          setErrorMessage(
+            rawMessage || "An unexpected network or server error occurred."
+          );
+        }
       }
     },
     [localBlobUrl, noticeId, onChange]
@@ -625,10 +638,18 @@ export function NoticeAttachmentWidget({
                   aria-hidden="true"
                 />
                 <div style={{ flex: 1 }}>
-                  <strong style={{ display: "block", marginBottom: "2px" }}>
+                  <p
+                    className="notice-attachment-error__title"
+                    style={{ margin: "0 0 2px 0", fontWeight: 600, color: "#991b1b" }}
+                  >
                     Upload Failed
-                  </strong>
-                  <span>{errorMessage || "Document was rejected by validation."}</span>
+                  </p>
+                  <p
+                    className="notice-attachment-error__message"
+                    style={{ margin: 0, fontSize: "0.8125rem", color: "#7f1d1d", lineHeight: "1.4" }}
+                  >
+                    {errorMessage || "Document was rejected by validation."}
+                  </p>
                 </div>
               </div>
               <div
