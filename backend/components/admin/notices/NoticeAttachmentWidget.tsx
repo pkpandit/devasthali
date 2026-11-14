@@ -80,6 +80,7 @@ export function NoticeAttachmentWidget({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const scanningTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   const radioRefs = useRef<Record<AttachmentMode, HTMLButtonElement | null>>({
     upload: null,
@@ -100,6 +101,9 @@ export function NoticeAttachmentWidget({
       if (timerRef.current) {
         clearInterval(timerRef.current);
       }
+      if (scanningTimerRef.current) {
+        clearTimeout(scanningTimerRef.current);
+      }
     };
   }, [localBlobUrl]);
 
@@ -112,6 +116,11 @@ export function NoticeAttachmentWidget({
       setErrorMessage(null);
       setUrlValidationError(null);
       setActiveUploadPhase(null);
+      if (timerRef.current) clearInterval(timerRef.current);
+      if (scanningTimerRef.current) {
+        clearTimeout(scanningTimerRef.current);
+        scanningTimerRef.current = null;
+      }
 
       if (newMode === "upload") {
         onChange({
@@ -227,6 +236,10 @@ export function NoticeAttachmentWidget({
       setUploadProgress(15);
 
       if (timerRef.current) clearInterval(timerRef.current);
+      if (scanningTimerRef.current) {
+        clearTimeout(scanningTimerRef.current);
+        scanningTimerRef.current = null;
+      }
       timerRef.current = setInterval(() => {
         setUploadProgress((prev) => {
           if (prev >= 65) {
@@ -245,12 +258,16 @@ export function NoticeAttachmentWidget({
         }
 
         // Transition to scanning state after short upload indication
-        setTimeout(() => {
+        scanningTimerRef.current = setTimeout(() => {
           setActiveUploadPhase("scanning");
           setUploadProgress(85);
         }, 350);
 
         const res = await uploadNoticeDocumentAction(formData);
+        if (scanningTimerRef.current) {
+          clearTimeout(scanningTimerRef.current);
+          scanningTimerRef.current = null;
+        }
         if (timerRef.current) clearInterval(timerRef.current);
 
         if (res.success && res.data) {
@@ -277,6 +294,10 @@ export function NoticeAttachmentWidget({
         }
       } catch (err) {
         if (timerRef.current) clearInterval(timerRef.current);
+        if (scanningTimerRef.current) {
+          clearTimeout(scanningTimerRef.current);
+          scanningTimerRef.current = null;
+        }
         setActiveUploadPhase("error");
         const rawMessage = err instanceof Error ? err.message : String(err);
         if (
@@ -344,6 +365,10 @@ export function NoticeAttachmentWidget({
   const handleCancelUpload = () => {
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
+    }
+    if (scanningTimerRef.current) {
+      clearTimeout(scanningTimerRef.current);
+      scanningTimerRef.current = null;
     }
     if (timerRef.current) {
       clearInterval(timerRef.current);
