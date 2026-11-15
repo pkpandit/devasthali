@@ -15,10 +15,34 @@ function getInitials(name: string): string {
 }
 
 /**
+ * Resolves the set of authorized media hostnames for topper photos.
+ * Defaults to loopback in development and incorporates configured production media origin.
+ */
+export function getAllowedMediaHostnames(): Set<string> {
+  const allowed = new Set<string>(["127.0.0.1", "localhost"]);
+  const configuredOrigin =
+    process.env.NEXT_PUBLIC_MEDIA_ORIGIN ||
+    process.env.PUBLIC_MEDIA_ORIGIN;
+
+  if (configuredOrigin) {
+    try {
+      const parsed = new URL(configuredOrigin);
+      if (parsed.hostname) {
+        allowed.add(parsed.hostname.toLowerCase());
+      }
+    } catch {
+      // Ignore invalid URL
+    }
+  }
+
+  return allowed;
+}
+
+/**
  * Validates that photoUrl is a safe, root-relative local path (e.g. /images/...)
  * or an authorized backend media URL to adhere strictly to Next.js image domain configurations.
  */
-function isDisplayablePhotoUrl(url: string | null | undefined): boolean {
+export function isDisplayablePhotoUrl(url: string | null | undefined): boolean {
   if (!url) return false;
   const trimmed = url.trim();
 
@@ -30,19 +54,19 @@ function isDisplayablePhotoUrl(url: string | null | undefined): boolean {
   // Allowed backend media URL
   try {
     const parsed = new URL(trimmed);
-    if (parsed.protocol === "http:" || parsed.protocol === "https:") {
-      if (
-        (parsed.hostname === "127.0.0.1" || parsed.hostname === "localhost") &&
-        parsed.pathname.startsWith("/api/public/media/toppers/")
-      ) {
-        return true;
-      }
+    if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
+      return false;
     }
+
+    if (!parsed.pathname.startsWith("/api/public/media/toppers/")) {
+      return false;
+    }
+
+    const allowedHosts = getAllowedMediaHostnames();
+    return allowedHosts.has(parsed.hostname.toLowerCase());
   } catch {
     return false;
   }
-
-  return false;
 }
 
 export function TopperCard({ topper }: TopperCardProps) {

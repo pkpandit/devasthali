@@ -10,7 +10,8 @@
     "db:verify": "node scripts/verify-db.js",
     "db:validate": "prisma validate",
     "admin:provision": "node scripts/create-super-admin.js",
-    "media:clean-orphans": "node scripts/clean-orphaned-photos.js"
+    "media:clean-orphans": "node scripts/clean-orphaned-photos.js",
+    "documents:clean-orphans": "node scripts/clean-orphaned-documents.js"
   },
   "dependencies": {
     "@node-rs/argon2": "^2.2.2",

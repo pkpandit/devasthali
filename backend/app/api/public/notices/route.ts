@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/server/prisma";
 import { NoticeCategory } from "@prisma/client";
+import { getPublicMediaOrigin } from "@/lib/server/storage";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -48,15 +49,29 @@ function formatByteSize(bytes: number): string {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
+/**
+ * Public Notices & Circulars Feed Endpoint.
+ *
+ * Implements:
+ * 1. Filtering: category, urgentOnly
+ * 2. Pagination: page, limit (max 50)
+ * 3. Scope: Strictly active published notices (publishDate <= now, expiryDate null or > now)
+ * 4. Whitelist projection: Omits internal identifiers (authorId, fileStorageKey, fileSha256)
+ * 5. Document resolution: Managed attachments route via controlled public document endpoint
+ */
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
 
     // 1. Pagination parameters
-    const rawPage = parseInt(searchParams.get("page") || "1", 10);
-    const rawLimit = parseInt(searchParams.get("limit") || "10", 10);
-    const page = Math.max(1, isNaN(rawPage) ? 1 : rawPage);
-    const limit = Math.min(50, Math.max(1, isNaN(rawLimit) ? 10 : rawLimit));
+    const pageParam = parseInt(searchParams.get("page") || "1", 10);
+    const limitParam = parseInt(searchParams.get("limit") || "10", 10);
+
+    const page = Number.isInteger(pageParam) && pageParam > 0 ? pageParam : 1;
+    const limit =
+      Number.isInteger(limitParam) && limitParam > 0
+        ? Math.min(limitParam, 50)
+        : 10;
     const skip = (page - 1) * limit;
 
     // 2. Filter parameters
@@ -116,13 +131,14 @@ export async function GET(request: NextRequest) {
     ]);
 
     const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+    const mediaOrigin = getPublicMediaOrigin();
 
     // 5. Strict DTO Whitelist Projection
     // Never expose raw storage keys, SHA-256 hashes, original filenames, or author IDs
     const data: PublicNoticeDto[] = notices.map((n) => {
       // If notice has a managed attachment, route through controlled public document endpoint
       const resolvedFileUrl = n.fileStorageKey
-        ? `/api/public/documents/${n.slug}`
+        ? `${mediaOrigin}/api/public/documents/${n.slug}`
         : n.fileUrl;
 
       const resolvedFileSize = n.fileSize

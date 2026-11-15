@@ -20,27 +20,52 @@ const publicTopperSchema = z.object({
 
 const publicToppersArraySchema = z.array(publicTopperSchema);
 
-// Photo helper logic
+// Photo helper logic matching frontend/components/features/toppers/TopperCard.tsx
+function getAllowedMediaHostnames() {
+  const allowed = new Set(["127.0.0.1", "localhost"]);
+  const configuredOrigin =
+    process.env.NEXT_PUBLIC_MEDIA_ORIGIN ||
+    process.env.PUBLIC_MEDIA_ORIGIN;
+
+  if (configuredOrigin) {
+    try {
+      const parsed = new URL(configuredOrigin);
+      if (parsed.hostname) {
+        allowed.add(parsed.hostname.toLowerCase());
+      }
+    } catch {
+      // Ignore invalid URL
+    }
+  }
+
+  return allowed;
+}
+
 function isDisplayablePhotoUrl(url) {
   if (!url) return false;
   const trimmed = url.trim();
+
+  // Root-relative static assets
   if (trimmed.startsWith("/") && !trimmed.startsWith("//") && !trimmed.startsWith("/\\")) {
     return true;
   }
+
+  // Allowed backend media URL
   try {
     const parsed = new URL(trimmed);
-    if (parsed.protocol === "http:" || parsed.protocol === "https:") {
-      if (
-        (parsed.hostname === "127.0.0.1" || parsed.hostname === "localhost") &&
-        parsed.pathname.startsWith("/api/public/media/toppers/")
-      ) {
-        return true;
-      }
+    if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
+      return false;
     }
+
+    if (!parsed.pathname.startsWith("/api/public/media/toppers/")) {
+      return false;
+    }
+
+    const allowedHosts = getAllowedMediaHostnames();
+    return allowedHosts.has(parsed.hostname.toLowerCase());
   } catch {
     return false;
   }
-  return false;
 }
 
 function getInitials(name) {
@@ -144,7 +169,42 @@ function getInitials(name) {
   console.log("  [PASS] Managed media URL validation and initials generation verified");
 }
 
-// 6. Empty Array Behavior
+// 6. Production Origin Media Acceptance & Untrusted Host Rejection
+{
+  const prevOrigin = process.env.NEXT_PUBLIC_MEDIA_ORIGIN;
+  try {
+    process.env.NEXT_PUBLIC_MEDIA_ORIGIN = "https://admin.devasthaly.edu.in";
+    assert.strictEqual(
+      isDisplayablePhotoUrl("https://admin.devasthaly.edu.in/api/public/media/toppers/top_prod123.webp"),
+      true,
+      "Should accept configured production media origin"
+    );
+    assert.strictEqual(
+      isDisplayablePhotoUrl("https://admin.devasthaly.edu.in/unauthorized/path.webp"),
+      false,
+      "Should reject non-media paths even on production origin"
+    );
+    assert.strictEqual(
+      isDisplayablePhotoUrl("https://attacker-origin.com/api/public/media/toppers/top_evil.webp"),
+      false,
+      "Should reject unauthorized external origins"
+    );
+    assert.strictEqual(
+      isDisplayablePhotoUrl("http://127.0.0.1:3001/api/public/media/toppers/top_local.webp"),
+      true,
+      "Should still accept local development origin"
+    );
+  } finally {
+    if (prevOrigin !== undefined) {
+      process.env.NEXT_PUBLIC_MEDIA_ORIGIN = prevOrigin;
+    } else {
+      delete process.env.NEXT_PUBLIC_MEDIA_ORIGIN;
+    }
+  }
+  console.log("  [PASS] Production media origin dynamically accepted while preserving strict host/path boundaries");
+}
+
+// 7. Empty Array Behavior
 {
   const empty = [];
   const parsed = publicToppersArraySchema.safeParse(empty);
