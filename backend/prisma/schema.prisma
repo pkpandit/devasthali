@@ -502,3 +502,28 @@ model LeadershipMember {
   @@index([slug])
   @@map("leadership_members")
 }
+
+// ==========================================
+// 11. FACULTY & MENTORS DIRECTORY
+// ==========================================
+
+model FacultyMember {
+  id              String   @id @default(cuid())
+  name            String   @db.VarChar(120)
+  designation     String   @db.VarChar(120)
+  department      String   @db.VarChar(120)
+  qualification   String?  @db.VarChar(255)
+  experienceYears Int      @default(0)
+  bio             String?  @db.Text
+  imageUrl        String?  @db.VarChar(500)
+  imageStorageKey String?  @db.VarChar(255)
+  imageAlt        String   @default("") @db.VarChar(255)
+  displayOrder    Int      @default(0)
+  isPublished     Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([isPublished, displayOrder])
+  @@index([department])
+  @@map("faculty_members")
+}
