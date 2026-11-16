@@ -5,6 +5,7 @@ import { Container } from "@/components/ui/Container";
 import { SCHOOL_INFO } from "@/lib/content/settings";
 import { footerAdmissionsLinks, footerLifeLinks } from "@/lib/content/navigation";
 import type { PublicSiteProfileDto } from "@/lib/api/profile";
+import type { FooterLinkItem } from "@/types/content";
 import {
   MapPin,
   Phone,
@@ -16,9 +17,15 @@ import {
 
 interface FooterProps {
   profile?: PublicSiteProfileDto;
+  admissionsLinks?: FooterLinkItem[];
+  lifeLinks?: FooterLinkItem[];
 }
 
-export function Footer({ profile }: FooterProps = {}) {
+export function Footer({
+  profile,
+  admissionsLinks: propAdmissions,
+  lifeLinks: propLife,
+}: FooterProps = {}) {
   const schoolName = profile?.schoolName || SCHOOL_INFO.name;
   const affiliationNo = profile?.affiliationNo || SCHOOL_INFO.affiliationNo;
   const schoolCode = profile?.schoolCode || SCHOOL_INFO.schoolCode;
@@ -33,6 +40,9 @@ export function Footer({ profile }: FooterProps = {}) {
     : "Devasthaly Vidyapeeth, Chilkahar, Tehsil Rasra, District Ballia, Uttar Pradesh — 277123";
   const landmark = profile?.address?.landmark || "Near Chilkahar Railway Crossing / Ballia-Rasra State Highway";
   const copyrightText = profile?.copyrightText || "© 2025 Devasthaly Vidyapeeth, Chilkahar, Ballia. All Rights Reserved.";
+
+  const activeAdmissions = propAdmissions ?? footerAdmissionsLinks;
+  const activeLife = propLife ?? footerLifeLinks;
 
   return (
     <footer className="w-full bg-[#111827] text-white pt-16 pb-24 lg:pb-12 border-t border-gray-800">
@@ -77,10 +87,12 @@ export function Footer({ profile }: FooterProps = {}) {
               Admissions & Academics
             </h4>
             <ul className="space-y-2.5 text-[15px] text-gray-300">
-              {footerAdmissionsLinks.map((item) => (
+              {activeAdmissions.map((item) => (
                 <li key={item.name}>
                   <Link
                     href={item.href}
+                    target={item.openInNewTab ? "_blank" : undefined}
+                    rel={item.openInNewTab ? "noopener noreferrer" : undefined}
                     className="flex items-center gap-2 hover:text-white hover:translate-x-1 transition-all"
                   >
                     <ChevronRight className="w-3.5 h-3.5 text-[#B91C1C]" />
@@ -97,10 +109,12 @@ export function Footer({ profile }: FooterProps = {}) {
               Life at School & Community
             </h4>
             <ul className="space-y-2.5 text-[15px] text-gray-300">
-              {footerLifeLinks.map((item) => (
+              {activeLife.map((item) => (
                 <li key={item.name}>
                   <Link
                     href={item.href}
+                    target={item.openInNewTab ? "_blank" : undefined}
+                    rel={item.openInNewTab ? "noopener noreferrer" : undefined}
                     className="flex items-center gap-2 hover:text-white hover:translate-x-1 transition-all"
                   >
                     <ChevronRight className="w-3.5 h-3.5 text-[#B91C1C]" />

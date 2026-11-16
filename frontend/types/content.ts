@@ -300,6 +300,7 @@ export interface NavItemChild {
   name: string;
   href: string;
   badge?: string;
+  openInNewTab?: boolean;
 }
 
 export interface NavColumn {
@@ -312,9 +313,12 @@ export interface NavItem {
   href: string;
   panelType?: "compact" | "medium" | "mega";
   columns?: NavColumn[];
+  badge?: string;
+  openInNewTab?: boolean;
 }
 
 export interface FooterLinkItem {
   name: string;
   href: string;
+  openInNewTab?: boolean;
 }

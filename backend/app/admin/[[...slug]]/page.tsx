@@ -4,6 +4,7 @@ import { PlaceholderWorkspace } from "@/components/admin/PlaceholderWorkspace";
 import { TopperWorkspace } from "@/components/admin/toppers/TopperWorkspace";
 import { NoticeWorkspace } from "@/components/admin/notices/NoticeWorkspace";
 import { ProfileDirectoryWorkspace } from "@/components/admin/profile/ProfileDirectoryWorkspace";
+import { NavigationWorkspace } from "@/components/admin/navigation/NavigationWorkspace";
 import { Breadcrumbs } from "@/components/ui/Breadcrumbs";
 import { Badge } from "@/components/ui/Badge";
 import { Card } from "@/components/ui/Card";
@@ -216,6 +217,83 @@ export default async function AdminWorkspacePage({
           <ProfileDirectoryWorkspace
             profile={serializedProfile}
             directoryEntries={serializedDirectory}
+          />
+        </div>
+      </Card>
+    );
+  }
+
+  // Specialization: /admin/navigation renders NavigationWorkspace
+  if (href === "/admin/navigation") {
+    await requireRole(["SUPER_ADMIN"], href);
+
+    const headerItems = await prisma.navigationItem.findMany({
+      where: { location: "HEADER_PRIMARY" },
+      orderBy: [
+        { displayOrder: "asc" },
+        { createdAt: "asc" },
+      ],
+      include: {
+        columns: {
+          orderBy: [
+            { displayOrder: "asc" },
+            { createdAt: "asc" },
+          ],
+          include: {
+            links: {
+              orderBy: [
+                { displayOrder: "asc" },
+                { createdAt: "asc" },
+              ],
+            },
+          },
+        },
+      },
+    });
+
+    const footerAdmissions = await prisma.navigationItem.findMany({
+      where: { location: "FOOTER_ADMISSIONS" },
+      orderBy: [
+        { displayOrder: "asc" },
+        { createdAt: "asc" },
+      ],
+    });
+
+    const footerCommunity = await prisma.navigationItem.findMany({
+      where: { location: "FOOTER_COMMUNITY" },
+      orderBy: [
+        { displayOrder: "asc" },
+        { createdAt: "asc" },
+      ],
+    });
+
+    return (
+      <Card as="section" aria-labelledby="admin-workspace-title">
+        <Breadcrumbs items={workspace.breadcrumbs} />
+
+        <div className="workspace-header">
+          <h1 className="workspace-title" id="admin-workspace-title" tabIndex={-1}>
+            {workspace.title}
+          </h1>
+          {workspace.badge && <Badge>{workspace.badge}</Badge>}
+        </div>
+
+        {workspace.description && (
+          <p className="workspace-description">{workspace.description}</p>
+        )}
+
+        <div className="workspace-meta-bar">
+          <PublicReferenceLink
+            publicHref={workspace.publicHref}
+            title={workspace.title}
+          />
+        </div>
+
+        <div className="workspace-content">
+          <NavigationWorkspace
+            headerItems={headerItems}
+            footerAdmissions={footerAdmissions}
+            footerCommunity={footerCommunity}
           />
         </div>
       </Card>

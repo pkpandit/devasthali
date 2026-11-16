@@ -276,6 +276,25 @@ export const adminSections: AdminSection[] = [
       },
     ],
   },
+  {
+    id: "navigation",
+    label: "Navigation",
+    href: "/admin/navigation",
+    publicHref: "/",
+    description: "Manage header primary navigation, mega-menus, dropdown columns, and footer link groups.",
+    groups: [
+      {
+        items: [
+          {
+            label: "Site Navigation & Menus",
+            href: "/admin/navigation",
+            publicHref: "/",
+            description: "Header primary menu items, dropdown columns, and footer link groups.",
+          },
+        ],
+      },
+    ],
+  },
 ];
 
 export const adminRedirects: Record<string, string> = {

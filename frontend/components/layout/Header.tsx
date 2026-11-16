@@ -23,6 +23,7 @@ export interface NavItemChild {
   name: string;
   href: string;
   badge?: string;
+  openInNewTab?: boolean;
 }
 
 export interface NavColumn {
@@ -33,6 +34,8 @@ export interface NavColumn {
 export interface NavItem {
   name: string;
   href: string;
+  badge?: string;
+  openInNewTab?: boolean;
   panelType?: "compact" | "medium" | "mega";
   columns?: NavColumn[];
 }
@@ -180,13 +183,16 @@ export const navItems: NavItem[] = [
 
 export interface HeaderProps {
   profile?: PublicSiteProfileDto;
+  navItems?: NavItem[];
 }
 
-export function Header({ profile }: HeaderProps = {}) {
+export function Header({ profile, navItems: propNavItems }: HeaderProps = {}) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
   const [openDesktopMenu, setOpenDesktopMenu] = useState<string | null>(null);
   const pathname = usePathname();
+
+  const activeNavItems = propNavItems ?? navItems;
 
   const mobileDrawerRef = useRef<HTMLDivElement>(null);
   const mobileMenuButtonRef = useRef<HTMLButtonElement>(null);
@@ -354,7 +360,7 @@ export function Header({ profile }: HeaderProps = {}) {
           {/* Left: Affiliation & Location Badges */}
           <div className="flex flex-wrap items-center gap-2 sm:gap-4 text-gray-300 text-xs sm:text-sm">
             <span className="inline-flex items-center gap-1.5 text-white font-medium">
-              <ShieldCheck className="w-3.5 h-3.5 text-[#F4CD13]" />
+              <ShieldCheck className="w-3.5 h-3.5 text-[#F4CD13]\" />
               CBSE Affiliation No.{" "}
               <strong className="text-white">
                 {affiliationNo}
@@ -437,7 +443,7 @@ export function Header({ profile }: HeaderProps = {}) {
             className="order-2 hidden xl:flex items-center gap-0.5 2xl:gap-1 shrink-0 font-heading"
             aria-label="Main Navigation"
           >
-            {navItems.map((link) => {
+            {activeNavItems.map((link) => {
               const isMenuOpen = openDesktopMenu === link.name;
               const hasChildren = Boolean(
                 link.columns && link.columns.length > 0,
@@ -460,6 +466,7 @@ export function Header({ profile }: HeaderProps = {}) {
               const dropdownId = `desktop-menu-${link.name.toLowerCase().replace(/[^a-z0-9]/g, "-")}`;
               const isBroadPanel =
                 link.panelType === "mega" || link.panelType === "medium";
+              const colCount = link.columns?.length || 1;
 
               return (
                 <div
@@ -474,6 +481,8 @@ export function Header({ profile }: HeaderProps = {}) {
                     <div className="flex items-center">
                       <Link
                         href={link.href}
+                        target={link.openInNewTab ? "_blank" : undefined}
+                        rel={link.openInNewTab ? "noopener noreferrer" : undefined}
                         className={`text-[13px] xl:text-[13px] 2xl:text-[14px] font-heading font-semibold pl-1.5 xl:pl-2 2xl:pl-2.5 pr-0.5 py-2 min-h-[44px] flex items-center rounded-l-lg transition-all whitespace-nowrap focus-visible:outline-2 focus-visible:outline-[#B91C1C] ${
                           isCurrentSection || isCurrentPage
                             ? "text-[#B91C1C] font-bold"
@@ -482,7 +491,12 @@ export function Header({ profile }: HeaderProps = {}) {
                               : "text-[#111827] hover:text-[#B91C1C]"
                         }`}
                       >
-                        {link.name}
+                        <span>{link.name}</span>
+                        {link.badge && (
+                          <span className="ml-1.5 text-[10px] font-bold px-1.5 py-0.5 bg-[#B91C1C] text-white rounded-full shrink-0 shadow-2xs">
+                            {link.badge}
+                          </span>
+                        )}
                       </Link>
                       <button
                         ref={(el) => {
@@ -512,13 +526,20 @@ export function Header({ profile }: HeaderProps = {}) {
                   ) : (
                     <Link
                       href={link.href}
+                      target={link.openInNewTab ? "_blank" : undefined}
+                      rel={link.openInNewTab ? "noopener noreferrer" : undefined}
                       className={`text-[13px] xl:text-[13px] 2xl:text-[14px] font-heading font-semibold px-1.5 xl:px-2 2xl:px-2.5 py-2 min-h-[44px] flex items-center rounded-lg transition-all whitespace-nowrap focus-visible:outline-2 focus-visible:outline-[#B91C1C] ${
                         isCurrentPage
                           ? "text-[#B91C1C] bg-red-50/80 font-bold"
                           : "text-[#111827] hover:text-[#B91C1C] hover:bg-gray-50"
                       }`}
                     >
-                      {link.name}
+                      <span>{link.name}</span>
+                      {link.badge && (
+                        <span className="ml-1.5 text-[10px] font-bold px-1.5 py-0.5 bg-[#B91C1C] text-white rounded-full shrink-0 shadow-2xs">
+                          {link.badge}
+                        </span>
+                      )}
                     </Link>
                   )}
 
@@ -537,7 +558,15 @@ export function Header({ profile }: HeaderProps = {}) {
                         <div className="site-container px-4 sm:px-6 lg:px-8">
                           <div className="w-full max-w-[1040px] mx-auto bg-white rounded-2xl shadow-2xl border border-gray-100 ring-1 ring-black/5 overflow-hidden p-6 lg:p-7 max-h-[calc(100dvh-130px)] overflow-y-auto">
                             <div>
-                              <div className="grid grid-cols-2 gap-8 divide-x divide-gray-100">
+                              <div
+                                className={`grid ${
+                                  colCount === 3
+                                    ? "grid-cols-3"
+                                    : colCount === 1
+                                      ? "grid-cols-1"
+                                      : "grid-cols-2"
+                                } gap-8 ${colCount > 1 ? "divide-x divide-gray-100" : ""}`}
+                              >
                                 {link.columns?.map((col, cIdx) => (
                                   <div
                                     key={cIdx}
@@ -556,6 +585,16 @@ export function Header({ profile }: HeaderProps = {}) {
                                           <Link
                                             key={subItem.name}
                                             href={subItem.href}
+                                            target={
+                                              subItem.openInNewTab
+                                                ? "_blank"
+                                                : undefined
+                                            }
+                                            rel={
+                                              subItem.openInNewTab
+                                                ? "noopener noreferrer"
+                                                : undefined
+                                            }
                                             onClick={() =>
                                               setOpenDesktopMenu(null)
                                             }
@@ -603,6 +642,16 @@ export function Header({ profile }: HeaderProps = {}) {
                               <Link
                                 key={subItem.name}
                                 href={subItem.href}
+                                target={
+                                  subItem.openInNewTab
+                                    ? "_blank"
+                                    : undefined
+                                }
+                                rel={
+                                  subItem.openInNewTab
+                                    ? "noopener noreferrer"
+                                    : undefined
+                                }
                                 onClick={() => setOpenDesktopMenu(null)}
                                 className={`px-3 py-2.5 rounded-xl text-[14px] font-heading font-medium flex items-center justify-between gap-3 group/sub transition-all min-h-[44px] focus-visible:outline-2 focus-visible:outline-[#B91C1C] ${
                                   isItemActive
@@ -681,7 +730,7 @@ export function Header({ profile }: HeaderProps = {}) {
           className="xl:hidden absolute top-full left-0 right-0 w-full h-[calc(100dvh-100%)] bg-white z-40 overflow-y-auto border-t border-[#E5E7EB] px-4 sm:px-6 py-6 pb-32 shadow-2xl animate-in fade-in slide-in-from-top-2 duration-200"
         >
           <div className="w-full max-w-xl mx-auto flex flex-col gap-3 font-heading">
-            {navItems.map((link) => {
+            {activeNavItems.map((link) => {
               const menuId = `mobile-sub-${link.name.toLowerCase().replace(/[^a-z0-9]/g, "-")}`;
               const isAccordionOpen = activeDropdown === link.name;
               const hasChildren = Boolean(
@@ -696,10 +745,17 @@ export function Header({ profile }: HeaderProps = {}) {
                         {/* Parent text link navigates to parent page */}
                         <Link
                           href={link.href}
+                          target={link.openInNewTab ? "_blank" : undefined}
+                          rel={link.openInNewTab ? "noopener noreferrer" : undefined}
                           onClick={() => setMobileMenuOpen(false)}
-                          className="py-2.5 px-1.5 min-h-[44px] flex items-center text-base font-heading font-bold text-[#111827] hover:text-[#B91C1C] focus-visible:outline-2 focus-visible:outline-[#B91C1C] rounded-lg"
+                          className="py-2.5 px-1.5 min-h-[44px] flex items-center gap-2 text-base font-heading font-bold text-[#111827] hover:text-[#B91C1C] focus-visible:outline-2 focus-visible:outline-[#B91C1C] rounded-lg"
                         >
-                          {link.name}
+                          <span>{link.name}</span>
+                          {link.badge && (
+                            <span className="text-xs font-bold px-2 py-0.5 bg-[#B91C1C] text-white rounded-full shrink-0">
+                              {link.badge}
+                            </span>
+                          )}
                         </Link>
                         {/* Accordion toggle button */}
                         <button
@@ -733,6 +789,8 @@ export function Header({ profile }: HeaderProps = {}) {
                                 <Link
                                   key={sub.name}
                                   href={sub.href}
+                                  target={sub.openInNewTab ? "_blank" : undefined}
+                                  rel={sub.openInNewTab ? "noopener noreferrer" : undefined}
                                   onClick={() => setMobileMenuOpen(false)}
                                   className="py-2.5 px-3 min-h-[44px] text-[15px] font-medium text-gray-700 hover:text-[#B91C1C] hover:bg-white rounded-lg flex items-center justify-between gap-2.5 transition-colors focus-visible:outline-2 focus-visible:outline-[#B91C1C]"
                                 >
@@ -754,10 +812,17 @@ export function Header({ profile }: HeaderProps = {}) {
                   ) : (
                     <Link
                       href={link.href}
+                      target={link.openInNewTab ? "_blank" : undefined}
+                      rel={link.openInNewTab ? "noopener noreferrer" : undefined}
                       onClick={() => setMobileMenuOpen(false)}
-                      className="block py-2.5 px-1.5 min-h-[44px] text-base font-heading font-bold text-[#111827] hover:text-[#B91C1C] focus-visible:outline-2 focus-visible:outline-[#B91C1C] rounded-lg"
+                      className="py-2.5 px-1.5 min-h-[44px] flex items-center gap-2 text-base font-heading font-bold text-[#111827] hover:text-[#B91C1C] focus-visible:outline-2 focus-visible:outline-[#B91C1C] rounded-lg"
                     >
-                      {link.name}
+                      <span>{link.name}</span>
+                      {link.badge && (
+                        <span className="text-xs font-bold px-2 py-0.5 bg-[#B91C1C] text-white rounded-full shrink-0">
+                          {link.badge}
+                        </span>
+                      )}
                     </Link>
                   )}
                 </div>

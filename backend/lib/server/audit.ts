@@ -33,11 +33,29 @@ export type ProfileAuditAction =
   | "DIRECTORY_ENTRY_STATUS_CHANGED"
   | "DIRECTORY_ENTRIES_REORDERED";
 
+export type NavigationAuditAction =
+  | "NAVIGATION_ITEM_CREATED"
+  | "NAVIGATION_ITEM_UPDATED"
+  | "NAVIGATION_ITEM_DELETED"
+  | "NAVIGATION_ITEM_STATUS_CHANGED"
+  | "NAVIGATION_ITEMS_REORDERED"
+  | "NAVIGATION_COLUMN_CREATED"
+  | "NAVIGATION_COLUMN_UPDATED"
+  | "NAVIGATION_COLUMN_DELETED"
+  | "NAVIGATION_COLUMN_STATUS_CHANGED"
+  | "NAVIGATION_COLUMNS_REORDERED"
+  | "NAVIGATION_LINK_CREATED"
+  | "NAVIGATION_LINK_UPDATED"
+  | "NAVIGATION_LINK_DELETED"
+  | "NAVIGATION_LINK_STATUS_CHANGED"
+  | "NAVIGATION_LINKS_REORDERED";
+
 export type AuditAction =
   | AuthAuditAction
   | TopperAuditAction
   | NoticeAuditAction
-  | ProfileAuditAction;
+  | ProfileAuditAction
+  | NavigationAuditAction;
 
 export interface CreateAuditLogParams {
   userId?: string | null;
@@ -49,7 +67,10 @@ export interface CreateAuditLogParams {
     | "BoardResultTopper"
     | "Notice"
     | "SiteProfile"
-    | "CampusDirectoryEntry";
+    | "CampusDirectoryEntry"
+    | "NavigationItem"
+    | "NavigationColumn"
+    | "NavigationLinkItem";
   entityId: string;
   metadata?: Record<string, unknown> | null;
   ipAddress?: string | null;
