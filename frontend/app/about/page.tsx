@@ -120,6 +120,7 @@ export default async function AboutPage() {
                             src={sec.imageUrl}
                             alt={sec.imageAlt || sec.heading || "Narrative illustration"}
                             fill
+                            sizes="(max-width: 1024px) 100vw, 60vw"
                             className="object-cover"
                           />
                         </div>

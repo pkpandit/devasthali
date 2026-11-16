@@ -124,6 +124,7 @@ export function LeadershipMessageTemplate({ member }: LeadershipMessageTemplateP
                       src={member.signatureImageUrl}
                       alt={member.signatureAlt || `${member.name} Signature`}
                       fill
+                      sizes="(max-width: 640px) 160px, 200px"
                       className="object-contain object-left"
                     />
                   </div>
