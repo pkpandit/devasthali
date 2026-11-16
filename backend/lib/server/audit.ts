@@ -64,13 +64,36 @@ export type HomepageAuditAction =
   | "HOMEPAGE_HIGHLIGHT_STATUS_CHANGED"
   | "HOMEPAGE_HIGHLIGHTS_REORDERED";
 
+export type AboutLeadershipAuditAction =
+  | "ABOUT_SETTING_UPDATED"
+  | "ABOUT_CREDENTIAL_CREATED"
+  | "ABOUT_CREDENTIAL_UPDATED"
+  | "ABOUT_CREDENTIAL_DELETED"
+  | "ABOUT_CREDENTIAL_STATUS_CHANGED"
+  | "ABOUT_CREDENTIALS_REORDERED"
+  | "ABOUT_NARRATIVE_CREATED"
+  | "ABOUT_NARRATIVE_UPDATED"
+  | "ABOUT_NARRATIVE_DELETED"
+  | "ABOUT_NARRATIVE_STATUS_CHANGED"
+  | "ABOUT_NARRATIVES_REORDERED"
+  | "VISION_MISSION_SETTING_UPDATED"
+  | "CORE_VALUE_CREATED"
+  | "CORE_VALUE_UPDATED"
+  | "CORE_VALUE_DELETED"
+  | "CORE_VALUE_STATUS_CHANGED"
+  | "CORE_VALUES_REORDERED"
+  | "LEADERSHIP_MEMBER_UPDATED"
+  | "LEADERSHIP_MEMBER_STATUS_CHANGED"
+  | "LEADERSHIP_MEMBERS_REORDERED";
+
 export type AuditAction =
   | AuthAuditAction
   | TopperAuditAction
   | NoticeAuditAction
   | ProfileAuditAction
   | NavigationAuditAction
-  | HomepageAuditAction;
+  | HomepageAuditAction
+  | AboutLeadershipAuditAction;
 
 export interface CreateAuditLogParams {
   userId?: string | null;
@@ -89,7 +112,13 @@ export interface CreateAuditLogParams {
     | "HomepageHero"
     | "HomepagePrincipalMessage"
     | "HomepageStatistic"
-    | "HomepageHighlight";
+    | "HomepageHighlight"
+    | "AboutPageSetting"
+    | "AboutCredential"
+    | "AboutNarrativeSection"
+    | "VisionMissionSetting"
+    | "InstitutionalCoreValue"
+    | "LeadershipMember";
   entityId: string;
   metadata?: Record<string, unknown> | null;
   ipAddress?: string | null;

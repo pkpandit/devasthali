@@ -317,6 +317,14 @@ export const adminSections: AdminSection[] = [
 ];
 
 export const adminRedirects: Record<string, string> = {
+  "/admin/about": "/admin/about-leadership",
+  "/admin/about/heritage": "/admin/about-leadership",
+  "/admin/about/vision-mission": "/admin/about-leadership",
+  "/admin/about/founders-message": "/admin/about-leadership",
+  "/admin/about/patrons-message": "/admin/about-leadership",
+  "/admin/about/presidents-message": "/admin/about-leadership",
+  "/admin/about/managers-message": "/admin/about-leadership",
+  "/admin/about/principals-message": "/admin/about-leadership",
   "/admin/academics/curriculum": "/admin/academics",
   "/admin/admissions/overview": "/admin/admissions",
 };
@@ -326,6 +334,14 @@ export function getAdminRedirect(href: string): string | undefined {
 }
 
 export const adminWorkspaces: AdminWorkspace[] = [
+  {
+    title: "About & Leadership",
+    href: "/admin/about-leadership",
+    publicHref: "/about",
+    sectionId: "about",
+    breadcrumbs: ["Admin", "About & Leadership"],
+    description: "Manage institutional heritage, narrative sections, vision & mission, core values, and leadership messages.",
+  },
   {
     title: "Home",
     href: "/admin",

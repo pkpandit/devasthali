@@ -6,6 +6,7 @@ import { NoticeWorkspace } from "@/components/admin/notices/NoticeWorkspace";
 import { ProfileDirectoryWorkspace } from "@/components/admin/profile/ProfileDirectoryWorkspace";
 import { NavigationWorkspace } from "@/components/admin/navigation/NavigationWorkspace";
 import { HomepageWorkspace } from "@/components/admin/homepage/HomepageWorkspace";
+import { AboutLeadershipWorkspace } from "@/components/admin/about/AboutLeadershipWorkspace";
 import { Breadcrumbs } from "@/components/ui/Breadcrumbs";
 import { Badge } from "@/components/ui/Badge";
 import { Card } from "@/components/ui/Card";
@@ -374,6 +375,112 @@ export default async function AdminWorkspacePage({
             principal={serializedPrincipal}
             statistics={serializedStatistics}
             highlights={serializedHighlights}
+          />
+        </div>
+      </Card>
+    );
+  }
+
+  // Specialization: /admin/about-leadership renders AboutLeadershipWorkspace
+  if (href === "/admin/about-leadership") {
+    await requireRole(["SUPER_ADMIN"], href);
+
+    const [
+      aboutSetting,
+      credentials,
+      narrativeSections,
+      vmSetting,
+      coreValues,
+      leadershipMembers,
+    ] = await Promise.all([
+      prisma.aboutPageSetting.findUnique({
+        where: { id: "default" },
+      }),
+      prisma.aboutCredential.findMany({
+        orderBy: [{ displayOrder: "asc" }, { createdAt: "asc" }],
+      }),
+      prisma.aboutNarrativeSection.findMany({
+        orderBy: [{ displayOrder: "asc" }, { createdAt: "asc" }],
+      }),
+      prisma.visionMissionSetting.findUnique({
+        where: { id: "default" },
+      }),
+      prisma.institutionalCoreValue.findMany({
+        orderBy: [{ displayOrder: "asc" }, { createdAt: "asc" }],
+      }),
+      prisma.leadershipMember.findMany({
+        orderBy: [{ displayOrder: "asc" }, { createdAt: "asc" }],
+      }),
+    ]);
+
+    const serializedAboutSetting = aboutSetting
+      ? {
+          ...aboutSetting,
+          updatedAt: aboutSetting.updatedAt.toISOString(),
+        }
+      : null;
+
+    const serializedCredentials = credentials.map((c) => ({
+      ...c,
+      createdAt: c.createdAt.toISOString(),
+      updatedAt: c.updatedAt.toISOString(),
+    }));
+
+    const serializedNarratives = narrativeSections.map((n) => ({
+      ...n,
+      createdAt: n.createdAt.toISOString(),
+      updatedAt: n.updatedAt.toISOString(),
+    }));
+
+    const serializedVmSetting = vmSetting
+      ? {
+          ...vmSetting,
+          updatedAt: vmSetting.updatedAt.toISOString(),
+        }
+      : null;
+
+    const serializedCoreValues = coreValues.map((cv) => ({
+      ...cv,
+      createdAt: cv.createdAt.toISOString(),
+      updatedAt: cv.updatedAt.toISOString(),
+    }));
+
+    const serializedLeadership = leadershipMembers.map((m) => ({
+      ...m,
+      createdAt: m.createdAt.toISOString(),
+      updatedAt: m.updatedAt.toISOString(),
+    }));
+
+    return (
+      <Card as="section" aria-labelledby="admin-workspace-title">
+        <Breadcrumbs items={workspace.breadcrumbs} />
+
+        <div className="workspace-header">
+          <h1 className="workspace-title" id="admin-workspace-title" tabIndex={-1}>
+            {workspace.title}
+          </h1>
+          {workspace.badge && <Badge>{workspace.badge}</Badge>}
+        </div>
+
+        {workspace.description && (
+          <p className="workspace-description">{workspace.description}</p>
+        )}
+
+        <div className="workspace-meta-bar">
+          <PublicReferenceLink
+            publicHref={workspace.publicHref}
+            title={workspace.title}
+          />
+        </div>
+
+        <div className="workspace-content">
+          <AboutLeadershipWorkspace
+            aboutSetting={serializedAboutSetting}
+            credentials={serializedCredentials}
+            narrativeSections={serializedNarratives}
+            vmSetting={serializedVmSetting}
+            coreValues={serializedCoreValues}
+            leadershipMembers={serializedLeadership}
           />
         </div>
       </Card>

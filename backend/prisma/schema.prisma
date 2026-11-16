@@ -377,3 +377,128 @@ model HomepageHighlight {
   @@index([isPublished, displayOrder])
   @@map("homepage_highlights")
 }
+
+
+// ==========================================
+// 10. ABOUT SCHOOL & LEADERSHIP MODELS
+// ==========================================
+
+enum LeadershipRole {
+  FOUNDER
+  PATRON
+  PRESIDENT
+  MANAGER
+  PRINCIPAL
+}
+
+model AboutPageSetting {
+  id                      String   @id @default("default")
+  breadcrumb              String   @default("") @db.VarChar(120)
+  heading                 String   @default("") @db.VarChar(120)
+  subheading              String   @default("") @db.VarChar(1000)
+  showcaseImageUrl        String?  @db.VarChar(500)
+  showcaseImageStorageKey String?  @db.VarChar(255)
+  showcaseImageAlt        String?  @db.VarChar(255)
+  showcaseBadge           String?  @db.VarChar(60)
+  isPublished             Boolean  @default(true)
+  createdAt               DateTime @default(now())
+  updatedAt               DateTime @updatedAt
+
+  @@map("about_page_settings")
+}
+
+model AboutCredential {
+  id           String   @id @default(cuid())
+  category     String   @default("") @db.VarChar(60)
+  title        String   @default("") @db.VarChar(120)
+  subtext      String   @default("") @db.VarChar(120)
+  iconName     String?  @db.VarChar(60)
+  displayOrder Int      @default(0)
+  isPublished  Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([isPublished, displayOrder])
+  @@map("about_credentials")
+}
+
+model AboutNarrativeSection {
+  id              String   @id @default(cuid())
+  heading         String?  @db.VarChar(120)
+  body            String   @db.Text
+  imageUrl        String?  @db.VarChar(500)
+  imageStorageKey String?  @db.VarChar(255)
+  imageAlt        String?  @db.VarChar(255)
+  displayOrder    Int      @default(0)
+  isPublished     Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([isPublished, displayOrder])
+  @@map("about_narrative_sections")
+}
+
+model VisionMissionSetting {
+  id           String   @id @default("default")
+  breadcrumb   String   @default("") @db.VarChar(120)
+  heading      String   @default("") @db.VarChar(120)
+  subheading   String   @default("") @db.VarChar(1000)
+  visionTitle  String   @default("") @db.VarChar(120)
+  visionBody   String   @default("") @db.Text
+  visionIcon   String   @default("") @db.VarChar(60)
+  missionTitle String   @default("") @db.VarChar(120)
+  missionBody  String   @default("") @db.Text
+  missionIcon  String   @default("") @db.VarChar(60)
+  isPublished  Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@map("vision_mission_settings")
+}
+
+model InstitutionalCoreValue {
+  id           String   @id @default(cuid())
+  title        String   @default("") @db.VarChar(120)
+  description  String   @default("") @db.Text
+  iconName     String?  @db.VarChar(60)
+  displayOrder Int      @default(0)
+  isPublished  Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([isPublished, displayOrder])
+  @@map("institutional_core_values")
+}
+
+model LeadershipMember {
+  id                  String         @id @default(cuid())
+  role                LeadershipRole @unique
+  slug                String         @unique @db.VarChar(100)
+  pageTitle           String         @default("") @db.VarChar(120)
+  breadcrumb          String         @default("") @db.VarChar(120)
+  badgeText           String         @default("") @db.VarChar(60)
+  name                String         @default("") @db.VarChar(120)
+  designation         String         @default("") @db.VarChar(120)
+  termOrAffiliation   String?        @db.VarChar(120)
+  location            String?        @db.VarChar(200)
+  shortIntro          String         @default("") @db.VarChar(1000)
+  quote               String?        @db.Text
+  messageBody         String         @default("") @db.Text
+  imageUrl            String?        @db.VarChar(500)
+  imageStorageKey     String?        @db.VarChar(255)
+  imageAlt            String?        @db.VarChar(255)
+  signatureImageUrl   String?        @db.VarChar(500)
+  signatureStorageKey String?        @db.VarChar(255)
+  signatureAlt        String?        @db.VarChar(255)
+  bio                 String?        @db.Text
+  ctaLabel            String?        @db.VarChar(60)
+  ctaHref             String?        @db.VarChar(500)
+  displayOrder        Int            @default(0)
+  isPublished         Boolean        @default(true)
+  createdAt           DateTime       @default(now())
+  updatedAt           DateTime       @updatedAt
+
+  @@index([isPublished, displayOrder])
+  @@index([slug])
+  @@map("leadership_members")
+}
