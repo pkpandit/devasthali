@@ -1,9 +1,18 @@
 import React from "react";
 import Link from "next/link";
 import { SCHOOL_INFO } from "@/lib/school-data";
+import type { PublicSiteProfileDto } from "@/lib/api/profile";
 import { Phone, MessageCircle, FilePenLine } from "lucide-react";
 
-export function MobileStickyDock() {
+interface MobileStickyDockProps {
+  profile?: PublicSiteProfileDto;
+}
+
+export function MobileStickyDock({ profile }: MobileStickyDockProps = {}) {
+  const admissionsPhone = profile?.contacts?.admissionsPhone || SCHOOL_INFO.contacts.admissionsPhone;
+  const rawWhatsApp = profile?.contacts?.whatsappNumber || SCHOOL_INFO.contacts.whatsappNumber;
+  const cleanWhatsApp = rawWhatsApp.replace(/\D/g, "");
+
   return (
     <div
       className="sm:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-[#E5E7EB] px-3 py-2 pb-[calc(0.5rem+env(safe-area-inset-bottom,0px))] shadow-[0_-4px_16px_rgba(0,0,0,0.08)]"
@@ -13,7 +22,7 @@ export function MobileStickyDock() {
       <div className="grid grid-cols-3 gap-2">
         {/* 1. Direct Call */}
         <Link
-          href={`tel:${SCHOOL_INFO.contacts.admissionsPhone.replace(/\s+/g, "")}`}
+          href={`tel:${admissionsPhone.replace(/\s+/g, "")}`}
           className="flex flex-col items-center justify-center min-h-[48px] py-1.5 px-2 rounded-xl bg-[#F3F4F6] text-[#111827] active:bg-gray-200 transition-colors text-center border border-[#E5E7EB]"
           aria-label="Call Admissions Office"
         >
@@ -23,7 +32,7 @@ export function MobileStickyDock() {
 
         {/* 2. Direct WhatsApp */}
         <Link
-          href={`https://wa.me/${SCHOOL_INFO.contacts.whatsappNumber}?text=Hello%20Devasthaly%20Vidyapeeth,%20I%20would%20like%20to%20enquire%20about%20admissions.`}
+          href={`https://wa.me/${cleanWhatsApp}?text=Hello%20Devasthaly%20Vidyapeeth,%20I%20would%20like%20to%20enquire%20about%20admissions.`}
           target="_blank"
           rel="noopener noreferrer"
           className="flex flex-col items-center justify-center min-h-[48px] py-1.5 px-2 rounded-xl bg-[#25D366] text-white active:bg-[#1ebd5b] transition-colors text-center shadow-sm"

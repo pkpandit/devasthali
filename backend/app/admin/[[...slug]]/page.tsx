@@ -3,6 +3,7 @@ import { notFound, redirect } from "next/navigation";
 import { PlaceholderWorkspace } from "@/components/admin/PlaceholderWorkspace";
 import { TopperWorkspace } from "@/components/admin/toppers/TopperWorkspace";
 import { NoticeWorkspace } from "@/components/admin/notices/NoticeWorkspace";
+import { ProfileDirectoryWorkspace } from "@/components/admin/profile/ProfileDirectoryWorkspace";
 import { Breadcrumbs } from "@/components/ui/Breadcrumbs";
 import { Badge } from "@/components/ui/Badge";
 import { Card } from "@/components/ui/Card";
@@ -152,6 +153,70 @@ export default async function AdminWorkspacePage({
 
         <div className="workspace-content">
           <NoticeWorkspace notices={serializedNotices} />
+        </div>
+      </Card>
+    );
+  }
+
+  // Specialization: /admin/contact/directory renders ProfileDirectoryWorkspace
+  if (href === "/admin/contact/directory") {
+    await requireRole(["SUPER_ADMIN"], href);
+
+    let profile = await prisma.siteProfile.findUnique({
+      where: { id: "default" },
+    });
+
+    if (!profile) {
+      profile = await prisma.siteProfile.create({
+        data: { id: "default", schoolName: "Devasthaly Vidyapeeth" },
+      });
+    }
+
+    const directoryEntries = await prisma.campusDirectoryEntry.findMany({
+      orderBy: [
+        { displayOrder: "asc" },
+        { createdAt: "asc" },
+      ],
+    });
+
+    const serializedProfile = {
+      ...profile,
+      updatedAt: profile.updatedAt.toISOString(),
+    };
+
+    const serializedDirectory = directoryEntries.map((entry) => ({
+      ...entry,
+      createdAt: entry.createdAt.toISOString(),
+      updatedAt: entry.updatedAt.toISOString(),
+    }));
+
+    return (
+      <Card as="section" aria-labelledby="admin-workspace-title">
+        <Breadcrumbs items={workspace.breadcrumbs} />
+
+        <div className="workspace-header">
+          <h1 className="workspace-title" id="admin-workspace-title" tabIndex={-1}>
+            {workspace.title}
+          </h1>
+          {workspace.badge && <Badge>{workspace.badge}</Badge>}
+        </div>
+
+        {workspace.description && (
+          <p className="workspace-description">{workspace.description}</p>
+        )}
+
+        <div className="workspace-meta-bar">
+          <PublicReferenceLink
+            publicHref={workspace.publicHref}
+            title={workspace.title}
+          />
+        </div>
+
+        <div className="workspace-content">
+          <ProfileDirectoryWorkspace
+            profile={serializedProfile}
+            directoryEntries={serializedDirectory}
+          />
         </div>
       </Card>
     );

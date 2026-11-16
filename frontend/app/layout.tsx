@@ -9,6 +9,7 @@ import { MobileStickyDock } from "@/components/layout/MobileStickyDock";
 import { ScrollToTop } from "@/components/layout/ScrollToTop";
 import { LocalSeoSchema } from "@/components/features/seo/LocalSeoSchema";
 import { ThemeProvider } from "@/components/layout/theme-provider";
+import { getPublicSiteProfile } from "@/lib/api/profile";
 
 const poppins = Poppins({
   weight: ["400", "500", "600", "700", "800"],
@@ -93,11 +94,13 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const profile = await getPublicSiteProfile();
+
   return (
     <html lang="en" className={`${poppins.variable} ${parkinsans.variable} scroll-smooth`} suppressHydrationWarning>
       <body className="font-sans antialiased bg-[#F9FAFB] text-gray-900 selection:bg-[#B91C1C] selection:text-white min-h-screen flex flex-col">
@@ -111,7 +114,7 @@ export default function RootLayout({
           <LocalSeoSchema />
 
           {/* Sticky Institutional Authority Bar & Mega Navbar */}
-          <Header />
+          <Header profile={profile} />
 
           {/* Real-time Ticker for Critical Circulars & Entrance Results */}
           <Suspense fallback={<NoticeTickerFallback />}>
@@ -124,10 +127,10 @@ export default function RootLayout({
           </main>
 
           {/* Institutional Multi-Column Authority Footer */}
-          <Footer />
+          <Footer profile={profile} />
 
           {/* Mobile Bottom Dock for High-Intent Actions (Phone / Admission Enquiry) */}
-          <MobileStickyDock />
+          <MobileStickyDock profile={profile} />
 
           {/* Smooth Scroll To Top Accelerator */}
           <ScrollToTop />

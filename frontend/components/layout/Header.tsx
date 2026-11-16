@@ -5,6 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { SCHOOL_INFO } from "@/lib/school-data";
+import type { PublicSiteProfileDto } from "@/lib/api/profile";
 import {
   Phone,
   MapPin,
@@ -177,7 +178,11 @@ export const navItems: NavItem[] = [
   },
 ];
 
-export function Header() {
+export interface HeaderProps {
+  profile?: PublicSiteProfileDto;
+}
+
+export function Header({ profile }: HeaderProps = {}) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
   const [openDesktopMenu, setOpenDesktopMenu] = useState<string | null>(null);
@@ -191,6 +196,20 @@ export function Header() {
   );
   const hoverTimerRef = useRef<NodeJS.Timeout | null>(null);
   const closeTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Dynamic profile fallbacks
+  const schoolName = profile?.schoolName || SCHOOL_INFO.name;
+  const affiliationNo = profile?.affiliationNo || SCHOOL_INFO.affiliationNo;
+  const schoolCode = profile?.schoolCode || SCHOOL_INFO.schoolCode;
+  const admissionsPhone = profile?.contacts?.admissionsPhone || SCHOOL_INFO.contacts.admissionsPhone;
+  const rawWhatsApp = profile?.contacts?.whatsappNumber || SCHOOL_INFO.contacts.whatsappNumber;
+  const cleanWhatsApp = rawWhatsApp.replace(/\D/g, "");
+  const locationBadge = profile?.address?.campus && profile?.address?.district
+    ? `${profile.address.campus}, ${profile.address.district} (U.P.)`
+    : "Chilkahar, Ballia (U.P.)";
+  const establishedYear = profile?.establishedYear || SCHOOL_INFO.establishedYear;
+  const schoolType = profile?.schoolType || "CBSE Residential School";
+  const subline = `Estd. ${establishedYear} • ${schoolType} • ${profile?.address?.campus || "Chilkahar"}, ${profile?.address?.district || "Ballia"}`;
 
   // Close menus when route changes (render-time state adjustment without cascading effect renders)
   const [prevPathname, setPrevPathname] = useState(pathname);
@@ -338,17 +357,17 @@ export function Header() {
               <ShieldCheck className="w-3.5 h-3.5 text-[#F4CD13]" />
               CBSE Affiliation No.{" "}
               <strong className="text-white">
-                {SCHOOL_INFO.affiliationNo}
+                {affiliationNo}
               </strong>
             </span>
             <span className="hidden sm:inline text-gray-600">|</span>
             <span className="hidden sm:inline text-gray-300">
-              School Code: {SCHOOL_INFO.schoolCode}
+              School Code: {schoolCode}
             </span>
             <span className="hidden lg:inline text-gray-600">|</span>
             <span className="hidden lg:inline-flex items-center gap-1">
               <MapPin className="w-3 h-3 text-[#F4CD13]" />
-              Chilkahar, Ballia (U.P.)
+              {locationBadge}
             </span>
           </div>
 
@@ -374,11 +393,11 @@ export function Header() {
               Pay Fees
             </Link>
             <Link
-              href={`tel:${SCHOOL_INFO.contacts.admissionsPhone.replace(/\s+/g, "")}`}
+              href={`tel:${admissionsPhone.replace(/\s+/g, "")}`}
               className="inline-flex items-center gap-1.5 font-bold text-white hover:text-[#F4CD13] transition-colors"
             >
               <Phone className="w-3 h-3 text-[#F4CD13]" />
-              <span>{SCHOOL_INFO.contacts.admissionsPhone}</span>
+              <span>{admissionsPhone}</span>
             </Link>
           </div>
         </div>
@@ -395,7 +414,7 @@ export function Header() {
             <div className="w-9 h-9 sm:w-11 sm:h-11 xl:w-11 xl:h-11 2xl:w-12 2xl:h-12 rounded-xl sm:rounded-2xl bg-white flex items-center justify-center p-1 shadow-xs border border-[#E5E7EB] group-hover:border-[#B91C1C] transition-colors shrink-0 overflow-hidden">
               <Image
                 src="/images/branding/devasthalyballia.webp"
-                alt="Devasthaly Vidyapeeth Logo"
+                alt={`${schoolName} Logo`}
                 width={48}
                 height={48}
                 className="w-full h-full object-contain"
@@ -404,10 +423,10 @@ export function Header() {
             </div>
             <div className="flex flex-col min-w-0">
               <span className="font-heading font-bold text-sm sm:text-base md:text-lg xl:text-[17px] 2xl:text-[20px] tracking-tight text-[#111827] leading-tight group-hover:text-[#B91C1C] transition-colors whitespace-nowrap">
-                Devasthaly Vidyapeeth
+                {schoolName}
               </span>
               <span className="text-gray-500 font-medium tracking-normal mt-0.5 text-[11px] 2xl:text-xs hidden min-[1680px]:block whitespace-nowrap">
-                Estd. 1988 • CBSE Residential School • Chilkahar, Ballia
+                {subline}
               </span>
             </div>
           </Link>
@@ -452,48 +471,39 @@ export function Header() {
                   onMouseLeave={() => hasChildren && handleMouseLeave()}
                 >
                   {hasChildren ? (
-                    <div
-                      className={`inline-flex items-center rounded-lg border transition-all ${
-                        isCurrentSection || isMenuOpen
-                          ? "border-red-200 bg-red-50/80 text-[#B91C1C]"
-                          : "border-transparent text-[#111827] hover:bg-gray-50 hover:text-[#B91C1C]"
-                      }`}
-                    >
-                      {/* Direct Parent Link: Navigates to parent overview page */}
+                    <div className="flex items-center">
                       <Link
                         href={link.href}
-                        className="pl-1.5 xl:pl-2 2xl:pl-2.5 pr-0.5 py-2 min-h-[44px] flex items-center text-[13px] xl:text-[13px] 2xl:text-[14px] font-heading font-semibold whitespace-nowrap rounded-l-lg transition-colors focus-visible:outline-2 focus-visible:outline-[#B91C1C]"
+                        className={`text-[13px] xl:text-[13px] 2xl:text-[14px] font-heading font-semibold pl-1.5 xl:pl-2 2xl:pl-2.5 pr-0.5 py-2 min-h-[44px] flex items-center rounded-l-lg transition-all whitespace-nowrap focus-visible:outline-2 focus-visible:outline-[#B91C1C] ${
+                          isCurrentSection || isCurrentPage
+                            ? "text-[#B91C1C] font-bold"
+                            : isMenuOpen
+                              ? "text-[#B91C1C]"
+                              : "text-[#111827] hover:text-[#B91C1C]"
+                        }`}
                       >
                         {link.name}
                       </Link>
-
-                      {/* Submenu Disclosure Button: Opens/closes mega-menu */}
                       <button
                         ref={(el) => {
                           toggleButtonRefs.current[link.name] = el;
                         }}
                         type="button"
-                        onClick={() =>
-                          setOpenDesktopMenu(isMenuOpen ? null : link.name)
-                        }
-                        onKeyDown={(e) => {
-                          if (
-                            e.key === "ArrowDown" ||
-                            e.key === "Enter" ||
-                            e.key === " "
-                          ) {
-                            e.preventDefault();
-                            setOpenDesktopMenu(link.name);
-                          }
-                        }}
                         aria-expanded={isMenuOpen}
                         aria-haspopup="true"
                         aria-controls={dropdownId}
-                        aria-label={`Toggle ${link.name} submenu`}
-                        className="min-h-[44px] min-w-[28px] w-[28px] xl:min-w-[28px] xl:w-[28px] 2xl:min-w-[32px] 2xl:w-[32px] flex items-center justify-center pl-0.5 pr-1 py-2 text-gray-400 hover:text-[#B91C1C] rounded-r-lg transition-colors focus-visible:outline-2 focus-visible:outline-[#B91C1C]"
+                        aria-label={`${link.name} navigation panel`}
+                        onClick={() =>
+                          setOpenDesktopMenu(isMenuOpen ? null : link.name)
+                        }
+                        className={`p-1.5 min-h-[44px] flex items-center justify-center rounded-r-lg transition-colors focus-visible:outline-2 focus-visible:outline-[#B91C1C] ${
+                          isMenuOpen
+                            ? "text-[#B91C1C] bg-red-50/60"
+                            : "text-gray-400 hover:text-[#B91C1C]"
+                        }`}
                       >
                         <ChevronDown
-                          className={`w-3.5 h-3.5 transition-transform duration-200 shrink-0 ${
+                          className={`w-3 h-3 transition-transform duration-200 ${
                             isMenuOpen ? "rotate-180 text-[#B91C1C]" : ""
                           }`}
                         />
@@ -549,19 +559,21 @@ export function Header() {
                                             onClick={() =>
                                               setOpenDesktopMenu(null)
                                             }
-                                            className={`group/item flex items-center justify-between gap-3 px-3 py-2 rounded-xl text-sm font-medium transition-all ${
+                                            className={`px-3 py-2.5 rounded-xl text-[14px] font-heading font-medium flex items-center justify-between gap-3 group/sub transition-all min-h-[44px] focus-visible:outline-2 focus-visible:outline-[#B91C1C] ${
                                               isItemActive
                                                 ? "bg-red-50 text-[#B91C1C] font-semibold"
-                                                : "text-gray-700 hover:text-[#B91C1C] hover:bg-red-50/60"
+                                                : "text-gray-700 hover:bg-[#F3F4F6] hover:text-[#B91C1C]"
                                             }`}
                                           >
                                             <span className="truncate">
                                               {subItem.name}
                                             </span>
-                                            {subItem.badge && (
-                                              <span className="text-xs font-bold px-2 py-0.5 bg-[#B91C1C] text-white rounded-full shrink-0">
+                                            {subItem.badge ? (
+                                              <span className="text-[11px] font-bold px-2 py-0.5 bg-[#B91C1C] text-white rounded-full shrink-0 shadow-2xs">
                                                 {subItem.badge}
                                               </span>
+                                            ) : (
+                                              <ChevronRight className="w-3.5 h-3.5 text-gray-400 group-hover/sub:text-[#B91C1C] group-hover/sub:translate-x-0.5 transition-all opacity-0 group-hover/sub:opacity-100 shrink-0" />
                                             )}
                                           </Link>
                                         );
@@ -570,75 +582,45 @@ export function Header() {
                                   </div>
                                 ))}
                               </div>
-
-                              {link.name === "About Us" && (
-                                <div className="mt-5 pt-3.5 border-t border-gray-100 flex flex-wrap items-center justify-between gap-2 text-sm text-gray-500">
-                                  <span className="text-gray-600 font-medium">
-                                    Purvanchal’s Premier CBSE Institution Estd.
-                                    1988
-                                  </span>
-                                  <Link
-                                    href="/mandatory-public-disclosure"
-                                    onClick={() => setOpenDesktopMenu(null)}
-                                    className="text-[#B91C1C] font-semibold hover:underline inline-flex items-center gap-1"
-                                  >
-                                    <span>CBSE Disclosure</span>
-                                    <ChevronRight className="w-3.5 h-3.5" />
-                                  </Link>
-                                </div>
-                              )}
-
-                              {link.name === "Admissions" && (
-                                <div className="mt-5 pt-3.5 border-t border-gray-100 flex flex-wrap items-center justify-between gap-2 text-sm text-gray-500">
-                                  <span className="text-gray-600 font-medium">
-                                    Session 2026–27 Nursery to Class IX &amp; XI
-                                  </span>
-                                  <Link
-                                    href="/online-admission-form"
-                                    onClick={() => setOpenDesktopMenu(null)}
-                                    className="text-[#B91C1C] font-semibold hover:underline inline-flex items-center gap-1"
-                                  >
-                                    <span>Apply Online</span>
-                                    <ChevronRight className="w-3.5 h-3.5" />
-                                  </Link>
-                                </div>
-                              )}
                             </div>
                           </div>
                         </div>
                       </div>
                     ) : (
+                      /* Compact Dropdown Panel */
                       <div
                         id={dropdownId}
                         role="region"
                         aria-label={`${link.name} Submenu`}
                         onMouseEnter={cancelCloseTimer}
                         onMouseLeave={handleMouseLeave}
-                        className="absolute top-full right-0 w-[360px] max-w-[calc(100vw-32px)] pt-2 z-50 animate-in fade-in-50 zoom-in-95 duration-150"
+                        className="absolute top-full left-0 mt-1 min-w-[280px] bg-white rounded-2xl shadow-xl border border-gray-100 ring-1 ring-black/5 overflow-hidden p-3 z-50 animate-in fade-in-50 zoom-in-95 duration-150"
                       >
-                        <div className="bg-white rounded-2xl shadow-2xl border border-gray-100 ring-1 ring-black/5 overflow-hidden p-4 max-h-[calc(100dvh-130px)] overflow-y-auto">
-                          <div className="flex flex-col gap-1">
-                            {link.columns?.[0]?.items.map((subItem) => {
-                              const isItemActive = pathname === subItem.href;
-                              return (
-                                <Link
-                                  key={subItem.name}
-                                  href={subItem.href}
-                                  onClick={() => setOpenDesktopMenu(null)}
-                                  className={`group/item flex items-start justify-between gap-3 px-3.5 py-2.5 rounded-xl text-[15px] font-medium transition-all ${
-                                    isItemActive
-                                      ? "bg-red-50 text-[#B91C1C] font-semibold"
-                                      : "text-gray-700 hover:text-[#B91C1C] hover:bg-red-50/60"
-                                  }`}
-                                >
-                                  <span className="break-words leading-snug">
-                                    {subItem.name}
+                        <div className="flex flex-col gap-1">
+                          {link.columns?.[0]?.items.map((subItem) => {
+                            const isItemActive = pathname === subItem.href;
+                            return (
+                              <Link
+                                key={subItem.name}
+                                href={subItem.href}
+                                onClick={() => setOpenDesktopMenu(null)}
+                                className={`px-3 py-2.5 rounded-xl text-[14px] font-heading font-medium flex items-center justify-between gap-3 group/sub transition-all min-h-[44px] focus-visible:outline-2 focus-visible:outline-[#B91C1C] ${
+                                  isItemActive
+                                    ? "bg-red-50 text-[#B91C1C] font-semibold"
+                                    : "text-gray-700 hover:bg-[#F3F4F6] hover:text-[#B91C1C]"
+                                }`}
+                              >
+                                <span>{subItem.name}</span>
+                                {subItem.badge ? (
+                                  <span className="text-[11px] font-bold px-2 py-0.5 bg-[#B91C1C] text-white rounded-full shrink-0">
+                                    {subItem.badge}
                                   </span>
-                                  <ChevronRight className="w-3.5 h-3.5 text-gray-300 group-hover/item:text-[#B91C1C] group-hover/item:translate-x-0.5 transition-all shrink-0 mt-1" />
-                                </Link>
-                              );
-                            })}
-                          </div>
+                                ) : (
+                                  <ChevronRight className="w-3.5 h-3.5 text-gray-400 group-hover/sub:text-[#B91C1C] group-hover/sub:translate-x-0.5 transition-all opacity-0 group-hover/sub:opacity-100" />
+                                )}
+                              </Link>
+                            );
+                          })}
                         </div>
                       </div>
                     ))}
@@ -650,7 +632,7 @@ export function Header() {
           {/* Right CTA Actions (Always visible across viewports) */}
           <div className="order-3 contents sm:flex sm:items-center sm:order-3 gap-1 sm:gap-1.5 xl:gap-2 2xl:gap-2.5 shrink-0">
             <Link
-              href={`https://wa.me/${SCHOOL_INFO.contacts.whatsappNumber}?text=Hello%20Devasthaly%20Vidyapeeth,%20I%20would%20like%20to%20enquire%20about%20admissions.`}
+              href={`https://wa.me/${cleanWhatsApp}?text=Hello%20Devasthaly%20Vidyapeeth,%20I%20would%20like%20to%20enquire%20about%20admissions.`}
               target="_blank"
               rel="noopener noreferrer"
               aria-label="Chat with Admissions on WhatsApp"
@@ -792,7 +774,7 @@ export function Header() {
                 Apply for Admission 2026–27
               </Link>
               <Link
-                href={`https://wa.me/${SCHOOL_INFO.contacts.whatsappNumber}`}
+                href={`https://wa.me/${cleanWhatsApp}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 onClick={() => setMobileMenuOpen(false)}
@@ -802,12 +784,12 @@ export function Header() {
                 Chat on WhatsApp
               </Link>
               <Link
-                href={`tel:${SCHOOL_INFO.contacts.admissionsPhone.replace(/\s+/g, "")}`}
+                href={`tel:${admissionsPhone.replace(/\s+/g, "")}`}
                 onClick={() => setMobileMenuOpen(false)}
                 className="w-full text-center py-3 min-h-[44px] bg-[#111827] hover:bg-black text-white font-bold rounded-xl shadow-md text-sm flex items-center justify-center gap-2 transition-colors focus-visible:outline-2 focus-visible:outline-white"
               >
                 <Phone className="w-4 h-4 text-[#B91C1C]" />
-                Call Admissions: {SCHOOL_INFO.contacts.admissionsPhone}
+                Call Admissions: {admissionsPhone}
               </Link>
             </div>
           </div>

@@ -25,12 +25,31 @@ export type NoticeAuditAction =
   | "DOCUMENT_REMOVED"
   | "DOCUMENT_DELETED";
 
-export type AuditAction = AuthAuditAction | TopperAuditAction | NoticeAuditAction;
+export type ProfileAuditAction =
+  | "SITE_PROFILE_UPDATED"
+  | "DIRECTORY_ENTRY_CREATED"
+  | "DIRECTORY_ENTRY_UPDATED"
+  | "DIRECTORY_ENTRY_DELETED"
+  | "DIRECTORY_ENTRY_STATUS_CHANGED"
+  | "DIRECTORY_ENTRIES_REORDERED";
+
+export type AuditAction =
+  | AuthAuditAction
+  | TopperAuditAction
+  | NoticeAuditAction
+  | ProfileAuditAction;
 
 export interface CreateAuditLogParams {
   userId?: string | null;
   action: AuditAction;
-  entityType: "User" | "Session" | "System" | "BoardResultTopper" | "Notice";
+  entityType:
+    | "User"
+    | "Session"
+    | "System"
+    | "BoardResultTopper"
+    | "Notice"
+    | "SiteProfile"
+    | "CampusDirectoryEntry";
   entityId: string;
   metadata?: Record<string, unknown> | null;
   ipAddress?: string | null;
@@ -61,35 +80,32 @@ export function sanitizeAuditMetadata(
     "api_key",
   ]);
 
-  const sanitized: Record<string, unknown> = {};
-  for (const [key, value] of Object.entries(meta)) {
-    const lowerKey = key.toLowerCase();
-    const isForbidden =
-      forbiddenKeys.has(lowerKey) ||
-      lowerKey.includes("password") ||
-      lowerKey.includes("token") ||
-      lowerKey.includes("secret") ||
-      lowerKey.includes("cookie");
+  const cleanObject = (obj: unknown): unknown => {
+    if (obj === null || obj === undefined) return obj;
+    if (typeof obj !== "object") return obj;
+    if (Array.isArray(obj)) return obj.map(cleanObject);
 
-    if (isForbidden) {
-      sanitized[key] = "[REDACTED]";
-    } else if (typeof value === "object" && value !== null && !Array.isArray(value)) {
-      sanitized[key] = sanitizeAuditMetadata(value as Record<string, unknown>);
-    } else {
-      sanitized[key] = value;
+    const record = obj as Record<string, unknown>;
+    const result: Record<string, unknown> = {};
+
+    for (const [key, val] of Object.entries(record)) {
+      if (forbiddenKeys.has(key.toLowerCase())) {
+        result[key] = "[REDACTED]";
+      } else if (typeof val === "object" && val !== null) {
+        result[key] = cleanObject(val);
+      } else {
+        result[key] = val;
+      }
     }
-  }
+    return result;
+  };
 
-  return sanitized as Prisma.InputJsonValue;
+  return cleanObject(meta) as Prisma.InputJsonValue;
 }
 
 /**
  * Records an immutable audit log entry.
  * If a transaction client (tx) is supplied, writes within that transaction.
- *
- * Handling failed logins:
- * If the user does not exist in the database, userId is set to null, ensuring
- * foreign key constraints (users.id) are not violated.
  */
 export async function recordAuditEvent(
   params: CreateAuditLogParams,

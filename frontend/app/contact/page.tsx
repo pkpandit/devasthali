@@ -1,6 +1,7 @@
 import React from "react";
 import type { Metadata } from "next";
-import { Phone, Mail, MessageCircle, Sparkles, Shield, UserCheck, HeartPulse } from "lucide-react";
+import { Phone, Mail, MessageCircle, Sparkles, Shield, UserCheck, HeartPulse, Building2 } from "lucide-react";
+import { getPublicSiteProfile, getPublicCampusDirectory } from "@/lib/api/profile";
 
 export const metadata: Metadata = {
   title: "Contact Us & Campus Directory | Devasthaly Vidyapeeth",
@@ -8,44 +9,75 @@ export const metadata: Metadata = {
     "Official directory and contact information for Devasthaly Vidyapeeth, Chilkahar, Ballia. Phone numbers for administration, hostel wardens, class coordinators, medical desk, and accounts office.",
 };
 
-export default function ContactPage() {
-  const hostelContacts = [
-    { sno: "1", role: "Main Gate Security", phone: "7753914135" },
-    { sno: "2", role: "Reception – Mr. B. C. Dubey", phone: "9554960415" },
-    { sno: "3", role: "Mrs. Shalini Singh", phone: "9519051030" },
-    { sno: "4", role: "Draupadi Niketan – Mrs. Shanti Verma (Kids Wing)", phone: "8810973997, 8887526375" },
-    { sno: "5", role: "Mrs. Beena Singh", phone: "8858451165, 9198069451" },
-    { sno: "6", role: "Mrs. Archana Rai", phone: "8176841070, 7800529868" },
-    { sno: "7", role: "Sadanand Niketan – Mr. Amit Singh", phone: "7309186668" },
-    { sno: "8", role: "Mr. Purushottam Ojha", phone: "7355467982, 7003176352" },
-    { sno: "9", role: "Mr. Ravi Prakash", phone: "6387266720, 9473723117" },
-    { sno: "10", role: "Mr. Akash", phone: "8756641048, 9984117456" },
-    { sno: "11", role: "J.P. Niketan – Mr. M. K. Ojha", phone: "9140702961, 9554960406" },
-    { sno: "12", role: "Mr. Mrityunjay Singh", phone: "8318399947, 7307368482" },
-    { sno: "13", role: "Mr. Ashish Mani", phone: "9651904529, 7052921300" },
-    { sno: "14", role: "Chief Warden – Mr. Dhirendra Singh", phone: "6307010040" },
-  ];
+export default async function ContactPage() {
+  const profile = await getPublicSiteProfile();
+  const directoryEntries = await getPublicCampusDirectory();
 
-  const authorityContacts = [
-    { sno: "1", name: "MRS. MAMTA SINGH", designation: "VICE-PRINCIPAL", assigned: "Administration", phone: "6306580532" },
-    { sno: "2", name: "MRS. ANITA SINGH", designation: "CO-ORDINATOR", assigned: "IX to XII (GIRLS)", phone: "9616148210" },
-    { sno: "3", name: "MRS. SADHANA MISHRA", designation: "CO-ORDINATOR", assigned: "VI to VIII (GIRLS)", phone: "9161762457" },
-    { sno: "4", name: "MR. NEERAJ SINGH", designation: "CO-ORDINATOR", assigned: "XI & XII (BOYS)", phone: "9005122930" },
-    { sno: "5", name: "MR. CHITRASEN SINGH", designation: "CO-ORDINATOR", assigned: "IX & X (BOYS)", phone: "7376867376" },
-    { sno: "6", name: "MR. RAMESHWAR SINGH", designation: "CO-ORDINATOR", assigned: "VI to VIII (BOYS)", phone: "7860436565" },
-    { sno: "7", name: "MRS. SITA SINGH", designation: "CO-ORDINATOR", assigned: "L.K.G. to II nd", phone: "9415830247" },
-    { sno: "8", name: "MRS. SADHANA ASTHANA", designation: "CO-ORDINATOR", assigned: "III rd to V th", phone: "9506892222" },
-  ];
+  // Categorized Directory Entries
+  const academicCoordinators = directoryEntries.filter(
+    (e) => e.category === "ACADEMIC_COORDINATOR"
+  );
+  const hostelWardens = directoryEntries.filter(
+    (e) => e.category === "HOSTEL_WARDEN"
+  );
+  const securityTransport = directoryEntries.filter(
+    (e) => e.category === "SECURITY_TRANSPORT"
+  );
+  const administration = directoryEntries.filter(
+    (e) => e.category === "ADMINISTRATION"
+  );
+  const officeAccounts = directoryEntries.filter(
+    (e) => e.category === "OFFICE_ACCOUNTS"
+  );
 
-  const officeContacts = [
-    { sno: "1", name: "Mr. Mukesh Prasad", role: "Fee Counter", phone: "9250930763" },
-    { sno: "2", name: "Mr. Satyendra Singh", role: "Fee Counter", phone: "9451491906" },
-    { sno: "3", name: "Mr. Dhananjay", role: "Accountant", phone: "9554960408" },
-  ];
+  // Office & Accounts consolidated list
+  const officeAndAccounts = [...administration, ...officeAccounts];
+
+  // Specific emergency/medical desk items if available, else standard fallback
+  const medicalDesk = securityTransport.find(
+    (e) =>
+      e.roleTitle.toLowerCase().includes("medical") ||
+      (e.department && e.department.toLowerCase().includes("health"))
+  ) || {
+    roleTitle: "Medical Emergency Desk",
+    contactName: "Dr. Deepak Chaubey",
+    phoneNumber: "9415805530",
+  };
+
+  const securityDesk = securityTransport.find(
+    (e) =>
+      e.roleTitle.toLowerCase().includes("security") ||
+      e.roleTitle.toLowerCase().includes("gate") ||
+      (e.department && e.department.toLowerCase().includes("security"))
+  ) || {
+    roleTitle: "DVP School Security",
+    contactName: "Guard 1st (Main Gate)",
+    phoneNumber: "6307798158",
+  };
+
+  const primaryPhone = profile.contacts.primaryPhone || profile.contacts.admissionsPhone || "9554960408";
+  const primaryEmail = profile.contacts.officeEmail || profile.contacts.email || "principaldvp@gmail.com";
+  const rawWhatsApp = profile.contacts.whatsappNumber || "919554960408";
+  const cleanWhatsApp = rawWhatsApp.replace(/\D/g, "");
+
+  const fullCampusAddress = `${profile.schoolName}, ${profile.address.campus || "Chilkahar"}, Tehsil ${profile.address.tehsil || "Rasra"}, District ${profile.address.district || "Ballia"}, ${profile.address.state || "Uttar Pradesh"} — ${profile.address.pinCode || "277123"}`;
+  const landmarkText = profile.address.landmark || "Located 8 km from Rasra or 25 km from Ballia on Ballia-Lucknow State Highway";
+
+  const renderPhoneLinks = (phoneStr: string) => {
+    const parts = phoneStr.split(",").map((p) => p.trim());
+    return parts.map((num, i) => (
+      <span key={i}>
+        {i > 0 && ", "}
+        <a href={`tel:${num.replace(/\s+/g, "")}`} className="hover:text-[#B91C1C] hover:underline font-bold text-[#111827]">
+          {num}
+        </a>
+      </span>
+    ));
+  };
 
   return (
     <div className="w-full bg-[#F3F4F6] pb-16">
-      {/* Full-Width White Edunex Page Header Banner */}
+      {/* Full-Width White Page Header Banner */}
       <div className="w-full bg-white border-b border-gray-200/80 py-10 sm:py-14 mb-10">
         <div className="site-container">
           <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-red-50 border border-red-100 text-[#B91C1C] text-sm font-heading font-bold uppercase tracking-wider mb-4">
@@ -56,7 +88,7 @@ export default function ContactPage() {
             Contact Us &amp; Directory
           </h1>
           <p className="text-base text-gray-600 leading-[1.7] mt-3 max-w-3xl leading-relaxed font-sans">
-            Devasthaly Vidyapeeth, Chilkahar, Ballia- 221701. Complete official directory of academic coordinators, hostel wardens, and administrative offices.
+            {profile.schoolName}, {profile.address.campus || "Chilkahar"}, {profile.address.district || "Ballia"} - {profile.address.pinCode || "277123"}. Complete official directory of academic coordinators, hostel wardens, and administrative offices.
           </p>
         </div>
       </div>
@@ -73,10 +105,10 @@ export default function ContactPage() {
               <p className="text-sm text-gray-500 font-sans mt-1">Official primary helpline:</p>
             </div>
             <div>
-              <a href="tel:9554960408" className="text-[#B91C1C] font-heading font-black text-xl hover:underline">
-                9554960408
+              <a href={`tel:${primaryPhone.replace(/\s+/g, "")}`} className="text-[#B91C1C] font-heading font-black text-xl hover:underline">
+                {primaryPhone}
               </a>
-              <p className="text-sm text-gray-500 mt-1">Mon – Sat: 8:00 AM – 3:30 PM</p>
+              <p className="text-sm text-gray-500 mt-1">{profile.contacts.workingHours || "Mon – Sat: 8:00 AM – 3:30 PM"}</p>
             </div>
           </div>
 
@@ -89,10 +121,10 @@ export default function ContactPage() {
               <p className="text-sm text-gray-500 font-sans mt-1">For admissions, certificates &amp; correspondence:</p>
             </div>
             <div>
-              <a href="mailto:principaldvp@gmail.com" className="text-[#B91C1C] font-heading font-bold text-base hover:underline break-all">
-                principaldvp@gmail.com
+              <a href={`mailto:${primaryEmail}`} className="text-[#B91C1C] font-heading font-bold text-base hover:underline break-all">
+                {primaryEmail}
               </a>
-              <p className="text-sm text-gray-500 mt-1">Website: www.Devasthalyballia.com</p>
+              <p className="text-sm text-gray-500 mt-1">Devasthaly Vidyapeeth Official Correspondence</p>
             </div>
           </div>
 
@@ -106,7 +138,7 @@ export default function ContactPage() {
             </div>
             <div>
               <a
-                href="https://wa.me/919554960408"
+                href={`https://wa.me/${cleanWhatsApp}?text=Hello%20Devasthaly%20Vidyapeeth,%20I%20would%20like%20to%20enquire%20about%20admissions.`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-[#25D366] hover:bg-[#1ebd5b] text-white text-sm font-heading font-bold transition-all shadow-xs hover:shadow-sm hover:-translate-y-0.5 focus-visible:outline-2 focus-visible:outline-[#25D366] focus-visible:outline-offset-2"
@@ -125,9 +157,15 @@ export default function ContactPage() {
               <HeartPulse className="w-6 h-6" />
             </div>
             <div>
-              <span className="text-sm font-heading font-bold uppercase tracking-wider text-red-600">Medical Emergency Desk</span>
-              <h3 className="font-heading font-bold text-base text-[#111827]">Dr. Deepak Chaubey</h3>
-              <a href="tel:9415805530" className="text-sm font-bold text-[#B91C1C] hover:underline">9415805530</a>
+              <span className="text-sm font-heading font-bold uppercase tracking-wider text-red-600">
+                {medicalDesk.roleTitle}
+              </span>
+              <h3 className="font-heading font-bold text-base text-[#111827]">
+                {medicalDesk.contactName || "Campus Health Centre"}
+              </h3>
+              <a href={`tel:${medicalDesk.phoneNumber.replace(/\s+/g, "")}`} className="text-sm font-bold text-[#B91C1C] hover:underline">
+                {medicalDesk.phoneNumber}
+              </a>
             </div>
           </div>
 
@@ -136,9 +174,15 @@ export default function ContactPage() {
               <Shield className="w-6 h-6" />
             </div>
             <div>
-              <span className="text-sm font-heading font-bold uppercase tracking-wider text-[#B91C1C]">DVP School Security</span>
-              <h3 className="font-heading font-bold text-base text-[#111827]">Guard 1st (Main Gate)</h3>
-              <a href="tel:6307798158" className="text-sm font-bold text-[#B91C1C] hover:underline">6307798158</a>
+              <span className="text-sm font-heading font-bold uppercase tracking-wider text-[#B91C1C]">
+                {securityDesk.roleTitle}
+              </span>
+              <h3 className="font-heading font-bold text-base text-[#111827]">
+                {securityDesk.contactName || "Campus Security Main Gate"}
+              </h3>
+              <a href={`tel:${securityDesk.phoneNumber.replace(/\s+/g, "")}`} className="text-sm font-bold text-[#B91C1C] hover:underline">
+                {securityDesk.phoneNumber}
+              </a>
             </div>
           </div>
         </div>
@@ -149,70 +193,76 @@ export default function ContactPage() {
             <UserCheck className="w-5 h-5 text-[#B91C1C]" />
             <span>Authorities &amp; Class Coordinators Contact Numbers</span>
           </h2>
-          <div className="overflow-x-auto border border-gray-200 rounded-2xl">
-            <table className="w-full text-sm text-left">
-              <thead className="bg-[#111827] text-white font-heading">
-                <tr>
-                  <th className="py-3 px-4 font-bold w-16">S.NO</th>
-                  <th className="py-3 px-4 font-bold">NAME</th>
-                  <th className="py-3 px-4 font-bold">DESIGNATION</th>
-                  <th className="py-3 px-4 font-bold">ASSIGNED CLASSES</th>
-                  <th className="py-3 px-4 font-bold">MOBILE NO.</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-200 font-sans text-gray-800">
-                {authorityContacts.map((auth, idx) => (
-                  <tr key={idx} className="hover:bg-[#F3F4F6] transition-colors">
-                    <td className="py-3 px-4 font-bold text-[#111827]">{auth.sno}</td>
-                    <td className="py-3 px-4 font-bold text-[#111827]">{auth.name}</td>
-                    <td className="py-3 px-4 font-semibold text-[#B91C1C]">{auth.designation}</td>
-                    <td className="py-3 px-4 text-gray-600">{auth.assigned}</td>
-                    <td className="py-3 px-4 font-bold text-[#111827]">
-                      <a href={`tel:${auth.phone}`} className="hover:text-[#B91C1C] hover:underline">
-                        {auth.phone}
-                      </a>
-                    </td>
+          {academicCoordinators.length === 0 ? (
+            <div className="p-8 text-center bg-gray-50 rounded-2xl border border-gray-200 text-gray-500 text-sm">
+              No coordinator contacts are currently listed. Please reach out to the Principal desk for assistance.
+            </div>
+          ) : (
+            <div className="overflow-x-auto border border-gray-200 rounded-2xl">
+              <table className="w-full text-sm text-left">
+                <thead className="bg-[#111827] text-white font-heading">
+                  <tr>
+                    <th className="py-3 px-4 font-bold w-16">S.NO</th>
+                    <th className="py-3 px-4 font-bold">NAME</th>
+                    <th className="py-3 px-4 font-bold">DESIGNATION</th>
+                    <th className="py-3 px-4 font-bold">ASSIGNED CLASSES / DEPT</th>
+                    <th className="py-3 px-4 font-bold">MOBILE NO.</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody className="divide-y divide-gray-200 font-sans text-gray-800">
+                  {academicCoordinators.map((auth, idx) => (
+                    <tr key={auth.id} className="hover:bg-[#F3F4F6] transition-colors">
+                      <td className="py-3 px-4 font-bold text-[#111827]">{idx + 1}</td>
+                      <td className="py-3 px-4 font-bold text-[#111827]">{auth.contactName || "—"}</td>
+                      <td className="py-3 px-4 font-semibold text-[#B91C1C]">{auth.roleTitle}</td>
+                      <td className="py-3 px-4 text-gray-600">{auth.department || "—"}</td>
+                      <td className="py-3 px-4">
+                        {renderPhoneLinks(auth.phoneNumber)}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
 
         {/* Hostel Contact Numbers Table */}
         <div className="bg-white p-4 sm:p-8 rounded-3xl border border-gray-200/90 shadow-sm space-y-4">
-          <h2 className="font-heading text-xl font-bold text-[#111827]">
-            Hostel Wardens &amp; Campus Reception Directory
+          <h2 className="font-heading text-xl font-bold text-[#111827] flex items-center gap-2">
+            <Building2 className="w-5 h-5 text-[#B91C1C]" />
+            <span>Hostel Wardens &amp; Campus Reception Directory</span>
           </h2>
-          <div className="overflow-x-auto border border-gray-200 rounded-2xl">
-            <table className="w-full text-sm text-left">
-              <thead className="bg-[#111827] text-white font-heading">
-                <tr>
-                  <th className="py-3 px-4 font-bold w-16">S.NO</th>
-                  <th className="py-3 px-4 font-bold">HOSTEL / UNIT</th>
-                  <th className="py-3 px-4 font-bold">MOBILE NO.</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-200 font-sans text-gray-800">
-                {hostelContacts.map((hostel, idx) => (
-                  <tr key={idx} className="hover:bg-[#F3F4F6] transition-colors">
-                    <td className="py-2.5 px-4 font-bold text-[#111827]">{hostel.sno}</td>
-                    <td className="py-2.5 px-4 font-medium text-gray-800">{hostel.role}</td>
-                    <td className="py-2.5 px-4 font-bold text-[#111827]">
-                      {hostel.phone.split(",").map((num, i) => (
-                        <span key={i}>
-                          {i > 0 && ", "}
-                          <a href={`tel:${num.trim()}`} className="hover:text-[#B91C1C] hover:underline">
-                            {num.trim()}
-                          </a>
-                        </span>
-                      ))}
-                    </td>
+          {hostelWardens.length === 0 ? (
+            <div className="p-8 text-center bg-gray-50 rounded-2xl border border-gray-200 text-gray-500 text-sm">
+              No hostel warden contacts are currently listed. Please contact the Chief Hostel Warden or school reception.
+            </div>
+          ) : (
+            <div className="overflow-x-auto border border-gray-200 rounded-2xl">
+              <table className="w-full text-sm text-left">
+                <thead className="bg-[#111827] text-white font-heading">
+                  <tr>
+                    <th className="py-3 px-4 font-bold w-16">S.NO</th>
+                    <th className="py-3 px-4 font-bold">HOSTEL / UNIT</th>
+                    <th className="py-3 px-4 font-bold">WARDEN / CONTACT</th>
+                    <th className="py-3 px-4 font-bold">MOBILE NO.</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody className="divide-y divide-gray-200 font-sans text-gray-800">
+                  {hostelWardens.map((hostel, idx) => (
+                    <tr key={hostel.id} className="hover:bg-[#F3F4F6] transition-colors">
+                      <td className="py-2.5 px-4 font-bold text-[#111827]">{idx + 1}</td>
+                      <td className="py-2.5 px-4 font-semibold text-[#111827]">{hostel.roleTitle}</td>
+                      <td className="py-2.5 px-4 font-medium text-gray-700">{hostel.contactName || "—"}</td>
+                      <td className="py-2.5 px-4">
+                        {renderPhoneLinks(hostel.phoneNumber)}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
 
         {/* Office & Fee Counters Table */}
@@ -220,32 +270,38 @@ export default function ContactPage() {
           <h2 className="font-heading text-xl font-bold text-[#111827]">
             Office &amp; Fee Counter Contacts
           </h2>
-          <div className="overflow-x-auto border border-gray-200 rounded-2xl">
-            <table className="w-full text-sm text-left">
-              <thead className="bg-[#111827] text-white font-heading">
-                <tr>
-                  <th className="py-3 px-4 font-bold w-16">S.NO</th>
-                  <th className="py-3 px-4 font-bold">OFFICIAL NAME</th>
-                  <th className="py-3 px-4 font-bold">DEPARTMENT</th>
-                  <th className="py-3 px-4 font-bold">MOBILE NO.</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-200 font-sans text-gray-800">
-                {officeContacts.map((off, idx) => (
-                  <tr key={idx} className="hover:bg-[#F3F4F6] transition-colors">
-                    <td className="py-2.5 px-4 font-bold text-[#111827]">{off.sno}</td>
-                    <td className="py-2.5 px-4 font-bold text-[#111827]">{off.name}</td>
-                    <td className="py-2.5 px-4 font-semibold text-[#B91C1C]">{off.role}</td>
-                    <td className="py-2.5 px-4 font-bold text-[#111827]">
-                      <a href={`tel:${off.phone}`} className="hover:text-[#B91C1C] hover:underline">
-                        {off.phone}
-                      </a>
-                    </td>
+          {officeAndAccounts.length === 0 ? (
+            <div className="p-8 text-center bg-gray-50 rounded-2xl border border-gray-200 text-gray-500 text-sm">
+              No administrative or fee counter contacts are currently listed.
+            </div>
+          ) : (
+            <div className="overflow-x-auto border border-gray-200 rounded-2xl">
+              <table className="w-full text-sm text-left">
+                <thead className="bg-[#111827] text-white font-heading">
+                  <tr>
+                    <th className="py-3 px-4 font-bold w-16">S.NO</th>
+                    <th className="py-3 px-4 font-bold">OFFICIAL NAME</th>
+                    <th className="py-3 px-4 font-bold">ROLE / DESIGNATION</th>
+                    <th className="py-3 px-4 font-bold">DEPARTMENT</th>
+                    <th className="py-3 px-4 font-bold">MOBILE NO.</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody className="divide-y divide-gray-200 font-sans text-gray-800">
+                  {officeAndAccounts.map((off, idx) => (
+                    <tr key={off.id} className="hover:bg-[#F3F4F6] transition-colors">
+                      <td className="py-2.5 px-4 font-bold text-[#111827]">{idx + 1}</td>
+                      <td className="py-2.5 px-4 font-bold text-[#111827]">{off.contactName || off.roleTitle}</td>
+                      <td className="py-2.5 px-4 font-semibold text-[#B91C1C]">{off.roleTitle}</td>
+                      <td className="py-2.5 px-4 text-gray-600">{off.department || "—"}</td>
+                      <td className="py-2.5 px-4">
+                        {renderPhoneLinks(off.phoneNumber)}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
 
         {/* Location & Map Section */}
@@ -258,7 +314,7 @@ export default function ContactPage() {
               How to Reach Chilkahar Campus
             </h2>
             <p className="text-sm text-gray-600 font-sans">
-              Address: Chilkahar, Ballia- 221701, Uttar Pradesh (Located 8 km from Rasra or 25 km from Ballia on Ballia-Lucknow State Highway).
+              Address: {fullCampusAddress}. ({landmarkText})
             </p>
           </div>
           <div className="w-full h-[400px] rounded-2xl overflow-hidden border border-gray-200 shadow-xs">

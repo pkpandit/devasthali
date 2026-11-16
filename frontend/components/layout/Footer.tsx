@@ -4,6 +4,7 @@ import Image from "next/image";
 import { Container } from "@/components/ui/Container";
 import { SCHOOL_INFO } from "@/lib/content/settings";
 import { footerAdmissionsLinks, footerLifeLinks } from "@/lib/content/navigation";
+import type { PublicSiteProfileDto } from "@/lib/api/profile";
 import {
   MapPin,
   Phone,
@@ -13,7 +14,26 @@ import {
   ChevronRight,
 } from "lucide-react";
 
-export function Footer() {
+interface FooterProps {
+  profile?: PublicSiteProfileDto;
+}
+
+export function Footer({ profile }: FooterProps = {}) {
+  const schoolName = profile?.schoolName || SCHOOL_INFO.name;
+  const affiliationNo = profile?.affiliationNo || SCHOOL_INFO.affiliationNo;
+  const schoolCode = profile?.schoolCode || SCHOOL_INFO.schoolCode;
+  const admissionsPhone = profile?.contacts?.admissionsPhone || SCHOOL_INFO.contacts.admissionsPhone;
+  const email = profile?.contacts?.email || profile?.contacts?.officeEmail || SCHOOL_INFO.contacts.email;
+  const workingHours = profile?.contacts?.workingHours || SCHOOL_INFO.contacts.workingHours;
+  const locationTag = profile?.address?.campus && profile?.address?.district
+    ? `${profile.address.campus}, ${profile.address.district} (U.P.)`
+    : "Chilkahar, Ballia (U.P.)";
+  const fullAddress = profile?.address?.campus && profile?.address?.district
+    ? `${schoolName}, ${profile.address.campus}, Tehsil ${profile.address.tehsil || "Rasra"}, District ${profile.address.district}, ${profile.address.state || "Uttar Pradesh"} — ${profile.address.pinCode || "277123"}`
+    : "Devasthaly Vidyapeeth, Chilkahar, Tehsil Rasra, District Ballia, Uttar Pradesh — 277123";
+  const landmark = profile?.address?.landmark || "Near Chilkahar Railway Crossing / Ballia-Rasra State Highway";
+  const copyrightText = profile?.copyrightText || "© 2025 Devasthaly Vidyapeeth, Chilkahar, Ballia. All Rights Reserved.";
+
   return (
     <footer className="w-full bg-[#111827] text-white pt-16 pb-24 lg:pb-12 border-t border-gray-800">
       <Container>
@@ -24,7 +44,7 @@ export function Footer() {
               <div className="w-12 h-12 rounded-xl bg-white flex items-center justify-center p-1 shadow-sm border border-gray-700 shrink-0 overflow-hidden">
                 <Image
                   src="/images/branding/devasthalyballia.webp"
-                  alt="Devasthaly Vidyapeeth Logo"
+                  alt={`${schoolName} Logo`}
                   width={48}
                   height={48}
                   className="w-full h-full object-contain"
@@ -32,22 +52,22 @@ export function Footer() {
               </div>
               <div>
                 <h3 className="font-heading font-bold text-xl lg:text-[22px] text-white leading-tight">
-                  Devasthaly Vidyapeeth
+                  {schoolName}
                 </h3>
-                <p className="text-sm text-gray-400 font-medium">Chilkahar, Ballia (U.P.)</p>
+                <p className="text-sm text-gray-400 font-medium">{locationTag}</p>
               </div>
             </div>
 
             <p className="text-base text-gray-300 leading-relaxed font-sans">
-              Established in 1988, Devasthaly Vidyapeeth stands as Purvanchal’s premier CBSE-affiliated co-educational residential and day-boarding institution, imparting holistic moral values alongside academic brilliance.
+              Established in {profile?.establishedYear || 1988}, {schoolName} stands as Purvanchal’s premier CBSE-affiliated co-educational residential and day-boarding institution, imparting holistic moral values alongside academic brilliance.
             </p>
 
             <div className="bg-[#1F2937] p-3 rounded-xl border border-gray-700 flex flex-col gap-1 text-sm text-gray-200">
               <div className="flex items-center gap-2">
                 <ShieldCheck className="w-4 h-4 text-[#F4CD13]" />
-                <span>CBSE Affiliation No: <strong>{SCHOOL_INFO.affiliationNo}</strong></span>
+                <span>CBSE Affiliation No: <strong>{affiliationNo}</strong></span>
               </div>
-              <div className="text-gray-400 pl-6">School Code: {SCHOOL_INFO.schoolCode}</div>
+              <div className="text-gray-400 pl-6">School Code: {schoolCode}</div>
             </div>
           </div>
 
@@ -100,9 +120,9 @@ export function Footer() {
               <div className="flex items-start gap-2.5">
                 <MapPin className="w-5 h-5 text-[#B91C1C] shrink-0 mt-0.5" />
                 <address className="not-italic leading-snug">
-                  Devasthaly Vidyapeeth, Chilkahar, Tehsil Rasra, District Ballia, Uttar Pradesh — 277123
+                  {fullAddress}
                   <span className="block text-sm text-gray-400 mt-1">
-                    (Near Chilkahar Railway Crossing / Ballia-Rasra State Highway)
+                    ({landmark})
                   </span>
                 </address>
               </div>
@@ -110,23 +130,23 @@ export function Footer() {
               <div className="flex items-center gap-2.5">
                 <Phone className="w-4 h-4 text-[#F4CD13] shrink-0" />
                 <Link
-                  href={`tel:${SCHOOL_INFO.contacts.admissionsPhone.replace(/\s+/g, "")}`}
+                  href={`tel:${admissionsPhone.replace(/\s+/g, "")}`}
                   className="hover:text-white"
                 >
-                  Admissions: {SCHOOL_INFO.contacts.admissionsPhone}
+                  Admissions: {admissionsPhone}
                 </Link>
               </div>
 
               <div className="flex items-center gap-2.5">
                 <Mail className="w-4 h-4 text-[#F4CD13] shrink-0" />
-                <Link href={`mailto:${SCHOOL_INFO.contacts.email}`} className="hover:text-white">
-                  {SCHOOL_INFO.contacts.email}
+                <Link href={`mailto:${email}`} className="hover:text-white">
+                  {email}
                 </Link>
               </div>
 
               <div className="flex items-start gap-2.5 text-sm text-gray-400">
                 <Clock className="w-4 h-4 text-[#F4CD13] shrink-0 mt-0.5" />
-                <span>{SCHOOL_INFO.contacts.workingHours}</span>
+                <span>{workingHours}</span>
               </div>
             </div>
 
@@ -142,9 +162,9 @@ export function Footer() {
 
         {/* Bottom Strip: Copyright & Technical Standards */}
         <div className="pt-8 flex flex-col md:flex-row items-center justify-between text-sm text-gray-400 gap-4">
-          <p>© 2025 Devasthaly Vidyapeeth, Chilkahar, Ballia. All Rights Reserved.</p>
+          <p>{copyrightText}</p>
           <div className="flex flex-wrap items-center gap-4">
-            <span>CBSE Affiliation: 2130238</span>
+            <span>CBSE Affiliation: {affiliationNo}</span>
             <span>•</span>
             <Link href="/privacy-policy" className="hover:text-white underline">
               Privacy &amp; Child Safeguarding
