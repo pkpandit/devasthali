@@ -86,6 +86,13 @@ export type AboutLeadershipAuditAction =
   | "LEADERSHIP_MEMBER_STATUS_CHANGED"
   | "LEADERSHIP_MEMBERS_REORDERED";
 
+export type FacultyAuditAction =
+  | "FACULTY_MEMBER_CREATED"
+  | "FACULTY_MEMBER_UPDATED"
+  | "FACULTY_MEMBER_DELETED"
+  | "FACULTY_MEMBER_STATUS_CHANGED"
+  | "FACULTY_MEMBERS_REORDERED";
+
 export type AuditAction =
   | AuthAuditAction
   | TopperAuditAction
@@ -93,7 +100,8 @@ export type AuditAction =
   | ProfileAuditAction
   | NavigationAuditAction
   | HomepageAuditAction
-  | AboutLeadershipAuditAction;
+  | AboutLeadershipAuditAction
+  | FacultyAuditAction;
 
 export interface CreateAuditLogParams {
   userId?: string | null;
@@ -118,7 +126,8 @@ export interface CreateAuditLogParams {
     | "AboutNarrativeSection"
     | "VisionMissionSetting"
     | "InstitutionalCoreValue"
-    | "LeadershipMember";
+    | "LeadershipMember"
+    | "FacultyMember";
   entityId: string;
   metadata?: Record<string, unknown> | null;
   ipAddress?: string | null;

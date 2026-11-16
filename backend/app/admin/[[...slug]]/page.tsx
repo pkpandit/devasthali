@@ -7,6 +7,7 @@ import { ProfileDirectoryWorkspace } from "@/components/admin/profile/ProfileDir
 import { NavigationWorkspace } from "@/components/admin/navigation/NavigationWorkspace";
 import { HomepageWorkspace } from "@/components/admin/homepage/HomepageWorkspace";
 import { AboutLeadershipWorkspace } from "@/components/admin/about/AboutLeadershipWorkspace";
+import { FacultyWorkspace } from "@/components/admin/faculty/FacultyWorkspace";
 import { Breadcrumbs } from "@/components/ui/Breadcrumbs";
 import { Badge } from "@/components/ui/Badge";
 import { Card } from "@/components/ui/Card";
@@ -105,6 +106,53 @@ export default async function AdminWorkspacePage({
 
         <div className="workspace-content">
           <TopperWorkspace toppers={serializedToppers} />
+        </div>
+      </Card>
+    );
+  }
+
+  // Specialization: /admin/academics/faculty renders interactive FacultyWorkspace
+  if (href === "/admin/academics/faculty") {
+    // Restricted strictly to SUPER_ADMIN
+    await requireRole(["SUPER_ADMIN"], href);
+
+    const faculty = await prisma.facultyMember.findMany({
+      orderBy: [
+        { displayOrder: "asc" },
+        { createdAt: "asc" },
+      ],
+    });
+
+    const serializedFaculty = faculty.map((f) => ({
+      ...f,
+      createdAt: f.createdAt.toISOString(),
+      updatedAt: f.updatedAt.toISOString(),
+    }));
+
+    return (
+      <Card as="section" aria-labelledby="admin-workspace-title">
+        <Breadcrumbs items={workspace.breadcrumbs} />
+
+        <div className="workspace-header">
+          <h1 className="workspace-title" id="admin-workspace-title" tabIndex={-1}>
+            {workspace.title}
+          </h1>
+          {workspace.badge && <Badge>{workspace.badge}</Badge>}
+        </div>
+
+        {workspace.description && (
+          <p className="workspace-description">{workspace.description}</p>
+        )}
+
+        <div className="workspace-meta-bar">
+          <PublicReferenceLink
+            publicHref={workspace.publicHref}
+            title={workspace.title}
+          />
+        </div>
+
+        <div className="workspace-content">
+          <FacultyWorkspace facultyMembers={serializedFaculty} />
         </div>
       </Card>
     );
