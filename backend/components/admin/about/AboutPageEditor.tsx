@@ -229,8 +229,8 @@ export function AboutPageEditor({
       )}
 
       {/* 1. Header & Showcase Settings */}
-      <form onSubmit={handleSettingSubmit} className="space-y-6 bg-white p-6 rounded-2xl border border-gray-100 shadow-xs">
-        <div className="flex items-center justify-between pb-4 border-b border-gray-100">
+      <form onSubmit={handleSettingSubmit} className="space-y-6 bg-white p-6 sm:p-8 rounded-2xl border border-gray-200 shadow-xs">
+        <div className="flex flex-wrap items-center justify-between gap-3 pb-4 border-b border-gray-100">
           <div>
             <h2 className="text-base font-heading font-bold text-gray-900">
               Page Header & Showcase Settings
@@ -251,128 +251,134 @@ export function AboutPageEditor({
         </div>
 
         {serverError && (
-          <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-red-800 text-sm">
+          <div className="topper-dialog-error-banner" role="alert">
             {serverError}
           </div>
         )}
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider text-gray-700 mb-1">
+          <div className="topper-field">
+            <label htmlFor="about-breadcrumb" className="topper-label">
               Breadcrumb Text <span className="text-red-500">*</span>
             </label>
             <input
+              id="about-breadcrumb"
               type="text"
               name="breadcrumb"
               value={formData.breadcrumb}
               onChange={handleSettingChange}
-              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#B91C1C] focus:border-transparent outline-none"
+              className={`topper-input ${fieldErrors.breadcrumb ? "topper-input--error" : ""}`}
               required
             />
             {fieldErrors.breadcrumb && (
-              <p className="text-xs text-red-600 mt-1">{fieldErrors.breadcrumb}</p>
+              <p className="topper-field-error">{fieldErrors.breadcrumb}</p>
             )}
           </div>
 
-          <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider text-gray-700 mb-1">
+          <div className="topper-field">
+            <label htmlFor="about-heading" className="topper-label">
               Page Heading <span className="text-red-500">*</span>
             </label>
             <input
+              id="about-heading"
               type="text"
               name="heading"
               value={formData.heading}
               onChange={handleSettingChange}
               placeholder="e.g. About Devasthaly Vidyapeeth"
-              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#B91C1C] focus:border-transparent outline-none"
+              className={`topper-input ${fieldErrors.heading ? "topper-input--error" : ""}`}
               required
             />
             {fieldErrors.heading && (
-              <p className="text-xs text-red-600 mt-1">{fieldErrors.heading}</p>
+              <p className="topper-field-error">{fieldErrors.heading}</p>
             )}
           </div>
         </div>
 
-        <div>
-          <label className="block text-xs font-semibold uppercase tracking-wider text-gray-700 mb-1">
+        <div className="topper-field">
+          <label htmlFor="about-subheading" className="topper-label">
             Subheading <span className="text-red-500">*</span>
           </label>
           <textarea
+            id="about-subheading"
             name="subheading"
             value={formData.subheading}
             onChange={handleSettingChange}
             rows={2}
-            className="w-full px-3 py-2 text-sm border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#B91C1C] focus:border-transparent outline-none"
+            className={`topper-input ${fieldErrors.subheading ? "topper-input--error" : ""}`}
             required
           />
           {fieldErrors.subheading && (
-            <p className="text-xs text-red-600 mt-1">{fieldErrors.subheading}</p>
+            <p className="topper-field-error">{fieldErrors.subheading}</p>
           )}
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider text-gray-700 mb-1">
+          <div className="topper-field">
+            <label htmlFor="about-showcaseBadge" className="topper-label">
               Showcase Badge (Optional)
             </label>
             <input
+              id="about-showcaseBadge"
               type="text"
               name="showcaseBadge"
               value={formData.showcaseBadge}
               onChange={handleSettingChange}
               placeholder="e.g. Established 1988"
-              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#B91C1C] focus:border-transparent outline-none"
+              className="topper-input"
             />
           </div>
 
-          <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider text-gray-700 mb-1">
+          <div className="topper-field">
+            <label htmlFor="about-showcaseImageUrl" className="topper-label">
               Showcase Image URL
             </label>
             <input
+              id="about-showcaseImageUrl"
               type="text"
               name="showcaseImageUrl"
               value={formData.showcaseImageUrl}
               onChange={handleSettingChange}
               placeholder="e.g. /images/about/showcase.jpg"
-              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#B91C1C] focus:border-transparent outline-none"
+              className="topper-input"
             />
           </div>
 
-          <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider text-gray-700 mb-1">
+          <div className="topper-field">
+            <label htmlFor="about-showcaseImageAlt" className="topper-label">
               Showcase Image Alt
             </label>
             <input
+              id="about-showcaseImageAlt"
               type="text"
               name="showcaseImageAlt"
               value={formData.showcaseImageAlt}
               onChange={handleSettingChange}
               placeholder="e.g. School main building"
-              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#B91C1C] focus:border-transparent outline-none"
+              className="topper-input"
             />
           </div>
         </div>
 
-        <div className="flex items-center justify-between pt-4 border-t border-gray-100">
-          <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center justify-between gap-4 pt-4 border-t border-gray-100">
+          <label className="topper-checkbox-wrapper min-h-[44px]">
             <input
               type="checkbox"
               id="isPublishedAboutSetting"
               name="isPublished"
               checked={formData.isPublished}
               onChange={handleSettingChange}
-              className="w-4 h-4 rounded text-[#B91C1C] focus:ring-[#B91C1C] border-gray-300 cursor-pointer"
+              className="topper-checkbox"
             />
-            <label htmlFor="isPublishedAboutSetting" className="text-sm font-medium text-gray-700 cursor-pointer">
+            <span className="topper-checkbox-label">
               Publish Page Header
-            </label>
-          </div>
+            </span>
+          </label>
 
           <button
             type="submit"
             disabled={isPending}
-            className="px-5 py-2.5 rounded-xl text-sm font-heading font-bold bg-[#B91C1C] text-white hover:bg-[#991b1b] transition-colors disabled:opacity-50 inline-flex items-center gap-2 shadow-xs cursor-pointer"
+            className="topper-button topper-button--primary min-h-[44px] px-5 gap-2"
           >
             {isPending ? (
               <Loader2 className="w-4 h-4 animate-spin" />
@@ -385,8 +391,8 @@ export function AboutPageEditor({
       </form>
 
       {/* 2. Credentials Cards Section */}
-      <div className="space-y-4 bg-white p-6 rounded-2xl border border-gray-100 shadow-xs">
-        <div className="flex items-center justify-between pb-4 border-b border-gray-100">
+      <div className="space-y-4 bg-white p-6 sm:p-8 rounded-2xl border border-gray-200 shadow-xs">
+        <div className="flex flex-wrap items-center justify-between gap-3 pb-4 border-b border-gray-100">
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-xl bg-amber-100 text-amber-800 flex items-center justify-center shrink-0">
               <Award className="w-5 h-5" />
@@ -406,7 +412,7 @@ export function AboutPageEditor({
               setEditingCred(null);
               setIsCredDialogOpen(true);
             }}
-            className="px-4 py-2 rounded-xl text-xs font-heading font-bold bg-[#B91C1C] text-white hover:bg-[#991b1b] transition-colors inline-flex items-center gap-1.5 shadow-xs cursor-pointer"
+            className="topper-button topper-button--primary min-h-[44px] px-4 gap-1.5"
           >
             <Plus className="w-4 h-4" />
             <span>Add Credential</span>
@@ -422,7 +428,7 @@ export function AboutPageEditor({
             {credentials.map((cred, idx) => (
               <div
                 key={cred.id}
-                className="py-3 flex items-center justify-between gap-4 hover:bg-gray-50/50 px-2 rounded-lg transition-colors"
+                className="py-3 flex flex-wrap sm:flex-nowrap items-center justify-between gap-4 hover:bg-gray-50/50 px-2 rounded-lg transition-colors"
               >
                 <div className="flex items-center gap-3 min-w-0">
                   <span className="text-xs font-mono font-bold text-gray-400 w-6">
@@ -448,12 +454,13 @@ export function AboutPageEditor({
                   </div>
                 </div>
 
-                <div className="flex items-center gap-1 shrink-0">
+                <div className="topper-card-actions shrink-0">
                   <button
                     type="button"
                     onClick={() => handleMoveCred(idx, "UP")}
                     disabled={idx === 0 || isPending}
-                    className="p-1.5 text-gray-400 hover:text-gray-700 disabled:opacity-30 rounded-lg hover:bg-gray-100 cursor-pointer"
+                    className="topper-icon-button"
+                    aria-label={`Move credential ${cred.title} up`}
                     title="Move Up"
                   >
                     <ArrowUp className="w-4 h-4" />
@@ -462,7 +469,8 @@ export function AboutPageEditor({
                     type="button"
                     onClick={() => handleMoveCred(idx, "DOWN")}
                     disabled={idx === credentials.length - 1 || isPending}
-                    className="p-1.5 text-gray-400 hover:text-gray-700 disabled:opacity-30 rounded-lg hover:bg-gray-100 cursor-pointer"
+                    className="topper-icon-button"
+                    aria-label={`Move credential ${cred.title} down`}
                     title="Move Down"
                   >
                     <ArrowDown className="w-4 h-4" />
@@ -471,7 +479,8 @@ export function AboutPageEditor({
                     type="button"
                     onClick={() => handleToggleCredStatus(cred.id, cred.isPublished)}
                     disabled={isPending}
-                    className="p-1.5 text-gray-400 hover:text-gray-700 rounded-lg hover:bg-gray-100 cursor-pointer"
+                    className="topper-icon-button"
+                    aria-label={cred.isPublished ? `Unpublish credential ${cred.title}` : `Publish credential ${cred.title}`}
                     title={cred.isPublished ? "Unpublish" : "Publish"}
                   >
                     {cred.isPublished ? (
@@ -486,7 +495,8 @@ export function AboutPageEditor({
                       setEditingCred(cred);
                       setIsCredDialogOpen(true);
                     }}
-                    className="p-1.5 text-gray-400 hover:text-blue-600 rounded-lg hover:bg-blue-50 cursor-pointer"
+                    className="topper-icon-button"
+                    aria-label={`Edit credential ${cred.title}`}
                     title="Edit Credential"
                   >
                     <Pencil className="w-4 h-4" />
@@ -500,7 +510,8 @@ export function AboutPageEditor({
                         title: cred.title,
                       })
                     }
-                    className="p-1.5 text-gray-400 hover:text-red-600 rounded-lg hover:bg-red-50 cursor-pointer"
+                    className="topper-icon-button topper-icon-button--danger"
+                    aria-label={`Delete credential ${cred.title}`}
                     title="Delete Credential"
                   >
                     <Trash2 className="w-4 h-4" />
@@ -513,8 +524,8 @@ export function AboutPageEditor({
       </div>
 
       {/* 3. Narrative Sections */}
-      <div className="space-y-4 bg-white p-6 rounded-2xl border border-gray-100 shadow-xs">
-        <div className="flex items-center justify-between pb-4 border-b border-gray-100">
+      <div className="space-y-4 bg-white p-6 sm:p-8 rounded-2xl border border-gray-200 shadow-xs">
+        <div className="flex flex-wrap items-center justify-between gap-3 pb-4 border-b border-gray-100">
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-xl bg-blue-100 text-blue-800 flex items-center justify-center shrink-0">
               <BookOpen className="w-5 h-5" />
@@ -534,7 +545,7 @@ export function AboutPageEditor({
               setEditingNarrative(null);
               setIsNarrativeDialogOpen(true);
             }}
-            className="px-4 py-2 rounded-xl text-xs font-heading font-bold bg-[#B91C1C] text-white hover:bg-[#991b1b] transition-colors inline-flex items-center gap-1.5 shadow-xs cursor-pointer"
+            className="topper-button topper-button--primary min-h-[44px] px-4 gap-1.5"
           >
             <Plus className="w-4 h-4" />
             <span>Add Section</span>
@@ -550,7 +561,7 @@ export function AboutPageEditor({
             {narrativeSections.map((sec, idx) => (
               <div
                 key={sec.id}
-                className="py-4 flex items-start justify-between gap-4 hover:bg-gray-50/50 px-2 rounded-lg transition-colors"
+                className="py-4 flex flex-wrap sm:flex-nowrap items-start justify-between gap-4 hover:bg-gray-50/50 px-2 rounded-lg transition-colors"
               >
                 <div className="flex items-start gap-3 min-w-0">
                   <span className="text-xs font-mono font-bold text-gray-400 w-6 pt-1">
@@ -573,12 +584,13 @@ export function AboutPageEditor({
                   </div>
                 </div>
 
-                <div className="flex items-center gap-1 shrink-0 pt-1">
+                <div className="topper-card-actions shrink-0 pt-1">
                   <button
                     type="button"
                     onClick={() => handleMoveNarrative(idx, "UP")}
                     disabled={idx === 0 || isPending}
-                    className="p-1.5 text-gray-400 hover:text-gray-700 disabled:opacity-30 rounded-lg hover:bg-gray-100 cursor-pointer"
+                    className="topper-icon-button"
+                    aria-label={`Move narrative section ${sec.heading || idx + 1} up`}
                     title="Move Up"
                   >
                     <ArrowUp className="w-4 h-4" />
@@ -587,7 +599,8 @@ export function AboutPageEditor({
                     type="button"
                     onClick={() => handleMoveNarrative(idx, "DOWN")}
                     disabled={idx === narrativeSections.length - 1 || isPending}
-                    className="p-1.5 text-gray-400 hover:text-gray-700 disabled:opacity-30 rounded-lg hover:bg-gray-100 cursor-pointer"
+                    className="topper-icon-button"
+                    aria-label={`Move narrative section ${sec.heading || idx + 1} down`}
                     title="Move Down"
                   >
                     <ArrowDown className="w-4 h-4" />
@@ -596,7 +609,8 @@ export function AboutPageEditor({
                     type="button"
                     onClick={() => handleToggleNarrativeStatus(sec.id, sec.isPublished)}
                     disabled={isPending}
-                    className="p-1.5 text-gray-400 hover:text-gray-700 rounded-lg hover:bg-gray-100 cursor-pointer"
+                    className="topper-icon-button"
+                    aria-label={sec.isPublished ? `Unpublish section ${sec.heading || idx + 1}` : `Publish section ${sec.heading || idx + 1}`}
                     title={sec.isPublished ? "Unpublish" : "Publish"}
                   >
                     {sec.isPublished ? (
@@ -611,7 +625,8 @@ export function AboutPageEditor({
                       setEditingNarrative(sec);
                       setIsNarrativeDialogOpen(true);
                     }}
-                    className="p-1.5 text-gray-400 hover:text-blue-600 rounded-lg hover:bg-blue-50 cursor-pointer"
+                    className="topper-icon-button"
+                    aria-label={`Edit section ${sec.heading || idx + 1}`}
                     title="Edit Section"
                   >
                     <Pencil className="w-4 h-4" />
@@ -625,7 +640,8 @@ export function AboutPageEditor({
                         title: sec.heading || `Paragraph ${idx + 1}`,
                       })
                     }
-                    className="p-1.5 text-gray-400 hover:text-red-600 rounded-lg hover:bg-red-50 cursor-pointer"
+                    className="topper-icon-button topper-icon-button--danger"
+                    aria-label={`Delete section ${sec.heading || idx + 1}`}
                     title="Delete Section"
                   >
                     <Trash2 className="w-4 h-4" />

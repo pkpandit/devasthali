@@ -229,7 +229,7 @@ async function HomeNoticesSection() {
 }
 
 export default async function HomePage() {
-  const { hero, principal, statistics, highlights } = await getPublicHomepage();
+  const { hero, statistics, highlights } = await getPublicHomepage();
 
   return (
     <div className="flex flex-col w-full bg-white">
@@ -366,80 +366,6 @@ export default async function HomePage() {
                       </div>
                     </div>
                   </div>
-                </div>
-              </div>
-            </div>
-          </Container>
-        </section>
-      )}
-
-      {/* =========================================================================
-          SECTION 1.5: LEADERSHIP ANCHOR (Principal's Message Excerpt)
-      ========================================================================= */}
-      {principal && (
-        <section className="w-full bg-white border-b border-[#E5E7EB] py-12 sm:py-16">
-          <Container>
-            <div className="bg-[#F9FAFB] rounded-3xl p-6 sm:p-10 border border-gray-200/90 shadow-sm relative overflow-hidden">
-              <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
-                {/* Left Portrait */}
-                <div className="lg:col-span-4 flex flex-col items-center text-center">
-                  <div className="relative aspect-[3/4] w-44 sm:w-52 rounded-2xl overflow-hidden border border-gray-200 shadow-md bg-[#111827] group">
-                    {principal.imageUrl ? (
-                      <Image
-                        src={principal.imageUrl}
-                        alt={principal.principalName}
-                        fill
-                        sizes="(max-width: 640px) 176px, 208px"
-                        className="object-cover object-top group-hover:scale-105 transition-transform duration-500"
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center text-gray-400 text-xs">
-                        Principal Portrait
-                      </div>
-                    )}
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent pointer-events-none" />
-                    <div className="absolute bottom-2.5 inset-x-2.5 text-center">
-                      <span className="text-xs font-heading font-bold uppercase tracking-wider px-2.5 py-0.5 bg-[#B91C1C] text-white rounded-full shadow-xs">
-                        Principal
-                      </span>
-                    </div>
-                  </div>
-                  <h3 className="font-heading text-xl font-bold text-[#111827] mt-3">
-                    {principal.principalName}
-                  </h3>
-                  <p className="text-xs font-heading font-semibold text-[#B91C1C]">
-                    {principal.principalDesignation}
-                  </p>
-                </div>
-
-                {/* Right Editorial Excerpt */}
-                <div className="lg:col-span-8 space-y-4 text-left">
-                  <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-red-50 border border-red-100 text-[#B91C1C] text-xs font-heading font-bold uppercase tracking-wider">
-                    <Sparkles className="w-3.5 h-3.5 text-[#B91C1C]" />
-                    <span>{principal.heading}</span>
-                  </div>
-
-                  <div className="border-l-4 border-[#B91C1C] pl-4 py-1">
-                    <p className="font-heading font-bold text-base sm:text-lg text-[#111827] italic leading-relaxed">
-                      &ldquo;{principal.quote}&rdquo;
-                    </p>
-                  </div>
-
-                  <p className="text-sm sm:text-base text-gray-600 font-sans leading-relaxed">
-                    {principal.excerpt}
-                  </p>
-
-                  {principal.cta && (
-                    <div className="pt-2">
-                      <Link
-                        href={principal.cta.href}
-                        className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-[#B91C1C] text-white text-sm font-heading font-bold hover:bg-[#991b1b] transition-colors shadow-xs"
-                      >
-                        <span>{principal.cta.label}</span>
-                        <ChevronRight className="w-4 h-4" />
-                      </Link>
-                    </div>
-                  )}
                 </div>
               </div>
             </div>

@@ -102,15 +102,15 @@ export function HeroSectionEditor({ initialHero }: HeroSectionEditorProps) {
       )}
 
       {serverError && (
-        <div className="p-4 rounded-xl bg-red-50 border border-red-200 text-red-800 flex items-center gap-3">
+        <div className="topper-dialog-error-banner flex items-center gap-3" role="alert">
           <AlertCircle className="w-5 h-5 text-red-600 shrink-0" />
           <p className="text-sm font-medium">{serverError}</p>
         </div>
       )}
 
       <form onSubmit={handleSubmit} className="space-y-6">
-        <div className="bg-white rounded-2xl p-6 border border-gray-200 shadow-xs space-y-6">
-          <div className="flex items-center justify-between border-b border-gray-100 pb-4">
+        <div className="bg-white rounded-2xl p-6 sm:p-8 border border-gray-200 shadow-xs space-y-6">
+          <div className="flex flex-wrap items-center justify-between gap-4 border-b border-gray-100 pb-4">
             <div>
               <h2 className="text-lg font-heading font-bold text-gray-900">
                 Hero Banner Content
@@ -119,72 +119,67 @@ export function HeroSectionEditor({ initialHero }: HeroSectionEditorProps) {
                 Topmost visual focal point for admissions and school introduction.
               </p>
             </div>
-            <label className="flex items-center gap-2.5 cursor-pointer">
+            <label className="topper-checkbox-wrapper min-h-[44px]">
               <input
                 type="checkbox"
                 name="isPublished"
                 checked={formData.isPublished}
                 onChange={handleChange}
-                className="w-4 h-4 text-[#B91C1C] rounded border-gray-300 focus:ring-[#B91C1C]"
+                className="topper-checkbox"
               />
-              <span className="text-sm font-medium text-gray-700">Section Published</span>
+              <span className="topper-checkbox-label">Section Published</span>
             </label>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
             {/* Eyebrow Badge */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+            <div className="topper-field">
+              <label htmlFor="badgeText" className="topper-label">
                 Eyebrow Badge Text
               </label>
               <input
+                id="badgeText"
                 type="text"
                 name="badgeText"
                 value={formData.badgeText}
                 onChange={handleChange}
                 placeholder="e.g. Admissions Open 2026–27 • LKG to Class XI"
                 maxLength={120}
-                className={`w-full px-3.5 py-2.5 rounded-xl border text-sm transition-colors ${
-                  fieldErrors.badgeText
-                    ? "border-red-400 bg-red-50/50"
-                    : "border-gray-300 hover:border-gray-400 focus:border-[#B91C1C] focus:ring-1 focus:ring-[#B91C1C]"
-                }`}
+                className={`topper-input ${fieldErrors.badgeText ? "topper-input--error" : ""}`}
               />
               {fieldErrors.badgeText && (
-                <p className="text-xs text-red-600 mt-1">{fieldErrors.badgeText}</p>
+                <p className="topper-field-error">{fieldErrors.badgeText}</p>
               )}
             </div>
 
             {/* Highlighted Accent Text */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+            <div className="topper-field">
+              <label htmlFor="highlightText" className="topper-label">
                 Highlighted Accent Text (Gold Underline)
               </label>
               <input
+                id="highlightText"
                 type="text"
                 name="highlightText"
                 value={formData.highlightText}
                 onChange={handleChange}
                 placeholder="e.g. Since 1988"
                 maxLength={100}
-                className={`w-full px-3.5 py-2.5 rounded-xl border text-sm transition-colors ${
-                  fieldErrors.highlightText
-                    ? "border-red-400 bg-red-50/50"
-                    : "border-gray-300 hover:border-gray-400 focus:border-[#B91C1C] focus:ring-1 focus:ring-[#B91C1C]"
-                }`}
+                className={`topper-input ${fieldErrors.highlightText ? "topper-input--error" : ""}`}
               />
               {fieldErrors.highlightText && (
-                <p className="text-xs text-red-600 mt-1">{fieldErrors.highlightText}</p>
+                <p className="topper-field-error">{fieldErrors.highlightText}</p>
               )}
             </div>
           </div>
 
           {/* Main Heading H1 */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+          <div className="topper-field">
+            <label htmlFor="heading" className="topper-label">
               Main Display Heading H1 <span className="text-red-500">*</span>
             </label>
             <input
+              id="heading"
               type="text"
               name="heading"
               required
@@ -192,23 +187,20 @@ export function HeroSectionEditor({ initialHero }: HeroSectionEditorProps) {
               onChange={handleChange}
               placeholder="e.g. Nurturing Academic Rigour, Moral Character & Leadership"
               maxLength={255}
-              className={`w-full px-3.5 py-2.5 rounded-xl border text-sm transition-colors ${
-                fieldErrors.heading
-                  ? "border-red-400 bg-red-50/50"
-                  : "border-gray-300 hover:border-gray-400 focus:border-[#B91C1C] focus:ring-1 focus:ring-[#B91C1C]"
-              }`}
+              className={`topper-input ${fieldErrors.heading ? "topper-input--error" : ""}`}
             />
             {fieldErrors.heading && (
-              <p className="text-xs text-red-600 mt-1">{fieldErrors.heading}</p>
+              <p className="topper-field-error">{fieldErrors.heading}</p>
             )}
           </div>
 
           {/* Subheading */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+          <div className="topper-field">
+            <label htmlFor="subheading" className="topper-label">
               Subheading & Introduction <span className="text-red-500">*</span>
             </label>
             <textarea
+              id="subheading"
               name="subheading"
               rows={3}
               required
@@ -216,24 +208,21 @@ export function HeroSectionEditor({ initialHero }: HeroSectionEditorProps) {
               onChange={handleChange}
               placeholder="Welcome to Devasthaly Vidyapeeth, Chilkahar, Ballia..."
               maxLength={2000}
-              className={`w-full px-3.5 py-2.5 rounded-xl border text-sm transition-colors ${
-                fieldErrors.subheading
-                  ? "border-red-400 bg-red-50/50"
-                  : "border-gray-300 hover:border-gray-400 focus:border-[#B91C1C] focus:ring-1 focus:ring-[#B91C1C]"
-              }`}
+              className={`topper-input ${fieldErrors.subheading ? "topper-input--error" : ""}`}
             />
             {fieldErrors.subheading && (
-              <p className="text-xs text-red-600 mt-1">{fieldErrors.subheading}</p>
+              <p className="topper-field-error">{fieldErrors.subheading}</p>
             )}
           </div>
 
           {/* Primary CTA */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5 pt-2 border-t border-gray-100">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+            <div className="topper-field">
+              <label htmlFor="primaryCtaLabel" className="topper-label">
                 Primary CTA Button Label <span className="text-red-500">*</span>
               </label>
               <input
+                id="primaryCtaLabel"
                 type="text"
                 name="primaryCtaLabel"
                 required
@@ -241,22 +230,19 @@ export function HeroSectionEditor({ initialHero }: HeroSectionEditorProps) {
                 onChange={handleChange}
                 placeholder="e.g. Apply 2026–27"
                 maxLength={60}
-                className={`w-full px-3.5 py-2.5 rounded-xl border text-sm transition-colors ${
-                  fieldErrors.primaryCtaLabel
-                    ? "border-red-400 bg-red-50/50"
-                    : "border-gray-300 hover:border-gray-400 focus:border-[#B91C1C] focus:ring-1 focus:ring-[#B91C1C]"
-                }`}
+                className={`topper-input ${fieldErrors.primaryCtaLabel ? "topper-input--error" : ""}`}
               />
               {fieldErrors.primaryCtaLabel && (
-                <p className="text-xs text-red-600 mt-1">{fieldErrors.primaryCtaLabel}</p>
+                <p className="topper-field-error">{fieldErrors.primaryCtaLabel}</p>
               )}
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+            <div className="topper-field">
+              <label htmlFor="primaryCtaHref" className="topper-label">
                 Primary CTA Destination URL <span className="text-red-500">*</span>
               </label>
               <input
+                id="primaryCtaHref"
                 type="text"
                 name="primaryCtaHref"
                 required
@@ -264,87 +250,74 @@ export function HeroSectionEditor({ initialHero }: HeroSectionEditorProps) {
                 onChange={handleChange}
                 placeholder="e.g. /admissions"
                 maxLength={500}
-                className={`w-full px-3.5 py-2.5 rounded-xl border text-sm transition-colors ${
-                  fieldErrors.primaryCtaHref
-                    ? "border-red-400 bg-red-50/50"
-                    : "border-gray-300 hover:border-gray-400 focus:border-[#B91C1C] focus:ring-1 focus:ring-[#B91C1C]"
-                }`}
+                className={`topper-input ${fieldErrors.primaryCtaHref ? "topper-input--error" : ""}`}
               />
               {fieldErrors.primaryCtaHref && (
-                <p className="text-xs text-red-600 mt-1">{fieldErrors.primaryCtaHref}</p>
+                <p className="topper-field-error">{fieldErrors.primaryCtaHref}</p>
               )}
             </div>
           </div>
 
           {/* Secondary CTA */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+            <div className="topper-field">
+              <label htmlFor="secondaryCtaLabel" className="topper-label">
                 Secondary CTA Button Label (Optional)
               </label>
               <input
+                id="secondaryCtaLabel"
                 type="text"
                 name="secondaryCtaLabel"
                 value={formData.secondaryCtaLabel}
                 onChange={handleChange}
                 placeholder="e.g. Schedule a Guided Campus Tour"
                 maxLength={60}
-                className={`w-full px-3.5 py-2.5 rounded-xl border text-sm transition-colors ${
-                  fieldErrors.secondaryCtaLabel
-                    ? "border-red-400 bg-red-50/50"
-                    : "border-gray-300 hover:border-gray-400 focus:border-[#B91C1C] focus:ring-1 focus:ring-[#B91C1C]"
-                }`}
+                className={`topper-input ${fieldErrors.secondaryCtaLabel ? "topper-input--error" : ""}`}
               />
               {fieldErrors.secondaryCtaLabel && (
-                <p className="text-xs text-red-600 mt-1">{fieldErrors.secondaryCtaLabel}</p>
+                <p className="topper-field-error">{fieldErrors.secondaryCtaLabel}</p>
               )}
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+            <div className="topper-field">
+              <label htmlFor="secondaryCtaHref" className="topper-label">
                 Secondary CTA Destination URL (Optional)
               </label>
               <input
+                id="secondaryCtaHref"
                 type="text"
                 name="secondaryCtaHref"
                 value={formData.secondaryCtaHref}
                 onChange={handleChange}
                 placeholder="e.g. /contact"
                 maxLength={500}
-                className={`w-full px-3.5 py-2.5 rounded-xl border text-sm transition-colors ${
-                  fieldErrors.secondaryCtaHref
-                    ? "border-red-400 bg-red-50/50"
-                    : "border-gray-300 hover:border-gray-400 focus:border-[#B91C1C] focus:ring-1 focus:ring-[#B91C1C]"
-                }`}
+                className={`topper-input ${fieldErrors.secondaryCtaHref ? "topper-input--error" : ""}`}
               />
               {fieldErrors.secondaryCtaHref && (
-                <p className="text-xs text-red-600 mt-1">{fieldErrors.secondaryCtaHref}</p>
+                <p className="topper-field-error">{fieldErrors.secondaryCtaHref}</p>
               )}
             </div>
           </div>
 
           {/* Background Image URL */}
-          <div className="pt-2 border-t border-gray-100">
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+          <div className="topper-field pt-2 border-t border-gray-100">
+            <label htmlFor="backgroundImageUrl" className="topper-label">
               Background Showcase Image URL
             </label>
             <input
+              id="backgroundImageUrl"
               type="text"
               name="backgroundImageUrl"
               value={formData.backgroundImageUrl}
               onChange={handleChange}
               placeholder="e.g. /images/about/campus-showcase.jpg"
               maxLength={500}
-              className={`w-full px-3.5 py-2.5 rounded-xl border text-sm transition-colors ${
-                fieldErrors.backgroundImageUrl
-                  ? "border-red-400 bg-red-50/50"
-                  : "border-gray-300 hover:border-gray-400 focus:border-[#B91C1C] focus:ring-1 focus:ring-[#B91C1C]"
-              }`}
+              className={`topper-input ${fieldErrors.backgroundImageUrl ? "topper-input--error" : ""}`}
             />
             {fieldErrors.backgroundImageUrl && (
-              <p className="text-xs text-red-600 mt-1">{fieldErrors.backgroundImageUrl}</p>
+              <p className="topper-field-error">{fieldErrors.backgroundImageUrl}</p>
             )}
-            <p className="text-xs text-gray-500 mt-1">
+            <p className="topper-field-note">
               Use a root-relative path (e.g. /images/...) or secure HTTPS image URL.
             </p>
           </div>
@@ -355,7 +328,7 @@ export function HeroSectionEditor({ initialHero }: HeroSectionEditorProps) {
           <button
             type="submit"
             disabled={isPending}
-            className="px-6 py-2.5 rounded-xl bg-[#B91C1C] text-white font-heading font-bold text-sm hover:bg-[#991b1b] focus:outline-2 focus:outline-offset-2 focus:outline-[#B91C1C] disabled:opacity-50 inline-flex items-center gap-2 shadow-xs transition-colors cursor-pointer"
+            className="topper-button topper-button--primary min-h-[44px] px-6 gap-2"
           >
             {isPending ? (
               <>

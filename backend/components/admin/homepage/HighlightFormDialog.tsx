@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import { X, Loader2, Save, AlertCircle } from "lucide-react";
 import {
   createHomepageHighlightAction,
@@ -36,15 +36,29 @@ export function HighlightFormDialog({
   onClose,
   onSuccess,
 }: HighlightFormDialogProps) {
+  useEffect(() => {
+    function handleKeyDown(e: KeyboardEvent) {
+      if (!isOpen) return;
+      if (e.key === "Escape") {
+        e.preventDefault();
+        onClose();
+      }
+    }
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isOpen, onClose]);
+
   if (!isOpen) return null;
 
   return (
-    <HighlightFormInner
-      key={highlight?.id || "new-highlight"}
-      highlight={highlight}
-      onClose={onClose}
-      onSuccess={onSuccess}
-    />
+    <div className="topper-dialog-backdrop" onClick={onClose}>
+      <HighlightFormInner
+        key={highlight?.id || "new-highlight"}
+        highlight={highlight}
+        onClose={onClose}
+        onSuccess={onSuccess}
+      />
+    </div>
   );
 }
 
@@ -58,6 +72,7 @@ function HighlightFormInner({
   onSuccess: () => void;
 }) {
   const [isPending, startTransition] = useTransition();
+  const titleInputRef = useRef<HTMLInputElement>(null);
 
   const [formData, setFormData] = useState({
     title: highlight?.title || "",
@@ -72,6 +87,10 @@ function HighlightFormInner({
 
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [serverError, setServerError] = useState<string | null>(null);
+
+  useEffect(() => {
+    titleInputRef.current?.focus();
+  }, []);
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement>
@@ -120,39 +139,43 @@ function HighlightFormInner({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs animate-in fade-in duration-200">
-      <div
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="hl-dialog-title"
-        className="w-full max-w-xl bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden"
-      >
-        <div className="flex items-center justify-between p-5 border-b border-gray-100">
-          <h2 id="hl-dialog-title" className="text-lg font-heading font-bold text-gray-900">
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="hl-dialog-title"
+      className="topper-dialog-container"
+      onClick={(e) => e.stopPropagation()}
+    >
+      <form onSubmit={handleSubmit} className="topper-dialog-form">
+        <div className="topper-dialog-header">
+          <h2 id="hl-dialog-title" className="topper-dialog-title">
             {highlight ? "Edit Promotional Highlight" : "Add Promotional Highlight"}
           </h2>
           <button
             type="button"
             onClick={onClose}
-            className="p-1 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
+            aria-label="Close dialog"
+            className="topper-dialog-close"
           >
-            <X className="w-5 h-5" />
+            <X size={18} />
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-4 max-h-[80vh] overflow-y-auto">
+        <div className="topper-dialog-body space-y-4">
           {serverError && (
-            <div className="p-3.5 rounded-xl bg-red-50 border border-red-200 text-red-800 text-sm flex items-center gap-2">
+            <div className="topper-dialog-error-banner flex items-center gap-2" role="alert">
               <AlertCircle className="w-4 h-4 text-red-600 shrink-0" />
               <span>{serverError}</span>
             </div>
           )}
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+          <div className="topper-field topper-field--full">
+            <label htmlFor="hl-title" className="topper-label">
               Highlight Title <span className="text-red-500">*</span>
             </label>
             <input
+              ref={titleInputRef}
+              id="hl-title"
               type="text"
               name="title"
               required
@@ -160,18 +183,19 @@ function HighlightFormInner({
               onChange={handleChange}
               placeholder="e.g. Download School Prospectus"
               maxLength={120}
-              className="w-full px-3 py-2 rounded-xl border border-gray-300 text-sm focus:border-[#B91C1C] focus:ring-1 focus:ring-[#B91C1C]"
+              className={`topper-input ${fieldErrors.title ? "topper-input--error" : ""}`}
             />
             {fieldErrors.title && (
-              <p className="text-xs text-red-600 mt-1">{fieldErrors.title}</p>
+              <p className="topper-field-error">{fieldErrors.title}</p>
             )}
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+          <div className="topper-field topper-field--full">
+            <label htmlFor="hl-description" className="topper-label">
               Short Description / Sub-Hint <span className="text-red-500">*</span>
             </label>
             <input
+              id="hl-description"
               type="text"
               name="description"
               required
@@ -179,57 +203,60 @@ function HighlightFormInner({
               onChange={handleChange}
               placeholder="e.g. Admissions PDF Brochure"
               maxLength={255}
-              className="w-full px-3 py-2 rounded-xl border border-gray-300 text-sm focus:border-[#B91C1C] focus:ring-1 focus:ring-[#B91C1C]"
+              className={`topper-input ${fieldErrors.description ? "topper-input--error" : ""}`}
             />
             {fieldErrors.description && (
-              <p className="text-xs text-red-600 mt-1">{fieldErrors.description}</p>
+              <p className="topper-field-error">{fieldErrors.description}</p>
             )}
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+          <div className="topper-form-grid">
+            <div className="topper-field">
+              <label htmlFor="hl-badge" className="topper-label">
                 Category Pill Badge
               </label>
               <input
+                id="hl-badge"
                 type="text"
                 name="badge"
                 value={formData.badge}
                 onChange={handleChange}
                 placeholder="e.g. PDF, Fees, Routes, CBSE"
                 maxLength={40}
-                className="w-full px-3 py-2 rounded-xl border border-gray-300 text-sm focus:border-[#B91C1C] focus:ring-1 focus:ring-[#B91C1C]"
+                className={`topper-input ${fieldErrors.badge ? "topper-input--error" : ""}`}
               />
               {fieldErrors.badge && (
-                <p className="text-xs text-red-600 mt-1">{fieldErrors.badge}</p>
+                <p className="topper-field-error">{fieldErrors.badge}</p>
               )}
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+            <div className="topper-field">
+              <label htmlFor="hl-iconName" className="topper-label">
                 Lucide Icon Name
               </label>
               <input
+                id="hl-iconName"
                 type="text"
                 name="iconName"
                 value={formData.iconName}
                 onChange={handleChange}
                 placeholder="e.g. Download, FileText, Bus, Award, Calendar"
                 maxLength={60}
-                className="w-full px-3 py-2 rounded-xl border border-gray-300 text-sm focus:border-[#B91C1C] focus:ring-1 focus:ring-[#B91C1C]"
+                className={`topper-input ${fieldErrors.iconName ? "topper-input--error" : ""}`}
               />
               {fieldErrors.iconName && (
-                <p className="text-xs text-red-600 mt-1">{fieldErrors.iconName}</p>
+                <p className="topper-field-error">{fieldErrors.iconName}</p>
               )}
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+          <div className="topper-form-grid">
+            <div className="topper-field">
+              <label htmlFor="hl-ctaLabel" className="topper-label">
                 CTA Button Label <span className="text-red-500">*</span>
               </label>
               <input
+                id="hl-ctaLabel"
                 type="text"
                 name="ctaLabel"
                 required
@@ -237,18 +264,19 @@ function HighlightFormInner({
                 onChange={handleChange}
                 placeholder="e.g. Download, View Details"
                 maxLength={60}
-                className="w-full px-3 py-2 rounded-xl border border-gray-300 text-sm focus:border-[#B91C1C] focus:ring-1 focus:ring-[#B91C1C]"
+                className={`topper-input ${fieldErrors.ctaLabel ? "topper-input--error" : ""}`}
               />
               {fieldErrors.ctaLabel && (
-                <p className="text-xs text-red-600 mt-1">{fieldErrors.ctaLabel}</p>
+                <p className="topper-field-error">{fieldErrors.ctaLabel}</p>
               )}
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+            <div className="topper-field">
+              <label htmlFor="hl-ctaHref" className="topper-label">
                 Destination URL <span className="text-red-500">*</span>
               </label>
               <input
+                id="hl-ctaHref"
                 type="text"
                 name="ctaHref"
                 required
@@ -256,74 +284,78 @@ function HighlightFormInner({
                 onChange={handleChange}
                 placeholder="e.g. /school-prospectus"
                 maxLength={500}
-                className="w-full px-3 py-2 rounded-xl border border-gray-300 text-sm focus:border-[#B91C1C] focus:ring-1 focus:ring-[#B91C1C]"
+                className={`topper-input ${fieldErrors.ctaHref ? "topper-input--error" : ""}`}
               />
               {fieldErrors.ctaHref && (
-                <p className="text-xs text-red-600 mt-1">{fieldErrors.ctaHref}</p>
+                <p className="topper-field-error">{fieldErrors.ctaHref}</p>
               )}
             </div>
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+          <div className="topper-field topper-field--full">
+            <label htmlFor="hl-imageUrl" className="topper-label">
               Photographic Background Image URL
             </label>
             <input
+              id="hl-imageUrl"
               type="text"
               name="imageUrl"
               value={formData.imageUrl}
               onChange={handleChange}
               placeholder="e.g. /images/admissions/prospectus-brochure.jpg"
               maxLength={500}
-              className="w-full px-3 py-2 rounded-xl border border-gray-300 text-sm focus:border-[#B91C1C] focus:ring-1 focus:ring-[#B91C1C]"
+              className={`topper-input ${fieldErrors.imageUrl ? "topper-input--error" : ""}`}
             />
             {fieldErrors.imageUrl && (
-              <p className="text-xs text-red-600 mt-1">{fieldErrors.imageUrl}</p>
+              <p className="topper-field-error">{fieldErrors.imageUrl}</p>
             )}
+            <p className="topper-field-note">
+              Use a root-relative path (e.g. /images/...) or secure HTTPS image URL.
+            </p>
           </div>
 
-          <div className="pt-2">
-            <label className="flex items-center gap-2.5 cursor-pointer">
+          <div className="topper-field topper-field--checkbox">
+            <label className="topper-checkbox-wrapper min-h-[44px]">
               <input
                 type="checkbox"
                 name="isPublished"
                 checked={formData.isPublished}
                 onChange={handleChange}
-                className="w-4 h-4 text-[#B91C1C] rounded border-gray-300 focus:ring-[#B91C1C]"
+                className="topper-checkbox"
               />
-              <span className="text-sm font-medium text-gray-700">Published on Public Homepage</span>
+              <span className="topper-checkbox-label">Published on Public Homepage</span>
             </label>
           </div>
+        </div>
 
-          <div className="flex items-center justify-end gap-3 pt-5 border-t border-gray-100">
-            <button
-              type="button"
-              onClick={onClose}
-              disabled={isPending}
-              className="px-4 py-2 rounded-xl text-sm font-medium text-gray-700 hover:bg-gray-100 transition-colors cursor-pointer"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={isPending}
-              className="px-5 py-2 rounded-xl text-sm font-heading font-bold bg-[#B91C1C] text-white hover:bg-[#991b1b] transition-colors disabled:opacity-50 inline-flex items-center gap-2 shadow-xs cursor-pointer"
-            >
-              {isPending ? (
-                <>
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                  <span>Saving...</span>
-                </>
-              ) : (
-                <>
-                  <Save className="w-4 h-4" />
-                  <span>{highlight ? "Update Highlight" : "Create Highlight"}</span>
-                </>
-              )}
-            </button>
-          </div>
-        </form>
-      </div>
+        <div className="topper-dialog-actions">
+          <button
+            type="button"
+            onClick={onClose}
+            disabled={isPending}
+            className="topper-button topper-button--secondary min-h-[44px]"
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            disabled={isPending}
+            className="topper-button topper-button--primary min-h-[44px] gap-2"
+          >
+            {isPending ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                <span>Saving...</span>
+              </>
+            ) : (
+              <>
+                <Save className="w-4 h-4" />
+                <span>{highlight ? "Update Highlight" : "Create Highlight"}</span>
+              </>
+            )}
+          </button>
+        </div>
+      </form>
     </div>
   );
 }

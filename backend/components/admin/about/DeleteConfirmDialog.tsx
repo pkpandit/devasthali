@@ -1,6 +1,6 @@
 "use client";
 
-import { useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import { AlertTriangle, Loader2 } from "lucide-react";
 
 interface DeleteConfirmDialogProps {
@@ -18,70 +18,124 @@ export function DeleteConfirmDialog({
   onClose,
   onConfirm,
 }: DeleteConfirmDialogProps) {
-  const [isPending, startTransition] = useTransition();
+  useEffect(() => {
+    function handleKeyDown(e: KeyboardEvent) {
+      if (!isOpen) return;
+      if (e.key === "Escape") {
+        e.preventDefault();
+        onClose();
+      }
+    }
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isOpen, onClose]);
 
   if (!isOpen) return null;
 
+  return (
+    <div className="topper-dialog-backdrop" onClick={onClose}>
+      <DeleteConfirmDialogInner
+        title={title}
+        itemDescription={itemDescription}
+        onClose={onClose}
+        onConfirm={onConfirm}
+      />
+    </div>
+  );
+}
+
+function DeleteConfirmDialogInner({
+  title,
+  itemDescription,
+  onClose,
+  onConfirm,
+}: {
+  title: string;
+  itemDescription: string;
+  onClose: () => void;
+  onConfirm: () => Promise<void>;
+}) {
+  const [isPending, startTransition] = useTransition();
+  const [error, setError] = useState<string | null>(null);
+  const cancelButtonRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    cancelButtonRef.current?.focus();
+  }, []);
+
   const handleConfirm = () => {
+    if (isPending) return;
+    setError(null);
+
     startTransition(async () => {
-      await onConfirm();
-      onClose();
+      try {
+        await onConfirm();
+        onClose();
+      } catch (err) {
+        setError(
+          err instanceof Error
+            ? err.message
+            : "An unexpected communication error occurred. The record was not removed."
+        );
+      }
     });
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs animate-in fade-in duration-200">
-      <div
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="delete-dialog-title"
-        className="w-full max-w-md bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden"
-      >
-        <div className="p-6 space-y-4">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-red-100 text-[#B91C1C] flex items-center justify-center shrink-0">
-              <AlertTriangle className="w-5 h-5" />
-            </div>
-            <div>
-              <h2 id="delete-dialog-title" className="text-lg font-heading font-bold text-gray-900">
-                {title}
-              </h2>
-              <p className="text-xs text-gray-500 font-sans mt-0.5">
-                This action will remove the record from the database.
-              </p>
-            </div>
-          </div>
+    <div
+      className="topper-dialog-container topper-dialog-container--danger"
+      role="alertdialog"
+      aria-modal="true"
+      aria-labelledby="delete-confirm-dialog-title"
+      aria-describedby="delete-confirm-dialog-desc"
+      onClick={(e) => e.stopPropagation()}
+    >
+      <div className="topper-delete-icon-wrapper" aria-hidden="true">
+        <AlertTriangle size={24} className="text-red-600" />
+      </div>
 
-          <p className="text-sm text-gray-600 font-sans">
-            Are you sure you want to delete <strong className="text-gray-900">&quot;{itemDescription}&quot;</strong>? This cannot be undone.
-          </p>
+      <div className="topper-dialog-header">
+        <h2 id="delete-confirm-dialog-title" className="topper-dialog-title text-red-900">
+          {title}
+        </h2>
+      </div>
 
-          <div className="flex items-center justify-end gap-3 pt-4 border-t border-gray-100">
-            <button
-              type="button"
-              onClick={onClose}
-              disabled={isPending}
-              className="px-4 py-2 rounded-xl text-sm font-medium text-gray-700 hover:bg-gray-100 transition-colors cursor-pointer"
-            >
-              Cancel
-            </button>
-            <button
-              type="button"
-              onClick={handleConfirm}
-              disabled={isPending}
-              className="px-4 py-2 rounded-xl text-sm font-heading font-bold bg-[#B91C1C] text-white hover:bg-[#991b1b] transition-colors disabled:opacity-50 inline-flex items-center gap-2 shadow-xs cursor-pointer"
-            >
-              {isPending ? (
-                <>
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                  <span>Deleting...</span>
-                </>
-              ) : (
-                <span>Delete Record</span>
-              )}
-            </button>
-          </div>
+      {error && (
+        <div className="topper-dialog-error-banner" role="alert" aria-live="assertive">
+          {error}
         </div>
+      )}
+
+      <div id="delete-confirm-dialog-desc" className="topper-dialog-body space-y-2">
+        <p className="text-sm text-slate-700">
+          Are you sure you want to delete <strong className="text-slate-900">&ldquo;{itemDescription}&rdquo;</strong>?
+        </p>
+        <div className="topper-delete-warning-box text-xs text-red-800 bg-red-50 p-3 rounded border border-red-200">
+          <strong>Warning:</strong> This performs an irreversible hard delete from the
+          database. This action cannot be undone.
+        </div>
+      </div>
+
+      <div className="topper-dialog-actions mt-6">
+        <button
+          ref={cancelButtonRef}
+          type="button"
+          className="topper-button topper-button--secondary min-h-[44px]"
+          onClick={onClose}
+          disabled={isPending}
+        >
+          Cancel
+        </button>
+        <button
+          type="button"
+          className="topper-button topper-button--danger min-h-[44px]"
+          onClick={handleConfirm}
+          disabled={isPending}
+          aria-busy={isPending}
+        >
+          {isPending && <Loader2 size={16} className="animate-spin mr-2" />}
+          {isPending ? "Deleting..." : "Permanently Delete Record"}
+        </button>
       </div>
     </div>
   );

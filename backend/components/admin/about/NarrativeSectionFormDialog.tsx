@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useTransition } from "react";
-import { Loader2, X, BookOpen } from "lucide-react";
+import { useEffect, useRef, useState, useTransition } from "react";
+import { Loader2, X, AlertCircle } from "lucide-react";
 import {
   createAboutNarrativeSectionAction,
   updateAboutNarrativeSectionAction,
@@ -33,15 +33,29 @@ export function NarrativeSectionFormDialog({
   onClose,
   onSuccess,
 }: NarrativeSectionFormDialogProps) {
+  useEffect(() => {
+    function handleKeyDown(e: KeyboardEvent) {
+      if (!isOpen) return;
+      if (e.key === "Escape") {
+        e.preventDefault();
+        onClose();
+      }
+    }
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isOpen, onClose]);
+
   if (!isOpen) return null;
 
   return (
-    <NarrativeSectionFormInner
-      key={section?.id || "new-narrative"}
-      section={section}
-      onClose={onClose}
-      onSuccess={onSuccess}
-    />
+    <div className="topper-dialog-backdrop" onClick={onClose}>
+      <NarrativeSectionFormInner
+        key={section?.id || "new-section"}
+        section={section}
+        onClose={onClose}
+        onSuccess={onSuccess}
+      />
+    </div>
   );
 }
 
@@ -55,6 +69,7 @@ function NarrativeSectionFormInner({
   onSuccess: () => void;
 }) {
   const [isPending, startTransition] = useTransition();
+  const firstInputRef = useRef<HTMLInputElement>(null);
 
   const [formData, setFormData] = useState({
     heading: section?.heading || "",
@@ -67,6 +82,10 @@ function NarrativeSectionFormInner({
 
   const [serverError, setServerError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    firstInputRef.current?.focus();
+  }, []);
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -122,165 +141,164 @@ function NarrativeSectionFormInner({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs animate-in fade-in duration-200">
-      <div
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="narrative-dialog-title"
-        className="w-full max-w-xl bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden"
-      >
-        <div className="p-6 border-b border-gray-100 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-red-100 text-[#B91C1C] flex items-center justify-center shrink-0">
-              <BookOpen className="w-5 h-5" />
-            </div>
-            <div>
-              <h2 id="narrative-dialog-title" className="text-lg font-heading font-bold text-gray-900">
-                {section ? "Edit Narrative Section" : "Add Narrative Section"}
-              </h2>
-              <p className="text-xs text-gray-500 font-sans mt-0.5">
-                Narrative sections form the story and paragraphs of the About School page.
-              </p>
-            </div>
-          </div>
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="narrative-dialog-title"
+      className="topper-dialog-container"
+      onClick={(e) => e.stopPropagation()}
+    >
+      <form onSubmit={handleSubmit} className="topper-dialog-form">
+        <div className="topper-dialog-header">
+          <h2 id="narrative-dialog-title" className="topper-dialog-title">
+            {section ? "Edit School Story Section" : "Add School Story Section"}
+          </h2>
           <button
             type="button"
             onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 rounded-lg p-1.5 transition-colors cursor-pointer"
+            aria-label="Close dialog"
+            className="topper-dialog-close"
           >
-            <X className="w-5 h-5" />
+            <X size={18} />
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-4 max-h-[75vh] overflow-y-auto">
+        <div className="topper-dialog-body space-y-4">
           {serverError && (
-            <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-red-800 text-sm">
-              {serverError}
+            <div className="topper-dialog-error-banner flex items-center gap-2" role="alert">
+              <AlertCircle className="w-4 h-4 text-red-600 shrink-0" />
+              <span>{serverError}</span>
             </div>
           )}
 
-          <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider text-gray-700 mb-1">
+          <div className="topper-field topper-field--full">
+            <label htmlFor="narrative-heading" className="topper-label">
               Section Heading (Optional)
             </label>
             <input
+              ref={firstInputRef}
+              id="narrative-heading"
               type="text"
               name="heading"
               value={formData.heading}
               onChange={handleChange}
-              placeholder="e.g. Founding Legacy & Mission"
-              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#B91C1C] focus:border-transparent outline-none"
+              placeholder="e.g. Genesis & Ballia Heritage, CBSE Affiliation Milestone"
+              className={`topper-input ${fieldErrors.heading ? "topper-input--error" : ""}`}
             />
             {fieldErrors.heading && (
-              <p className="text-xs text-red-600 mt-1">{fieldErrors.heading}</p>
+              <p className="topper-field-error">{fieldErrors.heading}</p>
             )}
           </div>
 
-          <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider text-gray-700 mb-1">
-              Narrative Body <span className="text-red-500">*</span>
+          <div className="topper-field topper-field--full">
+            <label htmlFor="narrative-body" className="topper-label">
+              Narrative Text / Paragraph <span className="text-red-500">*</span>
             </label>
             <textarea
+              id="narrative-body"
               name="body"
               value={formData.body}
               onChange={handleChange}
-              rows={6}
-              placeholder="Write the full narrative or paragraph text here..."
-              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#B91C1C] focus:border-transparent outline-none"
+              rows={5}
+              placeholder="Full paragraph text detailing this chapter of the school's story..."
+              className={`topper-input ${fieldErrors.body ? "topper-input--error" : ""}`}
               required
             />
             {fieldErrors.body && (
-              <p className="text-xs text-red-600 mt-1">{fieldErrors.body}</p>
+              <p className="topper-field-error">{fieldErrors.body}</p>
             )}
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-xs font-semibold uppercase tracking-wider text-gray-700 mb-1">
-                Illustration / Photo URL (Optional)
+          <div className="topper-form-grid">
+            <div className="topper-field">
+              <label htmlFor="narrative-imageUrl" className="topper-label">
+                Supporting Photo URL (Optional)
               </label>
               <input
+                id="narrative-imageUrl"
                 type="text"
                 name="imageUrl"
                 value={formData.imageUrl}
                 onChange={handleChange}
-                placeholder="e.g. /images/about/campus.jpg"
-                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#B91C1C] focus:border-transparent outline-none"
+                placeholder="e.g. /images/about/campus-history.jpg"
+                className={`topper-input ${fieldErrors.imageUrl ? "topper-input--error" : ""}`}
               />
               {fieldErrors.imageUrl && (
-                <p className="text-xs text-red-600 mt-1">{fieldErrors.imageUrl}</p>
+                <p className="topper-field-error">{fieldErrors.imageUrl}</p>
               )}
             </div>
 
-            <div>
-              <label className="block text-xs font-semibold uppercase tracking-wider text-gray-700 mb-1">
-                Image Alt Text
+            <div className="topper-field">
+              <label htmlFor="narrative-imageAlt" className="topper-label">
+                Photo Alt Text
               </label>
               <input
+                id="narrative-imageAlt"
                 type="text"
                 name="imageAlt"
                 value={formData.imageAlt}
                 onChange={handleChange}
-                placeholder="e.g. Campus grounds and buildings"
-                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#B91C1C] focus:border-transparent outline-none"
+                placeholder="e.g. Archival photo of the school foundation stone"
+                className={`topper-input ${fieldErrors.imageAlt ? "topper-input--error" : ""}`}
               />
               {fieldErrors.imageAlt && (
-                <p className="text-xs text-red-600 mt-1">{fieldErrors.imageAlt}</p>
+                <p className="topper-field-error">{fieldErrors.imageAlt}</p>
               )}
             </div>
           </div>
 
-          <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider text-gray-700 mb-1">
+          <div className="topper-field">
+            <label htmlFor="narrative-displayOrder" className="topper-label">
               Display Order
             </label>
             <input
+              id="narrative-displayOrder"
               type="number"
               name="displayOrder"
               value={formData.displayOrder}
               onChange={handleChange}
               min={0}
-              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#B91C1C] focus:border-transparent outline-none"
+              className={`topper-input ${fieldErrors.displayOrder ? "topper-input--error" : ""}`}
             />
             {fieldErrors.displayOrder && (
-              <p className="text-xs text-red-600 mt-1">{fieldErrors.displayOrder}</p>
+              <p className="topper-field-error">{fieldErrors.displayOrder}</p>
             )}
           </div>
 
-          <div className="flex items-center gap-2 pt-2">
-            <input
-              type="checkbox"
-              id="isPublishedNarrative"
-              name="isPublished"
-              checked={formData.isPublished}
-              onChange={handleChange}
-              className="w-4 h-4 rounded text-[#B91C1C] focus:ring-[#B91C1C] border-gray-300 cursor-pointer"
-            />
-            <label htmlFor="isPublishedNarrative" className="text-sm font-medium text-gray-700 cursor-pointer">
-              Publish on public About page
+          <div className="topper-field topper-field--checkbox">
+            <label className="topper-checkbox-wrapper min-h-[44px]">
+              <input
+                type="checkbox"
+                id="isPublishedNarrative"
+                name="isPublished"
+                checked={formData.isPublished}
+                onChange={handleChange}
+                className="topper-checkbox"
+              />
+              <span className="topper-checkbox-label">Publish on public About page</span>
             </label>
           </div>
+        </div>
 
-          <div className="flex items-center justify-end gap-3 pt-4 border-t border-gray-100">
-            <button
-              type="button"
-              onClick={onClose}
-              disabled={isPending}
-              className="px-4 py-2 rounded-xl text-sm font-medium text-gray-700 hover:bg-gray-100 transition-colors cursor-pointer"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={isPending}
-              className="px-5 py-2 rounded-xl text-sm font-heading font-bold bg-[#B91C1C] text-white hover:bg-[#991b1b] transition-colors disabled:opacity-50 inline-flex items-center gap-2 shadow-xs cursor-pointer"
-            >
-              {isPending && <Loader2 className="w-4 h-4 animate-spin" />}
-              <span>{section ? "Save Changes" : "Create Section"}</span>
-            </button>
-          </div>
-        </form>
-      </div>
+        <div className="topper-dialog-actions">
+          <button
+            type="button"
+            onClick={onClose}
+            disabled={isPending}
+            className="topper-button topper-button--secondary min-h-[44px]"
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            disabled={isPending}
+            className="topper-button topper-button--primary min-h-[44px] gap-2"
+          >
+            {isPending && <Loader2 className="w-4 h-4 animate-spin" />}
+            <span>{section ? "Save Changes" : "Create Section"}</span>
+          </button>
+        </div>
+      </form>
     </div>
   );
 }

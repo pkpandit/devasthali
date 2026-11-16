@@ -171,7 +171,7 @@ export function LeadershipEditor({ members }: LeadershipEditorProps) {
 
   if (!currentMember) {
     return (
-      <div className="p-8 text-center text-gray-500 bg-white rounded-2xl border border-gray-100">
+      <div className="p-8 text-center text-gray-500 bg-white rounded-2xl border border-gray-200">
         No leadership records available. Please run the database seed.
       </div>
     );
@@ -180,32 +180,42 @@ export function LeadershipEditor({ members }: LeadershipEditorProps) {
   return (
     <div className="space-y-8">
       {/* Role Switcher Tabs */}
-      <div className="flex flex-wrap items-center gap-2 border-b border-gray-200 pb-2">
-        {(["FOUNDER", "PATRON", "PRESIDENT", "MANAGER", "PRINCIPAL"] as const).map(
-          (role) => {
-            const m = members.find((item) => item.role === role);
-            const isSelected = activeRole === role;
-            return (
-              <button
-                key={role}
-                type="button"
-                onClick={() => handleRoleSelect(role)}
-                className={`px-4 py-2 text-xs font-heading font-bold rounded-xl inline-flex items-center gap-2 transition-all cursor-pointer ${
-                  isSelected
-                    ? "bg-[#B91C1C] text-white shadow-xs"
-                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                }`}
-              >
-                <span>{ROLE_LABELS[role]}</span>
-                {m && !m.isPublished && (
-                  <span className="px-1.5 py-0.5 text-[9px] font-bold bg-amber-100 text-amber-800 rounded-full">
-                    Draft
-                  </span>
-                )}
-              </button>
-            );
-          }
-        )}
+      <div className="topper-workspace-toolbar p-2 rounded-2xl bg-white border border-gray-200 shadow-xs">
+        <div
+          role="tablist"
+          aria-label="Leadership Roles"
+          className="flex items-center gap-2 overflow-x-auto no-scrollbar py-1"
+        >
+          {(["FOUNDER", "PATRON", "PRESIDENT", "MANAGER", "PRINCIPAL"] as const).map(
+            (role) => {
+              const m = members.find((item) => item.role === role);
+              const isSelected = activeRole === role;
+              return (
+                <button
+                  key={role}
+                  role="tab"
+                  id={`tab-${role.toLowerCase()}`}
+                  aria-selected={isSelected}
+                  aria-controls={`tabpanel-${role.toLowerCase()}`}
+                  type="button"
+                  onClick={() => handleRoleSelect(role)}
+                  className={`min-h-[44px] px-4 py-2 text-xs font-heading font-bold rounded-xl inline-flex items-center gap-2 shrink-0 transition-all cursor-pointer ${
+                    isSelected
+                      ? "bg-[#B91C1C] text-white shadow-xs"
+                      : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                  }`}
+                >
+                  <span>{ROLE_LABELS[role]}</span>
+                  {m && !m.isPublished && (
+                    <span className="px-1.5 py-0.5 text-[9px] font-bold bg-amber-100 text-amber-800 rounded-full">
+                      Draft
+                    </span>
+                  )}
+                </button>
+              );
+            }
+          )}
+        </div>
       </div>
 
       {/* Notifications */}
@@ -218,10 +228,15 @@ export function LeadershipEditor({ members }: LeadershipEditorProps) {
         </div>
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div
+        role="tabpanel"
+        id={`tabpanel-${activeRole.toLowerCase()}`}
+        aria-labelledby={`tab-${activeRole.toLowerCase()}`}
+        className="grid grid-cols-1 lg:grid-cols-3 gap-8"
+      >
         {/* Form Column (2 spans) */}
-        <form onSubmit={handleSubmit} className="lg:col-span-2 space-y-6 bg-white p-6 rounded-2xl border border-gray-100 shadow-xs">
-          <div className="flex items-center justify-between pb-4 border-b border-gray-100">
+        <form onSubmit={handleSubmit} className="lg:col-span-2 space-y-6 bg-white p-6 sm:p-8 rounded-2xl border border-gray-200 shadow-xs">
+          <div className="flex flex-wrap items-center justify-between gap-3 pb-4 border-b border-gray-100">
             <div>
               <h2 className="text-base font-heading font-bold text-gray-900">
                 Edit {ROLE_LABELS[activeRole]}
@@ -242,291 +257,308 @@ export function LeadershipEditor({ members }: LeadershipEditorProps) {
           </div>
 
           {serverError && (
-            <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-red-800 text-sm">
+            <div className="topper-dialog-error-banner" role="alert">
               {serverError}
             </div>
           )}
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-xs font-semibold uppercase tracking-wider text-gray-700 mb-1">
+            <div className="topper-field">
+              <label htmlFor="lead-name" className="topper-label">
                 Leader Name <span className="text-red-500">*</span>
               </label>
               <input
+                id="lead-name"
                 type="text"
                 name="name"
                 value={String(formData.name || "")}
                 onChange={handleChange}
                 placeholder="e.g. Chandra Shekhar"
-                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#B91C1C] focus:border-transparent outline-none"
+                className={`topper-input ${fieldErrors.name ? "topper-input--error" : ""}`}
                 required
               />
               {fieldErrors.name && (
-                <p className="text-xs text-red-600 mt-1">{fieldErrors.name}</p>
+                <p className="topper-field-error">{fieldErrors.name}</p>
               )}
             </div>
 
-            <div>
-              <label className="block text-xs font-semibold uppercase tracking-wider text-gray-700 mb-1">
+            <div className="topper-field">
+              <label htmlFor="lead-designation" className="topper-label">
                 Designation / Title <span className="text-red-500">*</span>
               </label>
               <input
+                id="lead-designation"
                 type="text"
                 name="designation"
                 value={String(formData.designation || "")}
                 onChange={handleChange}
                 placeholder="e.g. Founder & Former Prime Minister"
-                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#B91C1C] focus:border-transparent outline-none"
+                className={`topper-input ${fieldErrors.designation ? "topper-input--error" : ""}`}
                 required
               />
               {fieldErrors.designation && (
-                <p className="text-xs text-red-600 mt-1">{fieldErrors.designation}</p>
+                <p className="topper-field-error">{fieldErrors.designation}</p>
               )}
             </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-              <label className="block text-xs font-semibold uppercase tracking-wider text-gray-700 mb-1">
+            <div className="topper-field">
+              <label htmlFor="lead-badgeText" className="topper-label">
                 Badge / Tagline <span className="text-red-500">*</span>
               </label>
               <input
+                id="lead-badgeText"
                 type="text"
                 name="badgeText"
                 value={String(formData.badgeText || "")}
                 onChange={handleChange}
                 placeholder="e.g. Visionary Leadership"
-                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#B91C1C] focus:border-transparent outline-none"
+                className="topper-input"
                 required
               />
             </div>
 
-            <div>
-              <label className="block text-xs font-semibold uppercase tracking-wider text-gray-700 mb-1">
+            <div className="topper-field">
+              <label htmlFor="lead-termOrAffiliation" className="topper-label">
                 Affiliation / Role
               </label>
               <input
+                id="lead-termOrAffiliation"
                 type="text"
                 name="termOrAffiliation"
                 value={String(formData.termOrAffiliation || "")}
                 onChange={handleChange}
                 placeholder="e.g. Founder Patron"
-                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#B91C1C] focus:border-transparent outline-none"
+                className="topper-input"
               />
             </div>
 
-            <div>
-              <label className="block text-xs font-semibold uppercase tracking-wider text-gray-700 mb-1">
+            <div className="topper-field">
+              <label htmlFor="lead-location" className="topper-label">
                 Location
               </label>
               <input
+                id="lead-location"
                 type="text"
                 name="location"
                 value={String(formData.location || "")}
                 onChange={handleChange}
                 placeholder="e.g. Ballia, Uttar Pradesh"
-                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#B91C1C] focus:border-transparent outline-none"
+                className="topper-input"
               />
             </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-xs font-semibold uppercase tracking-wider text-gray-700 mb-1">
+            <div className="topper-field">
+              <label htmlFor="lead-pageTitle" className="topper-label">
                 Page Title <span className="text-red-500">*</span>
               </label>
               <input
+                id="lead-pageTitle"
                 type="text"
                 name="pageTitle"
                 value={String(formData.pageTitle || "")}
                 onChange={handleChange}
-                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#B91C1C] focus:border-transparent outline-none"
+                className="topper-input"
                 required
               />
             </div>
 
-            <div>
-              <label className="block text-xs font-semibold uppercase tracking-wider text-gray-700 mb-1">
+            <div className="topper-field">
+              <label htmlFor="lead-breadcrumb" className="topper-label">
                 Breadcrumb Text <span className="text-red-500">*</span>
               </label>
               <input
+                id="lead-breadcrumb"
                 type="text"
                 name="breadcrumb"
                 value={String(formData.breadcrumb || "")}
                 onChange={handleChange}
-                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#B91C1C] focus:border-transparent outline-none"
+                className="topper-input"
                 required
               />
             </div>
           </div>
 
-          <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider text-gray-700 mb-1">
+          <div className="topper-field">
+            <label htmlFor="lead-shortIntro" className="topper-label">
               Short Introduction / Lead <span className="text-red-500">*</span>
             </label>
             <textarea
+              id="lead-shortIntro"
               name="shortIntro"
               value={String(formData.shortIntro || "")}
               onChange={handleChange}
               rows={2}
               placeholder="Short introductory lead sentence appearing below the header..."
-              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#B91C1C] focus:border-transparent outline-none"
+              className="topper-input"
               required
             />
           </div>
 
-          <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider text-gray-700 mb-1">
+          <div className="topper-field">
+            <label htmlFor="lead-quote" className="topper-label">
               Inspirational Quote / Highlight
             </label>
             <textarea
+              id="lead-quote"
               name="quote"
               value={String(formData.quote || "")}
               onChange={handleChange}
               rows={2}
               placeholder="e.g. Education is the cornerstone of societal progress and personal dignity..."
-              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#B91C1C] focus:border-transparent outline-none font-serif italic"
+              className="topper-input font-serif italic"
             />
           </div>
 
-          <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider text-gray-700 mb-1">
+          <div className="topper-field">
+            <label htmlFor="lead-messageBody" className="topper-label">
               Message Body (Paragraphs separated by blank lines) <span className="text-red-500">*</span>
             </label>
             <textarea
+              id="lead-messageBody"
               name="messageBody"
               value={String(formData.messageBody || "")}
               onChange={handleChange}
               rows={8}
               placeholder="Full text of the leadership message..."
-              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#B91C1C] focus:border-transparent outline-none font-sans"
+              className="topper-input font-sans"
               required
             />
           </div>
 
-          <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider text-gray-700 mb-1">
+          <div className="topper-field">
+            <label htmlFor="lead-bio" className="topper-label">
               Biography / Historical Note (Optional)
             </label>
             <textarea
+              id="lead-bio"
               name="bio"
               value={String(formData.bio || "")}
               onChange={handleChange}
               rows={3}
               placeholder="Background, achievements, and legacy..."
-              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#B91C1C] focus:border-transparent outline-none font-sans"
+              className="topper-input font-sans"
             />
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-xs font-semibold uppercase tracking-wider text-gray-700 mb-1">
+            <div className="topper-field">
+              <label htmlFor="lead-imageUrl" className="topper-label">
                 Portrait Photo URL
               </label>
               <input
+                id="lead-imageUrl"
                 type="text"
                 name="imageUrl"
                 value={String(formData.imageUrl || "")}
                 onChange={handleChange}
                 placeholder="e.g. /images/leadership/chandra-shekhar.jpg"
-                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#B91C1C] focus:border-transparent outline-none"
+                className="topper-input"
               />
             </div>
 
-            <div>
-              <label className="block text-xs font-semibold uppercase tracking-wider text-gray-700 mb-1">
+            <div className="topper-field">
+              <label htmlFor="lead-imageAlt" className="topper-label">
                 Photo Alt Text
               </label>
               <input
+                id="lead-imageAlt"
                 type="text"
                 name="imageAlt"
                 value={String(formData.imageAlt || "")}
                 onChange={handleChange}
                 placeholder="e.g. Portrait of Shri Chandra Shekhar"
-                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#B91C1C] focus:border-transparent outline-none"
+                className="topper-input"
               />
             </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-xs font-semibold uppercase tracking-wider text-gray-700 mb-1">
+            <div className="topper-field">
+              <label htmlFor="lead-signatureImageUrl" className="topper-label">
                 Signature Image URL (Optional)
               </label>
               <input
+                id="lead-signatureImageUrl"
                 type="text"
                 name="signatureImageUrl"
                 value={String(formData.signatureImageUrl || "")}
                 onChange={handleChange}
                 placeholder="e.g. /images/leadership/signatures/founder.png"
-                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#B91C1C] focus:border-transparent outline-none"
+                className="topper-input"
               />
             </div>
 
-            <div>
-              <label className="block text-xs font-semibold uppercase tracking-wider text-gray-700 mb-1">
+            <div className="topper-field">
+              <label htmlFor="lead-signatureAlt" className="topper-label">
                 Signature Alt Text
               </label>
               <input
+                id="lead-signatureAlt"
                 type="text"
                 name="signatureAlt"
                 value={String(formData.signatureAlt || "")}
                 onChange={handleChange}
                 placeholder="e.g. Official Signature"
-                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#B91C1C] focus:border-transparent outline-none"
+                className="topper-input"
               />
             </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-xs font-semibold uppercase tracking-wider text-gray-700 mb-1">
+            <div className="topper-field">
+              <label htmlFor="lead-ctaLabel" className="topper-label">
                 CTA Button Label (Optional)
               </label>
               <input
+                id="lead-ctaLabel"
                 type="text"
                 name="ctaLabel"
                 value={String(formData.ctaLabel || "")}
                 onChange={handleChange}
                 placeholder="e.g. Explore Academic System"
-                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#B91C1C] focus:border-transparent outline-none"
+                className="topper-input"
               />
             </div>
 
-            <div>
-              <label className="block text-xs font-semibold uppercase tracking-wider text-gray-700 mb-1">
+            <div className="topper-field">
+              <label htmlFor="lead-ctaHref" className="topper-label">
                 CTA Destination URL (Optional)
               </label>
               <input
+                id="lead-ctaHref"
                 type="text"
                 name="ctaHref"
                 value={String(formData.ctaHref || "")}
                 onChange={handleChange}
                 placeholder="e.g. /academics"
-                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#B91C1C] focus:border-transparent outline-none"
+                className="topper-input"
               />
             </div>
           </div>
 
-          <div className="flex items-center justify-between pt-4 border-t border-gray-100">
-            <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center justify-between gap-4 pt-4 border-t border-gray-100">
+            <label className="topper-checkbox-wrapper min-h-[44px]">
               <input
                 type="checkbox"
                 id="isPublishedLeadership"
                 name="isPublished"
                 checked={Boolean(formData.isPublished)}
                 onChange={handleChange}
-                className="w-4 h-4 rounded text-[#B91C1C] focus:ring-[#B91C1C] border-gray-300 cursor-pointer"
+                className="topper-checkbox"
               />
-              <label htmlFor="isPublishedLeadership" className="text-sm font-medium text-gray-700 cursor-pointer">
+              <span className="topper-checkbox-label">
                 Publish on public website (Unpublishing returns 404 to public visitors)
-              </label>
-            </div>
+              </span>
+            </label>
 
             <button
               type="submit"
               disabled={isPending}
-              className="px-5 py-2.5 rounded-xl text-sm font-heading font-bold bg-[#B91C1C] text-white hover:bg-[#991b1b] transition-colors disabled:opacity-50 inline-flex items-center gap-2 shadow-xs cursor-pointer"
+              className="topper-button topper-button--primary min-h-[44px] px-5 gap-2"
             >
               {isPending ? (
                 <Loader2 className="w-4 h-4 animate-spin" />
@@ -540,7 +572,7 @@ export function LeadershipEditor({ members }: LeadershipEditorProps) {
 
         {/* Live Preview Card Column (1 span) */}
         <div className="space-y-4">
-          <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-xs space-y-4 sticky top-6">
+          <div className="bg-white p-6 sm:p-8 rounded-2xl border border-gray-200 shadow-xs space-y-4 sticky top-6">
             <div className="flex items-center justify-between pb-3 border-b border-gray-100">
               <div className="flex items-center gap-2">
                 <Users className="w-4 h-4 text-[#B91C1C]" />
@@ -599,13 +631,13 @@ export function LeadershipEditor({ members }: LeadershipEditorProps) {
 
               {formData.signatureImageUrl ? (
                 <div className="pt-2 border-t border-gray-100">
-                  <p className="text-[10px] text-gray-400 uppercase tracking-wider mb-1">
-                    Signature
+                  <p className="text-[10px] uppercase font-bold text-gray-400 tracking-wider mb-1">
+                    Signature Preview
                   </p>
-                  <div className="relative h-10 w-32 mx-auto">
+                  <div className="relative h-16 w-48 mx-auto overflow-hidden">
                     <Image
                       src={String(formData.signatureImageUrl)}
-                      alt="Signature"
+                      alt={String(formData.signatureAlt || "Official Signature")}
                       fill
                       unoptimized
                       className="object-contain"

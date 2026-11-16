@@ -102,42 +102,43 @@ export function PrincipalMessageEditor({ initialPrincipal }: PrincipalMessageEdi
       )}
 
       {serverError && (
-        <div className="p-4 rounded-xl bg-red-50 border border-red-200 text-red-800 flex items-center gap-3">
+        <div className="topper-dialog-error-banner flex items-center gap-3" role="alert">
           <AlertCircle className="w-5 h-5 text-red-600 shrink-0" />
           <p className="text-sm font-medium">{serverError}</p>
         </div>
       )}
 
       <form onSubmit={handleSubmit} className="space-y-6">
-        <div className="bg-white rounded-2xl p-6 border border-gray-200 shadow-xs space-y-6">
-          <div className="flex items-center justify-between border-b border-gray-100 pb-4">
+        <div className="bg-white rounded-2xl p-6 sm:p-8 border border-gray-200 shadow-xs space-y-6">
+          <div className="flex flex-wrap items-center justify-between gap-4 border-b border-gray-100 pb-4">
             <div>
               <h2 className="text-lg font-heading font-bold text-gray-900">
                 Principal&apos;s Message Excerpt
               </h2>
               <p className="text-xs text-gray-500 font-sans mt-0.5">
-                Front-facing leadership quote and editorial message shown on the public homepage.
+                Front-facing leadership quote and editorial message. Stored in database and managed here; retained for future approved public layout.
               </p>
             </div>
-            <label className="flex items-center gap-2.5 cursor-pointer">
+            <label className="topper-checkbox-wrapper min-h-[44px]">
               <input
                 type="checkbox"
                 name="isPublished"
                 checked={formData.isPublished}
                 onChange={handleChange}
-                className="w-4 h-4 text-[#B91C1C] rounded border-gray-300 focus:ring-[#B91C1C]"
+                className="topper-checkbox"
               />
-              <span className="text-sm font-medium text-gray-700">Section Published</span>
+              <span className="topper-checkbox-label">Section Published</span>
             </label>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
             {/* Heading */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+            <div className="topper-field">
+              <label htmlFor="heading" className="topper-label">
                 Section Heading <span className="text-red-500">*</span>
               </label>
               <input
+                id="heading"
                 type="text"
                 name="heading"
                 required
@@ -145,23 +146,20 @@ export function PrincipalMessageEditor({ initialPrincipal }: PrincipalMessageEdi
                 onChange={handleChange}
                 placeholder="e.g. Principal’s Message"
                 maxLength={120}
-                className={`w-full px-3.5 py-2.5 rounded-xl border text-sm transition-colors ${
-                  fieldErrors.heading
-                    ? "border-red-400 bg-red-50/50"
-                    : "border-gray-300 hover:border-gray-400 focus:border-[#B91C1C] focus:ring-1 focus:ring-[#B91C1C]"
-                }`}
+                className={`topper-input ${fieldErrors.heading ? "topper-input--error" : ""}`}
               />
               {fieldErrors.heading && (
-                <p className="text-xs text-red-600 mt-1">{fieldErrors.heading}</p>
+                <p className="topper-field-error">{fieldErrors.heading}</p>
               )}
             </div>
 
             {/* Principal Name */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+            <div className="topper-field">
+              <label htmlFor="principalName" className="topper-label">
                 Principal Name <span className="text-red-500">*</span>
               </label>
               <input
+                id="principalName"
                 type="text"
                 name="principalName"
                 required
@@ -169,23 +167,20 @@ export function PrincipalMessageEditor({ initialPrincipal }: PrincipalMessageEdi
                 onChange={handleChange}
                 placeholder="e.g. P. C. Shrivastava"
                 maxLength={120}
-                className={`w-full px-3.5 py-2.5 rounded-xl border text-sm transition-colors ${
-                  fieldErrors.principalName
-                    ? "border-red-400 bg-red-50/50"
-                    : "border-gray-300 hover:border-gray-400 focus:border-[#B91C1C] focus:ring-1 focus:ring-[#B91C1C]"
-                }`}
+                className={`topper-input ${fieldErrors.principalName ? "topper-input--error" : ""}`}
               />
               {fieldErrors.principalName && (
-                <p className="text-xs text-red-600 mt-1">{fieldErrors.principalName}</p>
+                <p className="topper-field-error">{fieldErrors.principalName}</p>
               )}
             </div>
 
             {/* Designation */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+            <div className="topper-field">
+              <label htmlFor="principalDesignation" className="topper-label">
                 Designation <span className="text-red-500">*</span>
               </label>
               <input
+                id="principalDesignation"
                 type="text"
                 name="principalDesignation"
                 required
@@ -193,24 +188,21 @@ export function PrincipalMessageEditor({ initialPrincipal }: PrincipalMessageEdi
                 onChange={handleChange}
                 placeholder="e.g. Principal, Devasthaly Vidyapeeth"
                 maxLength={120}
-                className={`w-full px-3.5 py-2.5 rounded-xl border text-sm transition-colors ${
-                  fieldErrors.principalDesignation
-                    ? "border-red-400 bg-red-50/50"
-                    : "border-gray-300 hover:border-gray-400 focus:border-[#B91C1C] focus:ring-1 focus:ring-[#B91C1C]"
-                }`}
+                className={`topper-input ${fieldErrors.principalDesignation ? "topper-input--error" : ""}`}
               />
               {fieldErrors.principalDesignation && (
-                <p className="text-xs text-red-600 mt-1">{fieldErrors.principalDesignation}</p>
+                <p className="topper-field-error">{fieldErrors.principalDesignation}</p>
               )}
             </div>
           </div>
 
           {/* Featured Highlight Quote */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+          <div className="topper-field">
+            <label htmlFor="quote" className="topper-label">
               Highlighted Quote (Callout Text) <span className="text-red-500">*</span>
             </label>
             <textarea
+              id="quote"
               name="quote"
               rows={2}
               required
@@ -218,23 +210,20 @@ export function PrincipalMessageEditor({ initialPrincipal }: PrincipalMessageEdi
               onChange={handleChange}
               placeholder="Devasthaly Vidyapeeth is an amalgamation of competent teachers, state-of-the-art infrastructure..."
               maxLength={500}
-              className={`w-full px-3.5 py-2.5 rounded-xl border text-sm transition-colors ${
-                fieldErrors.quote
-                  ? "border-red-400 bg-red-50/50"
-                  : "border-gray-300 hover:border-gray-400 focus:border-[#B91C1C] focus:ring-1 focus:ring-[#B91C1C]"
-              }`}
+              className={`topper-input ${fieldErrors.quote ? "topper-input--error" : ""}`}
             />
             {fieldErrors.quote && (
-              <p className="text-xs text-red-600 mt-1">{fieldErrors.quote}</p>
+              <p className="topper-field-error">{fieldErrors.quote}</p>
             )}
           </div>
 
           {/* Excerpt Body */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+          <div className="topper-field">
+            <label htmlFor="excerpt" className="topper-label">
               Editorial Excerpt Body <span className="text-red-500">*</span>
             </label>
             <textarea
+              id="excerpt"
               name="excerpt"
               rows={4}
               required
@@ -242,82 +231,69 @@ export function PrincipalMessageEditor({ initialPrincipal }: PrincipalMessageEdi
               onChange={handleChange}
               placeholder="Devasthaly Vidyapeeth aims at holistic growth and development of its students..."
               maxLength={2000}
-              className={`w-full px-3.5 py-2.5 rounded-xl border text-sm transition-colors ${
-                fieldErrors.excerpt
-                  ? "border-red-400 bg-red-50/50"
-                  : "border-gray-300 hover:border-gray-400 focus:border-[#B91C1C] focus:ring-1 focus:ring-[#B91C1C]"
-              }`}
+              className={`topper-input ${fieldErrors.excerpt ? "topper-input--error" : ""}`}
             />
             {fieldErrors.excerpt && (
-              <p className="text-xs text-red-600 mt-1">{fieldErrors.excerpt}</p>
+              <p className="topper-field-error">{fieldErrors.excerpt}</p>
             )}
           </div>
 
           {/* Portrait & CTA */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-5 pt-2 border-t border-gray-100">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+            <div className="topper-field">
+              <label htmlFor="imageUrl" className="topper-label">
                 Portrait Image URL
               </label>
               <input
+                id="imageUrl"
                 type="text"
                 name="imageUrl"
                 value={formData.imageUrl}
                 onChange={handleChange}
                 placeholder="e.g. /images/leadership/principal_sir.webp"
                 maxLength={500}
-                className={`w-full px-3.5 py-2.5 rounded-xl border text-sm transition-colors ${
-                  fieldErrors.imageUrl
-                    ? "border-red-400 bg-red-50/50"
-                    : "border-gray-300 hover:border-gray-400 focus:border-[#B91C1C] focus:ring-1 focus:ring-[#B91C1C]"
-                }`}
+                className={`topper-input ${fieldErrors.imageUrl ? "topper-input--error" : ""}`}
               />
               {fieldErrors.imageUrl && (
-                <p className="text-xs text-red-600 mt-1">{fieldErrors.imageUrl}</p>
+                <p className="topper-field-error">{fieldErrors.imageUrl}</p>
               )}
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+            <div className="topper-field">
+              <label htmlFor="ctaLabel" className="topper-label">
                 CTA Button Label
               </label>
               <input
+                id="ctaLabel"
                 type="text"
                 name="ctaLabel"
                 value={formData.ctaLabel}
                 onChange={handleChange}
                 placeholder="e.g. Read Full Message"
                 maxLength={60}
-                className={`w-full px-3.5 py-2.5 rounded-xl border text-sm transition-colors ${
-                  fieldErrors.ctaLabel
-                    ? "border-red-400 bg-red-50/50"
-                    : "border-gray-300 hover:border-gray-400 focus:border-[#B91C1C] focus:ring-1 focus:ring-[#B91C1C]"
-                }`}
+                className={`topper-input ${fieldErrors.ctaLabel ? "topper-input--error" : ""}`}
               />
               {fieldErrors.ctaLabel && (
-                <p className="text-xs text-red-600 mt-1">{fieldErrors.ctaLabel}</p>
+                <p className="topper-field-error">{fieldErrors.ctaLabel}</p>
               )}
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+            <div className="topper-field">
+              <label htmlFor="ctaHref" className="topper-label">
                 CTA Destination URL
               </label>
               <input
+                id="ctaHref"
                 type="text"
                 name="ctaHref"
                 value={formData.ctaHref}
                 onChange={handleChange}
                 placeholder="e.g. /principals-message"
                 maxLength={500}
-                className={`w-full px-3.5 py-2.5 rounded-xl border text-sm transition-colors ${
-                  fieldErrors.ctaHref
-                    ? "border-red-400 bg-red-50/50"
-                    : "border-gray-300 hover:border-gray-400 focus:border-[#B91C1C] focus:ring-1 focus:ring-[#B91C1C]"
-                }`}
+                className={`topper-input ${fieldErrors.ctaHref ? "topper-input--error" : ""}`}
               />
               {fieldErrors.ctaHref && (
-                <p className="text-xs text-red-600 mt-1">{fieldErrors.ctaHref}</p>
+                <p className="topper-field-error">{fieldErrors.ctaHref}</p>
               )}
             </div>
           </div>
@@ -328,7 +304,7 @@ export function PrincipalMessageEditor({ initialPrincipal }: PrincipalMessageEdi
           <button
             type="submit"
             disabled={isPending}
-            className="px-6 py-2.5 rounded-xl bg-[#B91C1C] text-white font-heading font-bold text-sm hover:bg-[#991b1b] focus:outline-2 focus:outline-offset-2 focus:outline-[#B91C1C] disabled:opacity-50 inline-flex items-center gap-2 shadow-xs transition-colors cursor-pointer"
+            className="topper-button topper-button--primary min-h-[44px] px-6 gap-2"
           >
             {isPending ? (
               <>
@@ -355,8 +331,7 @@ export function PrincipalMessageEditor({ initialPrincipal }: PrincipalMessageEdi
           {/* Portrait Preview */}
           <div className="md:col-span-4 flex flex-col items-center text-center">
             <div className="relative w-36 h-48 sm:w-44 sm:h-56 rounded-2xl overflow-hidden bg-gray-900 border border-gray-200 shadow-sm">
-              {formData.imageUrl ? (
-                <Image
+              {formData.imageUrl ? (                <Image
                   src={formData.imageUrl}
                   alt={formData.principalName || "Principal"}
                   fill
