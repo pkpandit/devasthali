@@ -295,6 +295,25 @@ export const adminSections: AdminSection[] = [
       },
     ],
   },
+  {
+    id: "homepage",
+    label: "Homepage",
+    href: "/admin/homepage",
+    publicHref: "/",
+    description: "Manage homepage hero banner, principal's message excerpt, trust metrics, and action highlights.",
+    groups: [
+      {
+        items: [
+          {
+            label: "Homepage Content & Sections",
+            href: "/admin/homepage",
+            publicHref: "/",
+            description: "Hero banner, Principal's message, 6 Key Statistics, and 6 Quick Action Highlights.",
+          },
+        ],
+      },
+    ],
+  },
 ];
 
 export const adminRedirects: Record<string, string> = {

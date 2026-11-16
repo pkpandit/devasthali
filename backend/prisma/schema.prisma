@@ -74,7 +74,7 @@ model AuditLog {
   userId     String?
   user       User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
   action     String   // E.g., 'AUTH_LOGIN_SUCCESS', 'AUTH_LOGIN_FAILED', 'NOTICE_CREATED', 'SITE_PROFILE_UPDATED', etc.
-  entityType String   // Target entity type: 'User', 'Session', 'BoardResultTopper', 'Notice', 'SiteProfile', 'CampusDirectoryEntry', 'NavigationItem', 'NavigationColumn', 'NavigationLinkItem'
+  entityType String   // Target entity type: 'User', 'Session', 'BoardResultTopper', 'Notice', 'SiteProfile', 'CampusDirectoryEntry', 'NavigationItem', 'NavigationColumn', 'NavigationLinkItem', 'HomepageHero', 'HomepagePrincipalMessage', 'HomepageStatistic', 'HomepageHighlight'
   entityId   String   // Target entity ID
   metadata   Json?    // Structured diagnostic context (IP, user agent, failure reason, modified fields)
   ipAddress  String?
@@ -299,4 +299,81 @@ model NavigationLinkItem {
 
   @@index([columnId, isPublished, displayOrder])
   @@map("navigation_link_items")
+}
+
+// ==========================================
+// 9. HOMEPAGE CONTENT MANAGEMENT (MILESTONE 3)
+// ==========================================
+
+model HomepageHero {
+  id                        String   @id @default("default") // Singleton identifier
+  badgeText                 String?  @db.VarChar(120)
+  heading                   String   @db.VarChar(255)
+  highlightText             String?  @db.VarChar(100)
+  subheading                String   @db.Text
+  primaryCtaLabel           String   @db.VarChar(60)
+  primaryCtaHref            String   @db.VarChar(500)
+  secondaryCtaLabel         String?  @db.VarChar(60)
+  secondaryCtaHref          String?  @db.VarChar(500)
+  backgroundImageUrl        String?  @db.VarChar(500)
+  backgroundImageStorageKey String?  @db.VarChar(255)
+  isPublished               Boolean  @default(true)
+  updatedAt                 DateTime @updatedAt
+
+  @@map("homepage_hero")
+}
+
+model HomepagePrincipalMessage {
+  id                   String   @id @default("default") // Singleton identifier
+  heading              String   @db.VarChar(120)
+  principalName        String   @db.VarChar(120)
+  principalDesignation String   @db.VarChar(120)
+  quote                String   @db.VarChar(500)
+  excerpt              String   @db.Text
+  imageUrl             String?  @db.VarChar(500)
+  imageStorageKey      String?  @db.VarChar(255)
+  ctaLabel             String?  @db.VarChar(60)
+  ctaHref              String?  @db.VarChar(500)
+  isPublished          Boolean  @default(true)
+  updatedAt            DateTime @updatedAt
+
+  @@map("homepage_principal_message")
+}
+
+model HomepageStatistic {
+  id              String   @id @default(cuid())
+  label           String   @db.VarChar(120)
+  numericValue    String   @db.VarChar(40)
+  suffix          String?  @db.VarChar(20)
+  subtext         String?  @db.VarChar(120)
+  badge           String?  @db.VarChar(40)
+  iconName        String?  @db.VarChar(60)
+  imageUrl        String?  @db.VarChar(500)
+  imageStorageKey String?  @db.VarChar(255)
+  displayOrder    Int      @default(0)
+  isPublished     Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([isPublished, displayOrder])
+  @@map("homepage_statistics")
+}
+
+model HomepageHighlight {
+  id              String   @id @default(cuid())
+  title           String   @db.VarChar(120)
+  description     String   @db.VarChar(255)
+  badge           String?  @db.VarChar(40)
+  iconName        String?  @db.VarChar(60)
+  imageUrl        String?  @db.VarChar(500)
+  imageStorageKey String?  @db.VarChar(255)
+  ctaLabel        String   @db.VarChar(60)
+  ctaHref         String   @db.VarChar(500)
+  displayOrder    Int      @default(0)
+  isPublished     Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([isPublished, displayOrder])
+  @@map("homepage_highlights")
 }

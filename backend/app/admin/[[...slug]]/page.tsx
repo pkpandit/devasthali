@@ -5,6 +5,7 @@ import { TopperWorkspace } from "@/components/admin/toppers/TopperWorkspace";
 import { NoticeWorkspace } from "@/components/admin/notices/NoticeWorkspace";
 import { ProfileDirectoryWorkspace } from "@/components/admin/profile/ProfileDirectoryWorkspace";
 import { NavigationWorkspace } from "@/components/admin/navigation/NavigationWorkspace";
+import { HomepageWorkspace } from "@/components/admin/homepage/HomepageWorkspace";
 import { Breadcrumbs } from "@/components/ui/Breadcrumbs";
 import { Badge } from "@/components/ui/Badge";
 import { Card } from "@/components/ui/Card";
@@ -294,6 +295,85 @@ export default async function AdminWorkspacePage({
             headerItems={headerItems}
             footerAdmissions={footerAdmissions}
             footerCommunity={footerCommunity}
+          />
+        </div>
+      </Card>
+    );
+  }
+
+  // Specialization: /admin/homepage renders HomepageWorkspace
+  if (href === "/admin/homepage") {
+    await requireRole(["SUPER_ADMIN"], href);
+
+    const [hero, principal, statistics, highlights] = await Promise.all([
+      prisma.homepageHero.findUnique({
+        where: { id: "default" },
+      }),
+      prisma.homepagePrincipalMessage.findUnique({
+        where: { id: "default" },
+      }),
+      prisma.homepageStatistic.findMany({
+        orderBy: [{ displayOrder: "asc" }, { createdAt: "asc" }],
+      }),
+      prisma.homepageHighlight.findMany({
+        orderBy: [{ displayOrder: "asc" }, { createdAt: "asc" }],
+      }),
+    ]);
+
+    const serializedHero = hero
+      ? {
+          ...hero,
+          updatedAt: hero.updatedAt.toISOString(),
+        }
+      : null;
+
+    const serializedPrincipal = principal
+      ? {
+          ...principal,
+          updatedAt: principal.updatedAt.toISOString(),
+        }
+      : null;
+
+    const serializedStatistics = statistics.map((stat) => ({
+      ...stat,
+      createdAt: stat.createdAt.toISOString(),
+      updatedAt: stat.updatedAt.toISOString(),
+    }));
+
+    const serializedHighlights = highlights.map((hl) => ({
+      ...hl,
+      createdAt: hl.createdAt.toISOString(),
+      updatedAt: hl.updatedAt.toISOString(),
+    }));
+
+    return (
+      <Card as="section" aria-labelledby="admin-workspace-title">
+        <Breadcrumbs items={workspace.breadcrumbs} />
+
+        <div className="workspace-header">
+          <h1 className="workspace-title" id="admin-workspace-title" tabIndex={-1}>
+            {workspace.title}
+          </h1>
+          {workspace.badge && <Badge>{workspace.badge}</Badge>}
+        </div>
+
+        {workspace.description && (
+          <p className="workspace-description">{workspace.description}</p>
+        )}
+
+        <div className="workspace-meta-bar">
+          <PublicReferenceLink
+            publicHref={workspace.publicHref}
+            title={workspace.title}
+          />
+        </div>
+
+        <div className="workspace-content">
+          <HomepageWorkspace
+            hero={serializedHero}
+            principal={serializedPrincipal}
+            statistics={serializedStatistics}
+            highlights={serializedHighlights}
           />
         </div>
       </Card>

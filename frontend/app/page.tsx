@@ -8,6 +8,7 @@ import {
   FAQ_DATA,
 } from "@/lib/school-data";
 import { getPublicNotices } from "@/lib/api/notices";
+import { getPublicHomepage } from "@/lib/api/homepage";
 import { Container } from "@/components/ui/Container";
 import { TestimonialSection } from "@/components/features/testimonials/TestimonialSection";
 import { HomeAnnouncement } from "@/components/features/announcements/HomeAnnouncement";
@@ -60,131 +61,75 @@ const FACILITY_ICONS: Record<string, React.ElementType> = {
   HeartPulse,
 };
 
-const STAT_METRICS = [
+const STAT_STYLES = [
   {
-    label: "Years of Heritage",
-    value: "36+",
-    subtext: "Established in 1988",
-    image: "/images/about/campus-showcase.jpg",
-    icon: Award,
     color: "text-[#B45309]",
     bg: "bg-amber-50/80",
     borderHover: "hover:border-[#B45309]/40",
     topGradient: "from-amber-500 to-amber-600",
-    badge: "Legacy",
   },
   {
-    label: "CBSE Board Pass Rate",
-    value: "100%",
-    subtext: "Consistent Merit Ranks",
-    image: "/images/home/hero/hero-students.jpg",
-    icon: Trophy,
     color: "text-[#B91C1C]",
     bg: "bg-red-50/80",
     borderHover: "hover:border-[#B91C1C]/40",
     topGradient: "from-red-600 to-[#B91C1C]",
-    badge: "Excellence",
   },
   {
-    label: "Lush Green Campus",
-    value: "15+ Acres",
-    subtext: "Eco-Friendly & Safe",
-    image: "/images/facilities/campus-grounds.jpg",
-    icon: Building,
     color: "text-emerald-700",
     bg: "bg-emerald-50/80",
     borderHover: "hover:border-emerald-600/40",
     topGradient: "from-emerald-600 to-emerald-700",
-    badge: "Eco Campus",
   },
   {
-    label: "Student-Teacher Ratio",
-    value: "1 : 25",
-    subtext: "Personal Mentorship",
-    image: "/images/leadership/principal-mentor.jpg",
-    icon: GraduationCap,
     color: "text-[#B91C1C]",
     bg: "bg-red-50/80",
     borderHover: "hover:border-[#B91C1C]/40",
     topGradient: "from-red-600 to-[#B91C1C]",
-    badge: "Mentorship",
   },
   {
-    label: "Alumni Across India",
-    value: "3,500+",
-    subtext: "IITs, AIIMS, Armed Forces",
-    image: "/images/alumni/alumni-graduates.jpg",
-    icon: Sparkles,
     color: "text-[#B45309]",
     bg: "bg-amber-50/80",
     borderHover: "hover:border-[#B45309]/40",
     topGradient: "from-amber-500 to-amber-600",
-    badge: "Alumni",
   },
   {
-    label: "Transport Nodes",
-    value: "40+ Stops",
-    subtext: "Ballia & Rasra Network",
-    image: "/images/facilities/school-bus-fleet.jpg",
-    icon: Bus,
     color: "text-[#B91C1C]",
     bg: "bg-red-50/80",
     borderHover: "hover:border-[#B91C1C]/40",
     topGradient: "from-red-600 to-[#B91C1C]",
-    badge: "GPS Fleet",
   },
 ];
 
-const QUICK_ACTIONS = [
-  {
-    label: "Download School Prospectus",
-    href: "/school-prospectus",
-    image: "/images/admissions/prospectus-brochure.jpg",
-    icon: Download,
-    hint: "Admissions PDF Brochure",
-    badge: "PDF",
-  },
-  {
-    label: "Fee Schedule & Guidelines",
-    href: "/admissions/fees",
-    image: "/images/admissions/fee-guidelines.jpg",
-    icon: FileText,
-    hint: "Class-wise Fee Structure",
-    badge: "Fees",
-  },
-  {
-    label: "Bus Routes & Transport",
-    href: "/facilities#transport",
-    image: "/images/facilities/school-bus-fleet.jpg",
-    icon: Bus,
-    hint: "40+ Stops GPS Network",
-    badge: "Routes",
-  },
-  {
-    label: "Board Toppers & Results",
-    href: "/results",
-    image: "/images/academics/toppers/board-toppers-trophy.jpg",
-    icon: Award,
-    hint: "100% CBSE Pass Records",
-    badge: "Merit",
-  },
-  {
-    label: "Official Circulars & Desk",
-    href: "/notices",
-    image: "/images/notices/school-notices-circulars.jpg",
-    icon: Calendar,
-    hint: "Latest School Circulars",
-    badge: "Desk",
-  },
-  {
-    label: "CBSE Mandatory Disclosure",
-    href: "/mandatory-public-disclosure",
-    image: "/images/about/cbse-affiliation-cert.jpg",
-    icon: ShieldCheck,
-    hint: "Statutory Compliance Docs",
-    badge: "CBSE",
-  },
-];
+const ICON_MAP: Record<string, React.ElementType> = {
+  ShieldCheck,
+  Award,
+  BookOpen,
+  Phone,
+  MessageCircle,
+  FileText,
+  Calendar,
+  Sparkles,
+  CheckCircle2,
+  ChevronRight,
+  MapPin,
+  Clock,
+  Download,
+  Bus,
+  Building,
+  Heart,
+  MonitorPlay,
+  FlaskConical,
+  Cpu,
+  Home,
+  Trophy,
+  HeartPulse,
+  GraduationCap,
+};
+
+function getLucideIcon(iconName?: string | null, fallback: React.ElementType = Award): React.ElementType {
+  if (!iconName) return fallback;
+  return ICON_MAP[iconName] || fallback;
+}
 
 /**
  * Deterministic skeleton fallback for Section 7: Latest Notices & Circulars.
@@ -283,269 +228,381 @@ async function HomeNoticesSection() {
   );
 }
 
-export default function HomePage() {
+export default async function HomePage() {
+  const { hero, principal, statistics, highlights } = await getPublicHomepage();
+
   return (
     <div className="flex flex-col w-full bg-white">
       <HomeAnnouncement />
       {/* =========================================================================
           SECTION 1: HERO & ADMISSION HOOK (Faithful Edplus Distance Recreation)
       ========================================================================= */}
-      <section className="relative w-full bg-[#111827] text-white py-16 sm:py-24 lg:py-32 overflow-hidden border-b border-gray-800">
-        {/* Full-Bleed Campus Hero Background Image with High-Contrast Gradient */}
-        <div className="absolute inset-0 pointer-events-none select-none">
-          <Image
-            src="/images/about/campus-showcase.jpg"
-            alt="Devasthaly Vidyapeeth Campus Architecture"
-            fill
-            sizes="100vw"
-            priority
-            quality={90}
-            className="object-cover object-center"
-          />
-          {/* Directional contrast gradient: deeper on left for text legibility, transparent on right to showcase campus building */}
-          <div className="absolute inset-0 bg-gradient-to-r from-[#111827]/95 via-[#111827]/80 to-[#111827]/55" />
-          <div className="absolute inset-0 bg-gradient-to-t from-[#111827] via-transparent to-[#111827]/50" />
-          {/* Brand atmospheric radial accents */}
-          <div className="absolute -bottom-24 -left-24 w-96 h-96 bg-[#B91C1C]/20 rounded-full blur-3xl" />
-          <div className="absolute -top-20 -right-20 w-96 h-96 bg-[#F4CD13]/15 rounded-full blur-3xl" />
-        </div>
+      {hero && (
+        <section className="relative w-full bg-[#111827] text-white py-16 sm:py-24 lg:py-32 overflow-hidden border-b border-gray-800">
+          {/* Full-Bleed Campus Hero Background Image with High-Contrast Gradient */}
+          <div className="absolute inset-0 pointer-events-none select-none">
+            <Image
+              src={hero.backgroundImageUrl || "/images/about/campus-showcase.jpg"}
+              alt="Devasthaly Vidyapeeth Campus Architecture"
+              fill
+              sizes="100vw"
+              priority
+              quality={90}
+              className="object-cover object-center"
+            />
+            {/* Directional contrast gradient: deeper on left for text legibility, transparent on right to showcase campus building */}
+            <div className="absolute inset-0 bg-gradient-to-r from-[#111827]/95 via-[#111827]/80 to-[#111827]/55" />
+            <div className="absolute inset-0 bg-gradient-to-t from-[#111827] via-transparent to-[#111827]/50" />
+            {/* Brand atmospheric radial accents */}
+            <div className="absolute -bottom-24 -left-24 w-96 h-96 bg-[#B91C1C]/20 rounded-full blur-3xl" />
+            <div className="absolute -top-20 -right-20 w-96 h-96 bg-[#F4CD13]/15 rounded-full blur-3xl" />
+          </div>
 
-        {/* Edplus Floating Decorative Geometric Shapes (bshape1–bshape4) */}
-        <div className="absolute top-1/4 left-8 w-16 h-16 rounded-full border-2 border-dashed border-[#B91C1C]/40 opacity-50 pointer-events-none select-none hidden xl:block" aria-hidden="true" />
-        <div className="absolute bottom-1/4 left-1/3 w-8 h-8 rotate-45 border-2 border-[#F4CD13]/40 opacity-40 pointer-events-none select-none hidden lg:block" aria-hidden="true" />
-        <div className="absolute top-16 right-1/4 w-12 h-12 rounded-2xl border border-white/20 rotate-12 opacity-30 pointer-events-none select-none hidden lg:block" aria-hidden="true" />
+          {/* Edplus Floating Decorative Geometric Shapes (bshape1–bshape4) */}
+          <div className="absolute top-1/4 left-8 w-16 h-16 rounded-full border-2 border-dashed border-[#B91C1C]/40 opacity-50 pointer-events-none select-none hidden xl:block" aria-hidden="true" />
+          <div className="absolute bottom-1/4 left-1/3 w-8 h-8 rotate-45 border-2 border-[#F4CD13]/40 opacity-40 pointer-events-none select-none hidden lg:block" aria-hidden="true" />
+          <div className="absolute top-16 right-1/4 w-12 h-12 rounded-2xl border border-white/20 rotate-12 opacity-30 pointer-events-none select-none hidden lg:block" aria-hidden="true" />
 
-        <Container className="relative z-10">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16 items-center">
-            {/* LEFT COLUMN: Edplus Banner Typography & Action Suite */}
-            <div className="lg:col-span-7 flex flex-col items-start text-left gap-6 lg:gap-8">
-              {/* Edplus Eyebrow Pill Badge */}
-              <div className="inline-flex items-center gap-2.5 px-4 py-2 rounded-full bg-[#B91C1C] text-white text-sm font-heading font-bold uppercase tracking-wider w-fit shadow-md border border-red-500/40">
-                <Sparkles className="w-4 h-4 text-[#F4CD13]" aria-hidden="true" />
-                <span>Admissions Open 2026–27 • LKG to Class XI</span>
-              </div>
-
-              {/* Main Display Heading H1 (Edplus 62px-70px bold banner title) */}
-              <h1 className="font-heading text-3xl sm:text-5xl lg:text-[62px] lg:leading-[70px] font-bold text-white tracking-tight">
-                Nurturing Academic Rigour, Moral Character & Leadership{" "}
-                <span className="text-[#F4CD13] underline decoration-[#B91C1C] decoration-4 underline-offset-8">
-                  Since 1988
-                </span>
-              </h1>
-
-              {/* Subtitle Paragraph */}
-              <p className="text-base sm:text-lg lg:text-[18px] lg:leading-[28px] text-gray-200 [&>strong]:text-white [&>strong]:font-semibold leading-relaxed font-sans max-w-2xl font-medium">
-                Welcome to <strong>Devasthaly Vidyapeeth</strong>, Chilkahar, Ballia. A premier CBSE-affiliated co-educational residential and day-boarding institution where timeless Indian values converge with state-of-the-art modern education.
-              </p>
-
-              {/* Statutory Trust Pills in Frosted Glass (Edplus Category/Metadata Bar Style) */}
-              <div className="flex flex-wrap items-center gap-2.5 sm:gap-3 text-sm text-gray-300 pt-2 border-t border-gray-800/80 w-full">
-                <span className="inline-flex items-center gap-2 bg-white/5 border border-white/10 backdrop-blur-sm px-3.5 py-2 rounded-xl text-gray-200 shadow-2xs">
-                  <ShieldCheck className="w-4 h-4 text-[#F4CD13]" aria-hidden="true" />
-                  <span className="font-heading font-semibold text-white">CBSE Affil. No. 2130238</span>
-                </span>
-                <span className="inline-flex items-center gap-2 bg-white/5 border border-white/10 backdrop-blur-sm px-3.5 py-2 rounded-xl text-gray-200 shadow-2xs">
-                  <Award className="w-4 h-4 text-[#F4CD13]" aria-hidden="true" />
-                  <span className="font-heading font-semibold text-white">36+ Years of Trust</span>
-                </span>
-                <span className="inline-flex items-center gap-2 bg-white/5 border border-white/10 backdrop-blur-sm px-3.5 py-2 rounded-xl text-gray-200 shadow-2xs">
-                  <Building className="w-4 h-4 text-[#F4CD13]" aria-hidden="true" />
-                  <span className="font-heading font-semibold text-white">15-Acre Eco Campus</span>
-                </span>
-              </div>
-            </div>
-
-            {/* RIGHT COLUMN: Edplus-Style Photographic Showcase with Glowing Frame */}
-            <div className="lg:col-span-5 relative w-full max-w-xl mx-auto lg:max-w-none pt-6 lg:pt-0">
-              {/* Atmospheric Crimson & Gold Aura Glow */}
-              <div className="absolute -inset-4 sm:-inset-6 bg-gradient-to-tr from-[#B91C1C]/40 via-[#F4CD13]/20 to-transparent rounded-[3rem] blur-2xl opacity-60 pointer-events-none" aria-hidden="true" />
-
-              {/* Asymmetric Framed Container */}
-              <div className="relative rounded-[2.5rem] bg-gradient-to-b from-white/15 to-white/5 p-3 sm:p-4 backdrop-blur-md border border-white/20 shadow-2xl">
-                <div className="relative aspect-[4/3] sm:aspect-[16/13] w-full rounded-[2rem] overflow-hidden bg-gray-950 shadow-inner group">
-                  <Image
-                    src="/images/home/hero/hero-bg.webp"
-                    alt="Devasthaly Vidyapeeth classroom learning environment"
-                    fill
-                    priority
-                    quality={95}
-                    sizes="(max-width: 1024px) 100vw, 45vw"
-                    className="object-cover object-center group-hover:scale-105 transition-transform duration-700 ease-out"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-[#111827]/80 via-transparent to-transparent pointer-events-none" />
-
-                  {/* Floating Glassmorphic Stat Badges (Edplus Signature) */}
-                  <div className="absolute top-4 right-4 bg-[#111827]/90 backdrop-blur-md px-3.5 py-2.5 rounded-2xl border border-white/15 shadow-xl flex items-center gap-3">
-                    <div className="w-9 h-9 rounded-xl bg-[#B91C1C] text-white flex items-center justify-center shrink-0 shadow-sm">
-                      <Award className="w-5 h-5 text-white" aria-hidden="true" />
-                    </div>
-                    <div>
-                      <div className="text-sm font-heading font-bold text-white tracking-tight">36+ Years Legacy</div>
-                      <div className="text-sm text-gray-300 font-medium">Estd. 1988 Ballia</div>
-                    </div>
+          <Container className="relative z-10">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16 items-center">
+              {/* LEFT COLUMN: Edplus Banner Typography & Action Suite */}
+              <div className="lg:col-span-7 flex flex-col items-start text-left gap-6 lg:gap-8">
+                {/* Edplus Eyebrow Pill Badge */}
+                {hero.badgeText && (
+                  <div className="inline-flex items-center gap-2.5 px-4 py-2 rounded-full bg-[#B91C1C] text-white text-sm font-heading font-bold uppercase tracking-wider w-fit shadow-md border border-red-500/40">
+                    <Sparkles className="w-4 h-4 text-[#F4CD13]" aria-hidden="true" />
+                    <span>{hero.badgeText}</span>
                   </div>
+                )}
 
-                  <div className="absolute bottom-4 left-4 bg-[#111827]/90 backdrop-blur-md px-3.5 py-2.5 rounded-2xl border border-white/15 shadow-xl flex items-center gap-3">
-                    <div className="w-9 h-9 rounded-xl bg-emerald-600 text-white flex items-center justify-center shrink-0 shadow-sm">
-                      <ShieldCheck className="w-5 h-5 text-white" aria-hidden="true" />
+                {/* Main Display Heading H1 (Edplus 62px-70px bold banner title) */}
+                <h1 className="font-heading text-3xl sm:text-5xl lg:text-[62px] lg:leading-[70px] font-bold text-white tracking-tight">
+                  {hero.heading}{" "}
+                  {hero.highlightText && (
+                    <span className="text-[#F4CD13] underline decoration-[#B91C1C] decoration-4 underline-offset-8">
+                      {hero.highlightText}
+                    </span>
+                  )}
+                </h1>
+
+                {/* Subtitle Paragraph */}
+                <p className="text-base sm:text-lg lg:text-[18px] lg:leading-[28px] text-gray-200 [&>strong]:text-white [&>strong]:font-semibold leading-relaxed font-sans max-w-2xl font-medium">
+                  {hero.subheading}
+                </p>
+
+                {/* Statutory Trust Pills in Frosted Glass (Edplus Category/Metadata Bar Style) */}
+                <div className="flex flex-wrap items-center gap-2.5 sm:gap-3 text-sm text-gray-300 pt-2 border-t border-gray-800/80 w-full">
+                  <span className="inline-flex items-center gap-2 bg-white/5 border border-white/10 backdrop-blur-sm px-3.5 py-2 rounded-xl text-gray-200 shadow-2xs">
+                    <ShieldCheck className="w-4 h-4 text-[#F4CD13]" aria-hidden="true" />
+                    <span className="font-heading font-semibold text-white">CBSE Affil. No. 2130238</span>
+                  </span>
+                  <span className="inline-flex items-center gap-2 bg-white/5 border border-white/10 backdrop-blur-sm px-3.5 py-2 rounded-xl text-gray-200 shadow-2xs">
+                    <Award className="w-4 h-4 text-[#F4CD13]" aria-hidden="true" />
+                    <span className="font-heading font-semibold text-white">36+ Years of Trust</span>
+                  </span>
+                  <span className="inline-flex items-center gap-2 bg-white/5 border border-white/10 backdrop-blur-sm px-3.5 py-2 rounded-xl text-gray-200 shadow-2xs">
+                    <Building className="w-4 h-4 text-[#F4CD13]" aria-hidden="true" />
+                    <span className="font-heading font-semibold text-white">15-Acre Eco Campus</span>
+                  </span>
+                </div>
+
+                {/* Primary & Secondary Hero CTAs */}
+                <div className="flex flex-wrap items-center gap-3 pt-2">
+                  <Link
+                    href={hero.primaryCta.href}
+                    className="inline-flex items-center gap-2 px-6 py-3.5 rounded-full bg-[#B91C1C] text-white text-base font-heading font-bold shadow-lg hover:bg-[#991b1b] transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#B91C1C]"
+                  >
+                    <span>{hero.primaryCta.label}</span>
+                    <ChevronRight className="w-4 h-4" />
+                  </Link>
+                  {hero.secondaryCta && (
+                    <Link
+                      href={hero.secondaryCta.href}
+                      className="inline-flex items-center gap-2 px-6 py-3.5 rounded-full bg-white/10 hover:bg-white/20 text-white text-base font-heading font-bold border border-white/20 backdrop-blur-sm transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+                    >
+                      <span>{hero.secondaryCta.label}</span>
+                    </Link>
+                  )}
+                </div>
+              </div>
+
+              {/* RIGHT COLUMN: Edplus-Style Photographic Showcase with Glowing Frame */}
+              <div className="lg:col-span-5 relative w-full max-w-xl mx-auto lg:max-w-none pt-6 lg:pt-0">
+                {/* Atmospheric Crimson & Gold Aura Glow */}
+                <div className="absolute -inset-4 sm:-inset-6 bg-gradient-to-tr from-[#B91C1C]/40 via-[#F4CD13]/20 to-transparent rounded-[3rem] blur-2xl opacity-60 pointer-events-none" aria-hidden="true" />
+
+                {/* Asymmetric Framed Container */}
+                <div className="relative rounded-[2.5rem] bg-gradient-to-b from-white/15 to-white/5 p-3 sm:p-4 backdrop-blur-md border border-white/20 shadow-2xl">
+                  <div className="relative aspect-[4/3] sm:aspect-[16/13] w-full rounded-[2rem] overflow-hidden bg-gray-950 shadow-inner group">
+                    <Image
+                      src="/images/home/hero/hero-bg.webp"
+                      alt="Devasthaly Vidyapeeth classroom learning environment"
+                      fill
+                      priority
+                      quality={95}
+                      sizes="(max-width: 1024px) 100vw, 45vw"
+                      className="object-cover object-center group-hover:scale-105 transition-transform duration-700 ease-out"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-[#111827]/80 via-transparent to-transparent pointer-events-none" />
+
+                    {/* Floating Glassmorphic Stat Badges (Edplus Signature) */}
+                    <div className="absolute top-4 right-4 bg-[#111827]/90 backdrop-blur-md px-3.5 py-2.5 rounded-2xl border border-white/15 shadow-xl flex items-center gap-3">
+                      <div className="w-9 h-9 rounded-xl bg-[#B91C1C] text-white flex items-center justify-center shrink-0 shadow-sm">
+                        <Award className="w-5 h-5 text-white" aria-hidden="true" />
+                      </div>
+                      <div>
+                        <div className="text-sm font-heading font-bold text-white tracking-tight">36+ Years Legacy</div>
+                        <div className="text-sm text-gray-300 font-medium">Estd. 1988 Ballia</div>
+                      </div>
                     </div>
-                    <div>
-                      <div className="text-sm font-heading font-bold text-white tracking-tight">100% Pass Rate</div>
-                      <div className="text-sm text-gray-300 font-medium">CBSE Merit Track</div>
+
+                    <div className="absolute bottom-4 left-4 bg-[#111827]/90 backdrop-blur-md px-3.5 py-2.5 rounded-2xl border border-white/15 shadow-xl flex items-center gap-3">
+                      <div className="w-9 h-9 rounded-xl bg-emerald-600 text-white flex items-center justify-center shrink-0 shadow-sm">
+                        <ShieldCheck className="w-5 h-5 text-white" aria-hidden="true" />
+                      </div>
+                      <div>
+                        <div className="text-sm font-heading font-bold text-white tracking-tight">100% Pass Rate</div>
+                        <div className="text-sm text-gray-300 font-medium">CBSE Merit Track</div>
+                      </div>
                     </div>
                   </div>
                 </div>
               </div>
             </div>
-          </div>
-        </Container>
-      </section>
+          </Container>
+        </section>
+      )}
+
+      {/* =========================================================================
+          SECTION 1.5: LEADERSHIP ANCHOR (Principal's Message Excerpt)
+      ========================================================================= */}
+      {principal && (
+        <section className="w-full bg-white border-b border-[#E5E7EB] py-12 sm:py-16">
+          <Container>
+            <div className="bg-[#F9FAFB] rounded-3xl p-6 sm:p-10 border border-gray-200/90 shadow-sm relative overflow-hidden">
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
+                {/* Left Portrait */}
+                <div className="lg:col-span-4 flex flex-col items-center text-center">
+                  <div className="relative aspect-[3/4] w-44 sm:w-52 rounded-2xl overflow-hidden border border-gray-200 shadow-md bg-[#111827] group">
+                    {principal.imageUrl ? (
+                      <Image
+                        src={principal.imageUrl}
+                        alt={principal.principalName}
+                        fill
+                        sizes="(max-width: 640px) 176px, 208px"
+                        className="object-cover object-top group-hover:scale-105 transition-transform duration-500"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-gray-400 text-xs">
+                        Principal Portrait
+                      </div>
+                    )}
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent pointer-events-none" />
+                    <div className="absolute bottom-2.5 inset-x-2.5 text-center">
+                      <span className="text-xs font-heading font-bold uppercase tracking-wider px-2.5 py-0.5 bg-[#B91C1C] text-white rounded-full shadow-xs">
+                        Principal
+                      </span>
+                    </div>
+                  </div>
+                  <h3 className="font-heading text-xl font-bold text-[#111827] mt-3">
+                    {principal.principalName}
+                  </h3>
+                  <p className="text-xs font-heading font-semibold text-[#B91C1C]">
+                    {principal.principalDesignation}
+                  </p>
+                </div>
+
+                {/* Right Editorial Excerpt */}
+                <div className="lg:col-span-8 space-y-4 text-left">
+                  <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-red-50 border border-red-100 text-[#B91C1C] text-xs font-heading font-bold uppercase tracking-wider">
+                    <Sparkles className="w-3.5 h-3.5 text-[#B91C1C]" />
+                    <span>{principal.heading}</span>
+                  </div>
+
+                  <div className="border-l-4 border-[#B91C1C] pl-4 py-1">
+                    <p className="font-heading font-bold text-base sm:text-lg text-[#111827] italic leading-relaxed">
+                      &ldquo;{principal.quote}&rdquo;
+                    </p>
+                  </div>
+
+                  <p className="text-sm sm:text-base text-gray-600 font-sans leading-relaxed">
+                    {principal.excerpt}
+                  </p>
+
+                  {principal.cta && (
+                    <div className="pt-2">
+                      <Link
+                        href={principal.cta.href}
+                        className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-[#B91C1C] text-white text-sm font-heading font-bold hover:bg-[#991b1b] transition-colors shadow-xs"
+                      >
+                        <span>{principal.cta.label}</span>
+                        <ChevronRight className="w-4 h-4" />
+                      </Link>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </Container>
+        </section>
+      )}
 
       {/* =========================================================================
           SECTION 2: INSTITUTIONAL TRUST & KEY STATS (Image on Left, Content on Right)
       ========================================================================= */}
-      <section className="w-full bg-[#F3F4F6] border-b border-[#E5E7EB] py-12 sm:py-16">
-        <Container>
-          {/* Section Introduction */}
-          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-8 sm:mb-10 text-left">
-            <div className="max-w-2xl">
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white border border-[#E5E7EB] text-[#B91C1C] text-sm font-heading font-bold uppercase tracking-wider mb-2.5 shadow-2xs">
-                <Sparkles className="w-3.5 h-3.5 text-[#B91C1C]" />
-                <span>Institutional Trust & Milestones</span>
-              </div>
-              <h2 className="font-heading text-2xl sm:text-[30px] sm:leading-[40px] lg:text-[35px] lg:leading-[47px] font-semibold text-[#111827] tracking-tight">
-                36 Years of Educational Eminence & Proven Rigour
-              </h2>
-            </div>
-            <p className="text-sm text-gray-500 font-sans max-w-sm">
-              Verified benchmarks that make Devasthaly Vidyapeeth Ballia&apos;s premier CBSE co-ed residential campus.
-            </p>
-          </div>
-
-          {/* 6 Horizontal Cards: Image Left, Content Right */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
-            {STAT_METRICS.map((stat, idx) => {
-              const IconComponent = stat.icon;
-              return (
-                <div
-                  key={idx}
-                  className={`group bg-white rounded-2xl p-3.5 sm:p-4 border border-slate-200/90 ${stat.borderHover} shadow-xs hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-row items-center gap-4 relative overflow-hidden`}
-                >
-                  <div
-                    className={`absolute top-0 inset-x-0 h-1 bg-gradient-to-r ${stat.topGradient} opacity-0 group-hover:opacity-100 transition-opacity duration-300`}
-                  />
-
-                  {/* LEFT SIDE: Image */}
-                  <div className="relative w-24 h-24 sm:w-28 sm:h-28 shrink-0 rounded-xl overflow-hidden bg-slate-900 shadow-2xs">
-                    <Image
-                      src={stat.image}
-                      alt={stat.label}
-                      fill
-                      sizes="(max-width: 640px) 96px, 112px"
-                      className="object-cover object-center group-hover:scale-110 transition-transform duration-500 ease-out"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-slate-950/60 via-transparent to-transparent" />
-                    <span className="absolute bottom-1.5 left-1.5 px-1.5 py-0.5 rounded bg-black/60 backdrop-blur-md text-sm font-heading font-bold text-white uppercase tracking-wider border border-white/20">
-                      {stat.badge}
-                    </span>
-                  </div>
-
-                  {/* RIGHT SIDE: Content */}
-                  <div className="flex flex-col justify-between text-left flex-grow min-w-0">
-                    <div className="flex items-center justify-between gap-2 mb-1">
-                      <div className="font-heading font-black text-2xl sm:text-3xl text-slate-900 group-hover:text-[#B91C1C] tracking-tight transition-colors whitespace-nowrap">
-                        {stat.value}
-                      </div>
-                      <div
-                        className={`w-8 h-8 rounded-lg ${stat.bg} ${stat.color} flex items-center justify-center shrink-0 shadow-2xs group-hover:scale-110 transition-transform duration-300`}
-                      >
-                        <IconComponent className="w-4 h-4" />
-                      </div>
-                    </div>
-                    <div className="text-sm font-heading font-bold text-slate-800 uppercase tracking-wide line-clamp-1">
-                      {stat.label}
-                    </div>
-                    <div className="text-sm text-gray-500 font-sans mt-0.5 line-clamp-1">
-                      {stat.subtext}
-                    </div>
-                  </div>
+      {statistics && statistics.length > 0 && (
+        <section className="w-full bg-[#F3F4F6] border-b border-[#E5E7EB] py-12 sm:py-16">
+          <Container>
+            {/* Section Introduction */}
+            <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-8 sm:mb-10 text-left">
+              <div className="max-w-2xl">
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white border border-[#E5E7EB] text-[#B91C1C] text-sm font-heading font-bold uppercase tracking-wider mb-2.5 shadow-2xs">
+                  <Sparkles className="w-3.5 h-3.5 text-[#B91C1C]" />
+                  <span>Institutional Trust & Milestones</span>
                 </div>
-              );
-            })}
-          </div>
-        </Container>
-      </section>
+                <h2 className="font-heading text-2xl sm:text-[30px] sm:leading-[40px] lg:text-[35px] lg:leading-[47px] font-semibold text-[#111827] tracking-tight">
+                  36 Years of Educational Eminence & Proven Rigour
+                </h2>
+              </div>
+              <p className="text-sm text-gray-500 font-sans max-w-sm">
+                Verified benchmarks that make Devasthaly Vidyapeeth Ballia&apos;s premier CBSE co-ed residential campus.
+              </p>
+            </div>
+
+            {/* 6 Horizontal Cards: Image Left, Content Right */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
+              {statistics.map((stat, idx) => {
+                const IconComponent = getLucideIcon(stat.iconName, Award);
+                const style = STAT_STYLES[idx % STAT_STYLES.length];
+                return (
+                  <div
+                    key={stat.id || idx}
+                    className={`group bg-white rounded-2xl p-3.5 sm:p-4 border border-slate-200/90 ${style.borderHover} shadow-xs hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-row items-center gap-4 relative overflow-hidden`}
+                  >
+                    <div
+                      className={`absolute top-0 inset-x-0 h-1 bg-gradient-to-r ${style.topGradient} opacity-0 group-hover:opacity-100 transition-opacity duration-300`}
+                    />
+
+                    {/* LEFT SIDE: Image */}
+                    <div className="relative w-24 h-24 sm:w-28 sm:h-28 shrink-0 rounded-xl overflow-hidden bg-slate-900 shadow-2xs">
+                      <Image
+                        src={stat.imageUrl || "/images/about/campus-showcase.jpg"}
+                        alt={stat.label}
+                        fill
+                        sizes="(max-width: 640px) 96px, 112px"
+                        className="object-cover object-center group-hover:scale-110 transition-transform duration-500 ease-out"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-slate-950/60 via-transparent to-transparent" />
+                      {stat.badge && (
+                        <span className="absolute bottom-1.5 left-1.5 px-1.5 py-0.5 rounded bg-black/60 backdrop-blur-md text-sm font-heading font-bold text-white uppercase tracking-wider border border-white/20">
+                          {stat.badge}
+                        </span>
+                      )}
+                    </div>
+
+                    {/* RIGHT SIDE: Content */}
+                    <div className="flex flex-col justify-between text-left flex-grow min-w-0">
+                      <div className="flex items-center justify-between gap-2 mb-1">
+                        <div className="font-heading font-black text-2xl sm:text-3xl text-slate-900 group-hover:text-[#B91C1C] tracking-tight transition-colors whitespace-nowrap">
+                          {stat.numericValue} {stat.suffix && <span className="text-xs font-normal text-gray-500">{stat.suffix}</span>}
+                        </div>
+                        <div
+                          className={`w-8 h-8 rounded-lg ${style.bg} ${style.color} flex items-center justify-center shrink-0 shadow-2xs group-hover:scale-110 transition-transform duration-300`}
+                        >
+                          <IconComponent className="w-4 h-4" />
+                        </div>
+                      </div>
+                      <div className="text-sm font-heading font-bold text-slate-800 uppercase tracking-wide line-clamp-1">
+                        {stat.label}
+                      </div>
+                      {stat.subtext && (
+                        <div className="text-sm text-gray-500 font-sans mt-0.5 line-clamp-1">
+                          {stat.subtext}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </Container>
+        </section>
+      )}
 
       {/* =========================================================================
           SECTION 3: PARENT QUICK ACTIONS HUB (Image on Left, Content on Right)
       ========================================================================= */}
-      <section className="w-full bg-white border-b border-[#E5E7EB] py-12 sm:py-16">
-        <Container>
-          {/* Section Introduction */}
-          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-8 sm:mb-10 text-left">
-            <div className="max-w-2xl">
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-red-50 border border-red-100 text-[#B91C1C] text-sm font-heading font-bold uppercase tracking-wider mb-2.5 shadow-2xs">
-                <FileText className="w-3.5 h-3.5 text-[#B91C1C]" />
-                <span>Parent & Aspirant Express Desk</span>
+      {highlights && highlights.length > 0 && (
+        <section className="w-full bg-white border-b border-[#E5E7EB] py-12 sm:py-16">
+          <Container>
+            {/* Section Introduction */}
+            <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-8 sm:mb-10 text-left">
+              <div className="max-w-2xl">
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-red-50 border border-red-100 text-[#B91C1C] text-sm font-heading font-bold uppercase tracking-wider mb-2.5 shadow-2xs">
+                  <FileText className="w-3.5 h-3.5 text-[#B91C1C]" />
+                  <span>Parent & Aspirant Express Desk</span>
+                </div>
+                <h2 className="font-heading text-2xl sm:text-[30px] sm:leading-[40px] lg:text-[35px] lg:leading-[47px] font-semibold text-[#111827] tracking-tight">
+                  One-Click Access to Essential School Resources
+                </h2>
               </div>
-              <h2 className="font-heading text-2xl sm:text-[30px] sm:leading-[40px] lg:text-[35px] lg:leading-[47px] font-semibold text-[#111827] tracking-tight">
-                One-Click Access to Essential School Resources
-              </h2>
+              <p className="text-sm text-gray-500 font-sans max-w-sm">
+                Direct portals for admission brochures, fee schedules, transit routes, and official CBSE notifications.
+              </p>
             </div>
-            <p className="text-sm text-gray-500 font-sans max-w-sm">
-              Direct portals for admission brochures, fee schedules, transit routes, and official CBSE notifications.
-            </p>
-          </div>
 
-          {/* 6 Horizontal Cards: Image Left, Content Right */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
-            {QUICK_ACTIONS.map((item, idx) => {
-              const IconComponent = item.icon;
-              return (
-                <Link
-                  key={idx}
-                  href={item.href}
-                  className="group bg-white rounded-2xl p-3.5 sm:p-4 border border-gray-200/90 hover:border-[#B91C1C]/40 shadow-xs hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-row items-center gap-4 cursor-pointer"
-                >
-                  {/* LEFT SIDE: Image */}
-                  <div className="relative w-20 h-20 sm:w-24 sm:h-24 shrink-0 rounded-xl overflow-hidden bg-slate-900 shadow-2xs">
-                    <Image
-                      src={item.image}
-                      alt={item.label}
-                      fill
-                      sizes="(max-width: 640px) 80px, 96px"
-                      className="object-cover object-center group-hover:scale-110 transition-transform duration-500 ease-out"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-slate-950/70 via-transparent to-transparent" />
-                    <span className="absolute bottom-1.5 left-1.5 px-1.5 py-0.5 rounded bg-white/20 backdrop-blur-md text-sm font-heading font-bold text-white uppercase tracking-wider border border-white/20">
-                      {item.badge}
-                    </span>
-                  </div>
-
-                  {/* RIGHT SIDE: Content */}
-                  <div className="flex flex-col justify-between text-left flex-grow min-w-0">
-                    <div className="flex items-center justify-between gap-2 mb-1.5">
-                      <div className="w-7 h-7 rounded-lg bg-red-50 group-hover:bg-[#B91C1C] text-[#B91C1C] group-hover:text-white flex items-center justify-center shrink-0 transition-colors shadow-2xs border border-red-100/60">
-                        <IconComponent className="w-3.5 h-3.5" />
-                      </div>
-                      <div className="flex items-center gap-1 text-sm font-bold text-gray-400 group-hover:text-[#B91C1C] transition-colors">
-                        <span>Open</span>
-                        <ChevronRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
-                      </div>
+            {/* Dynamic Horizontal Cards: Image Left, Content Right */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
+              {highlights.map((item, idx) => {
+                const IconComponent = getLucideIcon(item.iconName, FileText);
+                return (
+                  <Link
+                    key={item.id || idx}
+                    href={item.ctaHref}
+                    className="group bg-white rounded-2xl p-3.5 sm:p-4 border border-gray-200/90 hover:border-[#B91C1C]/40 shadow-xs hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-row items-center gap-4 cursor-pointer"
+                  >
+                    {/* LEFT SIDE: Image */}
+                    <div className="relative w-20 h-20 sm:w-24 sm:h-24 shrink-0 rounded-xl overflow-hidden bg-slate-900 shadow-2xs">
+                      <Image
+                        src={item.imageUrl || "/images/admissions/prospectus-brochure.jpg"}
+                        alt={item.title}
+                        fill
+                        sizes="(max-width: 640px) 80px, 96px"
+                        className="object-cover object-center group-hover:scale-110 transition-transform duration-500 ease-out"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-slate-950/70 via-transparent to-transparent" />
+                      {item.badge && (
+                        <span className="absolute bottom-1.5 left-1.5 px-1.5 py-0.5 rounded bg-white/20 backdrop-blur-md text-sm font-heading font-bold text-white uppercase tracking-wider border border-white/20">
+                          {item.badge}
+                        </span>
+                      )}
                     </div>
-                    <span className="font-heading font-bold text-sm text-slate-900 group-hover:text-[#B91C1C] transition-colors block leading-snug line-clamp-1">
-                      {item.label}
-                    </span>
-                    <span className="text-sm text-gray-500 font-sans transition-colors block mt-0.5 line-clamp-1">
-                      {item.hint}
-                    </span>
-                  </div>
-                </Link>
-              );
-            })}
-          </div>
-        </Container>
-      </section>
+
+                    {/* RIGHT SIDE: Content */}
+                    <div className="flex flex-col justify-between text-left flex-grow min-w-0">
+                      <div className="flex items-center justify-between gap-2 mb-1.5">
+                        <div className="w-7 h-7 rounded-lg bg-red-50 group-hover:bg-[#B91C1C] text-[#B91C1C] group-hover:text-white flex items-center justify-center shrink-0 transition-colors shadow-2xs border border-red-100/60">
+                          <IconComponent className="w-3.5 h-3.5" />
+                        </div>
+                        <div className="flex items-center gap-1 text-sm font-bold text-gray-400 group-hover:text-[#B91C1C] transition-colors">
+                          <span>{item.ctaLabel}</span>
+                          <ChevronRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
+                        </div>
+                      </div>
+                      <span className="font-heading font-bold text-sm text-slate-900 group-hover:text-[#B91C1C] transition-colors block leading-snug line-clamp-1">
+                        {item.title}
+                      </span>
+                      <span className="text-sm text-gray-500 font-sans transition-colors block mt-0.5 line-clamp-1">
+                        {item.description}
+                      </span>
+                    </div>
+                  </Link>
+                );
+              })}
+            </div>
+          </Container>
+        </section>
+      )}
 
       {/* =========================================================================
           SECTION 4: WHY CHOOSE DEVASTHALY VIDYAPEETH

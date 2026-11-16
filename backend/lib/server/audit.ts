@@ -50,12 +50,27 @@ export type NavigationAuditAction =
   | "NAVIGATION_LINK_STATUS_CHANGED"
   | "NAVIGATION_LINKS_REORDERED";
 
+export type HomepageAuditAction =
+  | "HOMEPAGE_HERO_UPDATED"
+  | "HOMEPAGE_PRINCIPAL_UPDATED"
+  | "HOMEPAGE_STATISTIC_CREATED"
+  | "HOMEPAGE_STATISTIC_UPDATED"
+  | "HOMEPAGE_STATISTIC_DELETED"
+  | "HOMEPAGE_STATISTIC_STATUS_CHANGED"
+  | "HOMEPAGE_STATISTICS_REORDERED"
+  | "HOMEPAGE_HIGHLIGHT_CREATED"
+  | "HOMEPAGE_HIGHLIGHT_UPDATED"
+  | "HOMEPAGE_HIGHLIGHT_DELETED"
+  | "HOMEPAGE_HIGHLIGHT_STATUS_CHANGED"
+  | "HOMEPAGE_HIGHLIGHTS_REORDERED";
+
 export type AuditAction =
   | AuthAuditAction
   | TopperAuditAction
   | NoticeAuditAction
   | ProfileAuditAction
-  | NavigationAuditAction;
+  | NavigationAuditAction
+  | HomepageAuditAction;
 
 export interface CreateAuditLogParams {
   userId?: string | null;
@@ -70,7 +85,11 @@ export interface CreateAuditLogParams {
     | "CampusDirectoryEntry"
     | "NavigationItem"
     | "NavigationColumn"
-    | "NavigationLinkItem";
+    | "NavigationLinkItem"
+    | "HomepageHero"
+    | "HomepagePrincipalMessage"
+    | "HomepageStatistic"
+    | "HomepageHighlight";
   entityId: string;
   metadata?: Record<string, unknown> | null;
   ipAddress?: string | null;
@@ -118,6 +137,7 @@ export function sanitizeAuditMetadata(
         result[key] = val;
       }
     }
+
     return result;
   };
 
