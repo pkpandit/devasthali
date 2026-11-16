@@ -7,7 +7,6 @@ import {
   Save,
   Loader2,
   CheckCircle2,
-  Users,
   ExternalLink,
   Quote,
   Award,
@@ -118,7 +117,7 @@ export function LeadershipEditor({ members }: LeadershipEditorProps) {
         bio: m.bio || "",
         ctaLabel: m.ctaLabel || "",
         ctaHref: m.ctaHref || "",
-        isPublished: m.isPublished,
+        isPublished: m.isPublished ?? true,
       });
     }
     setServerError(null);
@@ -171,60 +170,53 @@ export function LeadershipEditor({ members }: LeadershipEditorProps) {
 
   if (!currentMember) {
     return (
-      <div className="p-8 text-center text-gray-500 bg-white rounded-2xl border border-gray-200">
+      <div className="admin-empty-state">
         No leadership records available. Please run the database seed.
       </div>
     );
   }
 
   return (
-    <div className="space-y-8">
+    <div className="admin-workspace">
       {/* Role Switcher Tabs */}
-      <div className="topper-workspace-toolbar p-2 rounded-2xl bg-white border border-gray-200 shadow-xs">
-        <div
-          role="tablist"
-          aria-label="Leadership Roles"
-          className="flex items-center gap-2 overflow-x-auto no-scrollbar py-1"
-        >
-          {(["FOUNDER", "PATRON", "PRESIDENT", "MANAGER", "PRINCIPAL"] as const).map(
-            (role) => {
-              const m = members.find((item) => item.role === role);
-              const isSelected = activeRole === role;
-              return (
-                <button
-                  key={role}
-                  role="tab"
-                  id={`tab-${role.toLowerCase()}`}
-                  aria-selected={isSelected}
-                  aria-controls={`tabpanel-${role.toLowerCase()}`}
-                  type="button"
-                  onClick={() => handleRoleSelect(role)}
-                  className={`min-h-[44px] px-4 py-2 text-xs font-heading font-bold rounded-xl inline-flex items-center gap-2 shrink-0 transition-all cursor-pointer ${
-                    isSelected
-                      ? "bg-[#B91C1C] text-white shadow-xs"
-                      : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                  }`}
-                >
-                  <span>{ROLE_LABELS[role]}</span>
-                  {m && !m.isPublished && (
-                    <span className="px-1.5 py-0.5 text-[9px] font-bold bg-amber-100 text-amber-800 rounded-full">
-                      Draft
-                    </span>
-                  )}
-                </button>
-              );
-            }
-          )}
-        </div>
+      <div
+        role="tablist"
+        aria-label="Leadership Roles"
+        className="admin-tabs"
+      >
+        {(["FOUNDER", "PATRON", "PRESIDENT", "MANAGER", "PRINCIPAL"] as const).map(
+          (role) => {
+            const m = members.find((item) => item.role === role);
+            const isSelected = activeRole === role;
+            return (
+              <button
+                key={role}
+                role="tab"
+                id={`tab-${role.toLowerCase()}`}
+                aria-selected={isSelected}
+                aria-controls={`tabpanel-${role.toLowerCase()}`}
+                tabIndex={isSelected ? 0 : -1}
+                type="button"
+                onClick={() => handleRoleSelect(role)}
+                className={`admin-tab ${isSelected ? "admin-tab--active" : ""}`}
+              >
+                <span>{ROLE_LABELS[role]}</span>
+                {m && !m.isPublished && (
+                  <span className="admin-pill admin-pill--draft" style={{ marginLeft: "4px" }}>
+                    Draft
+                  </span>
+                )}
+              </button>
+            );
+          }
+        )}
       </div>
 
       {/* Notifications */}
       {successBanner && (
-        <div className="p-4 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 flex items-center gap-3">
-          <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
-          <p className="text-sm font-medium">
-            {ROLE_LABELS[activeRole]} has been successfully updated and saved.
-          </p>
+        <div className="admin-banner--success" role="status">
+          <CheckCircle2 size={18} aria-hidden="true" />
+          <span>{ROLE_LABELS[activeRole]} has been successfully updated and saved.</span>
         </div>
       )}
 
@@ -232,40 +224,48 @@ export function LeadershipEditor({ members }: LeadershipEditorProps) {
         role="tabpanel"
         id={`tabpanel-${activeRole.toLowerCase()}`}
         aria-labelledby={`tab-${activeRole.toLowerCase()}`}
-        className="grid grid-cols-1 lg:grid-cols-3 gap-8"
+        style={{
+          display: "grid",
+          gridTemplateColumns: "minmax(0, 2fr) minmax(280px, 1fr)",
+          gap: "24px",
+          alignItems: "start",
+        }}
       >
-        {/* Form Column (2 spans) */}
-        <form onSubmit={handleSubmit} className="lg:col-span-2 space-y-6 bg-white p-6 sm:p-8 rounded-2xl border border-gray-200 shadow-xs">
-          <div className="flex flex-wrap items-center justify-between gap-3 pb-4 border-b border-gray-100">
+        {/* Form Column */}
+        <form onSubmit={handleSubmit} className="admin-section-card">
+          <div className="admin-card-header">
             <div>
-              <h2 className="text-base font-heading font-bold text-gray-900">
+              <h2 className="admin-workspace-toolbar__title">
                 Edit {ROLE_LABELS[activeRole]}
               </h2>
-              <p className="text-xs text-gray-500 font-sans mt-0.5">
-                Canonical URL: <code className="bg-gray-100 px-1.5 py-0.5 rounded text-gray-700">/{currentMember.slug}</code> (Slugs are permanent and cannot be modified)
+              <p className="admin-workspace-toolbar__count">
+                Canonical URL: <code style={{ background: "#f3f4f6", padding: "2px 6px", borderRadius: "4px" }}>/{currentMember.slug}</code> (Fixed slug)
               </p>
             </div>
-            <a
-              href={`/${currentMember.slug}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-xs font-semibold text-[#B91C1C] hover:underline inline-flex items-center gap-1"
-            >
-              <span>View Public Page</span>
-              <ExternalLink className="w-3.5 h-3.5" />
-            </a>
+            <div className="admin-card-actions">
+              <a
+                href={`/${currentMember.slug}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="admin-button admin-button--secondary"
+                style={{ minHeight: "36px", padding: "6px 12px", fontSize: "0.8125rem" }}
+              >
+                <span>View Public Page</span>
+                <ExternalLink size={14} aria-hidden="true" />
+              </a>
+            </div>
           </div>
 
           {serverError && (
-            <div className="topper-dialog-error-banner" role="alert">
+            <div className="admin-banner--error" role="alert">
               {serverError}
             </div>
           )}
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="topper-field">
-              <label htmlFor="lead-name" className="topper-label">
-                Leader Name <span className="text-red-500">*</span>
+          <div className="admin-form-grid-2">
+            <div className="admin-field">
+              <label htmlFor="lead-name" className="admin-label">
+                Leader Name *
               </label>
               <input
                 id="lead-name"
@@ -274,17 +274,17 @@ export function LeadershipEditor({ members }: LeadershipEditorProps) {
                 value={String(formData.name || "")}
                 onChange={handleChange}
                 placeholder="e.g. Chandra Shekhar"
-                className={`topper-input ${fieldErrors.name ? "topper-input--error" : ""}`}
+                className="admin-input"
                 required
               />
               {fieldErrors.name && (
-                <p className="topper-field-error">{fieldErrors.name}</p>
+                <p className="admin-field-error">{fieldErrors.name}</p>
               )}
             </div>
 
-            <div className="topper-field">
-              <label htmlFor="lead-designation" className="topper-label">
-                Designation / Title <span className="text-red-500">*</span>
+            <div className="admin-field">
+              <label htmlFor="lead-designation" className="admin-label">
+                Designation / Title *
               </label>
               <input
                 id="lead-designation"
@@ -293,19 +293,19 @@ export function LeadershipEditor({ members }: LeadershipEditorProps) {
                 value={String(formData.designation || "")}
                 onChange={handleChange}
                 placeholder="e.g. Founder & Former Prime Minister"
-                className={`topper-input ${fieldErrors.designation ? "topper-input--error" : ""}`}
+                className="admin-input"
                 required
               />
               {fieldErrors.designation && (
-                <p className="topper-field-error">{fieldErrors.designation}</p>
+                <p className="admin-field-error">{fieldErrors.designation}</p>
               )}
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="topper-field">
-              <label htmlFor="lead-badgeText" className="topper-label">
-                Badge / Tagline <span className="text-red-500">*</span>
+          <div className="admin-form-grid-3">
+            <div className="admin-field">
+              <label htmlFor="lead-badgeText" className="admin-label">
+                Badge / Tagline *
               </label>
               <input
                 id="lead-badgeText"
@@ -314,13 +314,13 @@ export function LeadershipEditor({ members }: LeadershipEditorProps) {
                 value={String(formData.badgeText || "")}
                 onChange={handleChange}
                 placeholder="e.g. Visionary Leadership"
-                className="topper-input"
+                className="admin-input"
                 required
               />
             </div>
 
-            <div className="topper-field">
-              <label htmlFor="lead-termOrAffiliation" className="topper-label">
+            <div className="admin-field">
+              <label htmlFor="lead-termOrAffiliation" className="admin-label">
                 Affiliation / Role
               </label>
               <input
@@ -330,12 +330,12 @@ export function LeadershipEditor({ members }: LeadershipEditorProps) {
                 value={String(formData.termOrAffiliation || "")}
                 onChange={handleChange}
                 placeholder="e.g. Founder Patron"
-                className="topper-input"
+                className="admin-input"
               />
             </div>
 
-            <div className="topper-field">
-              <label htmlFor="lead-location" className="topper-label">
+            <div className="admin-field">
+              <label htmlFor="lead-location" className="admin-label">
                 Location
               </label>
               <input
@@ -345,15 +345,15 @@ export function LeadershipEditor({ members }: LeadershipEditorProps) {
                 value={String(formData.location || "")}
                 onChange={handleChange}
                 placeholder="e.g. Ballia, Uttar Pradesh"
-                className="topper-input"
+                className="admin-input"
               />
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="topper-field">
-              <label htmlFor="lead-pageTitle" className="topper-label">
-                Page Title <span className="text-red-500">*</span>
+          <div className="admin-form-grid-2">
+            <div className="admin-field">
+              <label htmlFor="lead-pageTitle" className="admin-label">
+                Page Title Tag *
               </label>
               <input
                 id="lead-pageTitle"
@@ -361,14 +361,14 @@ export function LeadershipEditor({ members }: LeadershipEditorProps) {
                 name="pageTitle"
                 value={String(formData.pageTitle || "")}
                 onChange={handleChange}
-                className="topper-input"
+                className="admin-input"
                 required
               />
             </div>
 
-            <div className="topper-field">
-              <label htmlFor="lead-breadcrumb" className="topper-label">
-                Breadcrumb Text <span className="text-red-500">*</span>
+            <div className="admin-field">
+              <label htmlFor="lead-breadcrumb" className="admin-label">
+                Breadcrumb Text *
               </label>
               <input
                 id="lead-breadcrumb"
@@ -376,15 +376,15 @@ export function LeadershipEditor({ members }: LeadershipEditorProps) {
                 name="breadcrumb"
                 value={String(formData.breadcrumb || "")}
                 onChange={handleChange}
-                className="topper-input"
+                className="admin-input"
                 required
               />
             </div>
           </div>
 
-          <div className="topper-field">
-            <label htmlFor="lead-shortIntro" className="topper-label">
-              Short Introduction / Lead <span className="text-red-500">*</span>
+          <div className="admin-field">
+            <label htmlFor="lead-shortIntro" className="admin-label">
+              Short Introductory Excerpt *
             </label>
             <textarea
               id="lead-shortIntro"
@@ -392,14 +392,13 @@ export function LeadershipEditor({ members }: LeadershipEditorProps) {
               value={String(formData.shortIntro || "")}
               onChange={handleChange}
               rows={2}
-              placeholder="Short introductory lead sentence appearing below the header..."
-              className="topper-input"
+              className="admin-textarea"
               required
             />
           </div>
 
-          <div className="topper-field">
-            <label htmlFor="lead-quote" className="topper-label">
+          <div className="admin-field">
+            <label htmlFor="lead-quote" className="admin-label">
               Inspirational Quote / Highlight
             </label>
             <textarea
@@ -408,14 +407,13 @@ export function LeadershipEditor({ members }: LeadershipEditorProps) {
               value={String(formData.quote || "")}
               onChange={handleChange}
               rows={2}
-              placeholder="e.g. Education is the cornerstone of societal progress and personal dignity..."
-              className="topper-input font-serif italic"
+              className="admin-textarea"
             />
           </div>
 
-          <div className="topper-field">
-            <label htmlFor="lead-messageBody" className="topper-label">
-              Message Body (Paragraphs separated by blank lines) <span className="text-red-500">*</span>
+          <div className="admin-field">
+            <label htmlFor="lead-messageBody" className="admin-label">
+              Full Official Message * (Use blank lines between paragraphs)
             </label>
             <textarea
               id="lead-messageBody"
@@ -423,15 +421,14 @@ export function LeadershipEditor({ members }: LeadershipEditorProps) {
               value={String(formData.messageBody || "")}
               onChange={handleChange}
               rows={8}
-              placeholder="Full text of the leadership message..."
-              className="topper-input font-sans"
+              className="admin-textarea"
               required
             />
           </div>
 
-          <div className="topper-field">
-            <label htmlFor="lead-bio" className="topper-label">
-              Biography / Historical Note (Optional)
+          <div className="admin-field">
+            <label htmlFor="lead-bio" className="admin-label">
+              Biography / Historical Note
             </label>
             <textarea
               id="lead-bio"
@@ -439,15 +436,14 @@ export function LeadershipEditor({ members }: LeadershipEditorProps) {
               value={String(formData.bio || "")}
               onChange={handleChange}
               rows={3}
-              placeholder="Background, achievements, and legacy..."
-              className="topper-input font-sans"
+              className="admin-textarea"
             />
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="topper-field">
-              <label htmlFor="lead-imageUrl" className="topper-label">
-                Portrait Photo URL
+          <div className="admin-form-grid-2">
+            <div className="admin-field">
+              <label htmlFor="lead-imageUrl" className="admin-label">
+                Leader Portrait Image URL
               </label>
               <input
                 id="lead-imageUrl"
@@ -455,14 +451,14 @@ export function LeadershipEditor({ members }: LeadershipEditorProps) {
                 name="imageUrl"
                 value={String(formData.imageUrl || "")}
                 onChange={handleChange}
-                placeholder="e.g. /images/leadership/chandra-shekhar.jpg"
-                className="topper-input"
+                placeholder="e.g. /images/leadership/founder.webp"
+                className="admin-input"
               />
             </div>
 
-            <div className="topper-field">
-              <label htmlFor="lead-imageAlt" className="topper-label">
-                Photo Alt Text
+            <div className="admin-field">
+              <label htmlFor="lead-imageAlt" className="admin-label">
+                Image Alt Description
               </label>
               <input
                 id="lead-imageAlt"
@@ -470,16 +466,16 @@ export function LeadershipEditor({ members }: LeadershipEditorProps) {
                 name="imageAlt"
                 value={String(formData.imageAlt || "")}
                 onChange={handleChange}
-                placeholder="e.g. Portrait of Shri Chandra Shekhar"
-                className="topper-input"
+                placeholder="e.g. Portrait of Chandra Shekhar"
+                className="admin-input"
               />
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="topper-field">
-              <label htmlFor="lead-signatureImageUrl" className="topper-label">
-                Signature Image URL (Optional)
+          <div className="admin-form-grid-2">
+            <div className="admin-field">
+              <label htmlFor="lead-signatureImageUrl" className="admin-label">
+                Signature Image URL
               </label>
               <input
                 id="lead-signatureImageUrl"
@@ -487,14 +483,14 @@ export function LeadershipEditor({ members }: LeadershipEditorProps) {
                 name="signatureImageUrl"
                 value={String(formData.signatureImageUrl || "")}
                 onChange={handleChange}
-                placeholder="e.g. /images/leadership/signatures/founder.png"
-                className="topper-input"
+                placeholder="e.g. /images/leadership/signature.png"
+                className="admin-input"
               />
             </div>
 
-            <div className="topper-field">
-              <label htmlFor="lead-signatureAlt" className="topper-label">
-                Signature Alt Text
+            <div className="admin-field">
+              <label htmlFor="lead-signatureAlt" className="admin-label">
+                Signature Alt Description
               </label>
               <input
                 id="lead-signatureAlt"
@@ -503,14 +499,14 @@ export function LeadershipEditor({ members }: LeadershipEditorProps) {
                 value={String(formData.signatureAlt || "")}
                 onChange={handleChange}
                 placeholder="e.g. Official Signature"
-                className="topper-input"
+                className="admin-input"
               />
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="topper-field">
-              <label htmlFor="lead-ctaLabel" className="topper-label">
+          <div className="admin-form-grid-2">
+            <div className="admin-field">
+              <label htmlFor="lead-ctaLabel" className="admin-label">
                 CTA Button Label (Optional)
               </label>
               <input
@@ -520,12 +516,12 @@ export function LeadershipEditor({ members }: LeadershipEditorProps) {
                 value={String(formData.ctaLabel || "")}
                 onChange={handleChange}
                 placeholder="e.g. Explore Academic System"
-                className="topper-input"
+                className="admin-input"
               />
             </div>
 
-            <div className="topper-field">
-              <label htmlFor="lead-ctaHref" className="topper-label">
+            <div className="admin-field">
+              <label htmlFor="lead-ctaHref" className="admin-label">
                 CTA Destination URL (Optional)
               </label>
               <input
@@ -535,22 +531,22 @@ export function LeadershipEditor({ members }: LeadershipEditorProps) {
                 value={String(formData.ctaHref || "")}
                 onChange={handleChange}
                 placeholder="e.g. /academics"
-                className="topper-input"
+                className="admin-input"
               />
             </div>
           </div>
 
-          <div className="flex flex-wrap items-center justify-between gap-4 pt-4 border-t border-gray-100">
-            <label className="topper-checkbox-wrapper min-h-[44px]">
+          <div className="admin-form-row">
+            <label className="admin-checkbox-row">
               <input
                 type="checkbox"
                 id="isPublishedLeadership"
                 name="isPublished"
                 checked={Boolean(formData.isPublished)}
                 onChange={handleChange}
-                className="topper-checkbox"
+                className="admin-toggle"
               />
-              <span className="topper-checkbox-label">
+              <span>
                 Publish on public website (Unpublishing returns 404 to public visitors)
               </span>
             </label>
@@ -558,94 +554,90 @@ export function LeadershipEditor({ members }: LeadershipEditorProps) {
             <button
               type="submit"
               disabled={isPending}
-              className="topper-button topper-button--primary min-h-[44px] px-5 gap-2"
+              className="admin-button admin-button--primary"
             >
               {isPending ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
+                <Loader2 size={16} className="animate-spin" />
               ) : (
-                <Save className="w-4 h-4" />
+                <Save size={16} />
               )}
               <span>Save {ROLE_LABELS[activeRole]}</span>
             </button>
           </div>
         </form>
 
-        {/* Live Preview Card Column (1 span) */}
-        <div className="space-y-4">
-          <div className="bg-white p-6 sm:p-8 rounded-2xl border border-gray-200 shadow-xs space-y-4 sticky top-6">
-            <div className="flex items-center justify-between pb-3 border-b border-gray-100">
-              <div className="flex items-center gap-2">
-                <Users className="w-4 h-4 text-[#B91C1C]" />
-                <h3 className="text-sm font-heading font-bold text-gray-900">
-                  Profile Preview
-                </h3>
-              </div>
-              <span className={`px-2 py-0.5 text-[10px] font-bold rounded-full ${
-                formData.isPublished ? "bg-emerald-100 text-emerald-800" : "bg-amber-100 text-amber-800"
-              }`}>
+        {/* Live Preview Card Column */}
+        <div className="admin-section-card" style={{ position: "sticky", top: "24px" }}>
+          <div className="admin-card-header">
+            <div>
+              <h3 style={{ margin: 0, fontSize: "0.875rem", fontFamily: "var(--heading-font)", fontWeight: 700, color: "#111827" }}>
+                Profile Preview
+              </h3>
+            </div>
+            <div>
+              <span className={`admin-pill ${formData.isPublished ? "admin-pill--published" : "admin-pill--draft"}`}>
                 {formData.isPublished ? "Live" : "Draft (404)"}
               </span>
             </div>
+          </div>
 
-            {/* Simulated Leader Profile Card */}
-            <div className="text-center space-y-3 pt-2">
-              <div className="relative w-28 h-28 mx-auto rounded-full overflow-hidden border-2 border-red-100 bg-gray-100 shadow-xs flex items-center justify-center">
-                {formData.imageUrl ? (
-                  <Image
-                    src={String(formData.imageUrl)}
-                    alt={String(formData.imageAlt || formData.name)}
-                    fill
-                    unoptimized
-                    className="object-cover"
-                  />
-                ) : (
-                  <Award className="w-10 h-10 text-gray-300" />
-                )}
-              </div>
+          <div style={{ textAlign: "center", display: "flex", flexDirection: "column", gap: "12px", alignItems: "center", paddingTop: "8px" }}>
+            <div style={{ width: "112px", height: "112px", borderRadius: "50%", overflow: "hidden", border: "2px solid #fee2e2", background: "#f3f4f6", display: "flex", alignItems: "center", justifyContent: "center", position: "relative" }}>
+              {formData.imageUrl ? (
+                <Image
+                  src={String(formData.imageUrl)}
+                  alt={String(formData.imageAlt || formData.name)}
+                  fill
+                  unoptimized
+                  style={{ objectFit: "cover" }}
+                />
+              ) : (
+                <Award size={40} style={{ color: "#d1d5db" }} />
+              )}
+            </div>
 
-              <div>
-                <span className="inline-block px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider bg-red-50 text-[#B91C1C] rounded-full mb-1">
-                  {String(formData.badgeText || "Leadership")}
-                </span>
-                <h4 className="text-base font-heading font-bold text-gray-900">
-                  {String(formData.name || "Leader Name")}
-                </h4>
-                <p className="text-xs text-gray-600 font-medium mt-0.5">
-                  {String(formData.designation || "Designation")}
+            <div>
+              <span style={{ display: "inline-block", padding: "2px 10px", fontSize: "0.6875rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em", background: "#fef2f2", color: "#b91c1c", borderRadius: "9999px", marginBottom: "4px" }}>
+                {String(formData.badgeText || "Leadership")}
+              </span>
+              <h4 style={{ margin: 0, fontSize: "1rem", fontFamily: "var(--heading-font)", fontWeight: 700, color: "#111827" }}>
+                {String(formData.name || "Leader Name")}
+              </h4>
+              <p style={{ margin: "2px 0 0", fontSize: "0.75rem", color: "#4b5563", fontWeight: 500 }}>
+                {String(formData.designation || "Designation")}
+              </p>
+              {formData.termOrAffiliation ? (
+                <p style={{ margin: "2px 0 0", fontSize: "0.6875rem", color: "#9ca3af" }}>
+                  {String(formData.termOrAffiliation)}
                 </p>
-                {formData.termOrAffiliation ? (
-                  <p className="text-[11px] text-gray-400 mt-0.5">
-                    {String(formData.termOrAffiliation)}
-                  </p>
-                ) : null}
-              </div>
-
-              {formData.quote ? (
-                <div className="p-3 bg-amber-50/70 border border-amber-200/50 rounded-xl text-left">
-                  <Quote className="w-3.5 h-3.5 text-amber-600 mb-1" />
-                  <p className="text-xs font-serif italic text-gray-700 line-clamp-3">
-                    &quot;{String(formData.quote)}&quot;
-                  </p>
-                </div>
-              ) : null}
-
-              {formData.signatureImageUrl ? (
-                <div className="pt-2 border-t border-gray-100">
-                  <p className="text-[10px] uppercase font-bold text-gray-400 tracking-wider mb-1">
-                    Signature Preview
-                  </p>
-                  <div className="relative h-16 w-48 mx-auto overflow-hidden">
-                    <Image
-                      src={String(formData.signatureImageUrl)}
-                      alt={String(formData.signatureAlt || "Official Signature")}
-                      fill
-                      unoptimized
-                      className="object-contain"
-                    />
-                  </div>
-                </div>
               ) : null}
             </div>
+
+            {formData.quote ? (
+              <div style={{ padding: "12px", background: "#fffbeb", border: "1px solid #fde68a", borderRadius: "10px", textAlign: "left", width: "100%", boxSizing: "border-box" }}>
+                <Quote size={14} style={{ color: "#d97706", marginBottom: "4px" }} />
+                <p style={{ margin: 0, fontSize: "0.75rem", fontStyle: "italic", color: "#374151" }}>
+                  &quot;{String(formData.quote)}&quot;
+                </p>
+              </div>
+            ) : null}
+
+            {formData.signatureImageUrl ? (
+              <div style={{ width: "100%", paddingTop: "8px", borderTop: "1px solid #f3f4f6" }}>
+                <p style={{ margin: "0 0 4px", fontSize: "0.625rem", textTransform: "uppercase", fontWeight: 700, color: "#9ca3af", letterSpacing: "0.05em" }}>
+                  Signature Preview
+                </p>
+                <div style={{ position: "relative", height: "64px", width: "180px", margin: "0 auto" }}>
+                  <Image
+                    src={String(formData.signatureImageUrl)}
+                    alt={String(formData.signatureAlt || "Official Signature")}
+                    fill
+                    unoptimized
+                    style={{ objectFit: "contain" }}
+                  />
+                </div>
+              </div>
+            ) : null}
           </div>
         </div>
       </div>

@@ -154,313 +154,341 @@ export function HeaderMenuEditor({ items, onRefresh }: HeaderMenuEditorProps) {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-gray-100">
-        <div>
-          <h2 className="text-base font-bold text-gray-900">Header Primary Menu Items</h2>
-          <p className="text-xs text-gray-500">
-            Top-level links, mega-menus, dropdown columns, and child links.
-          </p>
+    <div className="admin-workspace">
+      <div className="admin-section-card">
+        <div className="admin-card-header">
+          <div>
+            <h2 className="admin-workspace-toolbar__title">Header Primary Menu Items</h2>
+            <p className="admin-workspace-toolbar__count">
+              Top-level links, mega-menus, dropdown columns, and child links.
+            </p>
+          </div>
+          <div className="admin-card-actions">
+            <button
+              type="button"
+              onClick={handleAddItem}
+              className="admin-button admin-button--primary"
+            >
+              <Plus size={16} />
+              <span>Add Top-Level Menu Item</span>
+            </button>
+          </div>
         </div>
-        <button
-          type="button"
-          onClick={handleAddItem}
-          className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#B91C1C] hover:bg-[#991B1B] text-white text-xs font-semibold rounded-xl shadow-xs transition-colors shrink-0"
-        >
-          <Plus className="w-4 h-4" />
-          <span>Add Top-Level Menu Item</span>
-        </button>
+
+        {items.length === 0 ? (
+          <div className="admin-empty-state">
+            <p style={{ margin: "0 0 12px" }}>No header navigation items defined.</p>
+            <button
+              type="button"
+              onClick={handleAddItem}
+              className="admin-button admin-button--primary"
+            >
+              <Plus size={16} />
+              <span>Create First Item</span>
+            </button>
+          </div>
+        ) : (
+          <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+            {items.map((item, index) => {
+              const maxCols = getMaxColumnsForPanelType(item.panelType);
+              const canAddColumn = item.panelType !== "NONE" && item.columns.length < maxCols;
+
+              return (
+                <div
+                  key={item.id}
+                  style={{
+                    border: "1px solid var(--border)",
+                    borderRadius: "12px",
+                    background: "#ffffff",
+                    overflow: "hidden",
+                    opacity: item.isPublished ? 1 : 0.8,
+                  }}
+                >
+                  {/* Top-Level Item Header Bar */}
+                  <div
+                    style={{
+                      padding: "12px 16px",
+                      display: "flex",
+                      flexWrap: "wrap",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      gap: "12px",
+                      background: "#f9fafb",
+                      borderBottom: "1px solid var(--border)",
+                    }}
+                  >
+                    <div style={{ display: "flex", alignItems: "center", gap: "12px", minWidth: 0 }}>
+                      {/* Order Steppers */}
+                      <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
+                        <button
+                          type="button"
+                          onClick={() => handleMoveItem(index, "up")}
+                          disabled={index === 0}
+                          aria-label="Move item up"
+                          className="admin-icon-button"
+                          style={{ width: "24px", height: "24px", minWidth: "24px", minHeight: "24px", padding: 0 }}
+                        >
+                          <ArrowUp size={12} />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleMoveItem(index, "down")}
+                          disabled={index === items.length - 1}
+                          aria-label="Move item down"
+                          className="admin-icon-button"
+                          style={{ width: "24px", height: "24px", minWidth: "24px", minHeight: "24px", padding: 0 }}
+                        >
+                          <ArrowDown size={12} />
+                        </button>
+                      </div>
+
+                      <div>
+                        <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
+                          <span style={{ fontFamily: "var(--heading-font)", fontWeight: 700, fontSize: "0.9375rem", color: "#111827" }}>
+                            {item.label}
+                          </span>
+                          {item.badge && (
+                            <span style={{ display: "inline-flex", alignItems: "center", gap: "3px", fontSize: "0.625rem", fontWeight: 700, padding: "1px 6px", background: "#b91c1c", color: "#ffffff", borderRadius: "9999px" }}>
+                              <Sparkles size={10} />
+                              {item.badge}
+                            </span>
+                          )}
+                          <span
+                            className="admin-pill"
+                            style={{
+                              background: item.panelType === "MEGA" ? "#f3e8ff" : item.panelType === "MEDIUM" ? "#dbeafe" : item.panelType === "COMPACT" ? "#dcfce7" : "#f3f4f6",
+                              color: item.panelType === "MEGA" ? "#6b21a8" : item.panelType === "MEDIUM" ? "#1e40af" : item.panelType === "COMPACT" ? "#166534" : "#374151",
+                            }}
+                          >
+                            {item.panelType}
+                          </span>
+                        </div>
+                        <div style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "0.75rem", color: "#6b7280", marginTop: "2px" }}>
+                          <span style={{ fontFamily: "monospace" }}>{item.href}</span>
+                          {item.openInNewTab && (
+                            <span title="Opens in new tab">
+                              <ExternalLink size={12} style={{ color: "#9ca3af" }} />
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div style={{ display: "flex", alignItems: "center", gap: "6px", flexShrink: 0 }}>
+                      {/* Toggle Published */}
+                      <button
+                        type="button"
+                        onClick={() => handleToggleItemStatus(item)}
+                        title={item.isPublished ? "Unpublish item" : "Publish item"}
+                        className={`admin-pill ${item.isPublished ? "admin-pill--published" : "admin-pill--draft"}`}
+                        style={{ cursor: "pointer", border: "none", minHeight: "28px" }}
+                      >
+                        {item.isPublished ? <Eye size={12} style={{ marginRight: "3px" }} /> : <EyeOff size={12} style={{ marginRight: "3px" }} />}
+                        <span>{item.isPublished ? "Live" : "Draft"}</span>
+                      </button>
+
+                      {/* Add Column Button */}
+                      {canAddColumn && (
+                        <button
+                          type="button"
+                          onClick={() => handleAddColumn(item.id)}
+                          className="admin-button admin-button--secondary"
+                          style={{ minHeight: "32px", padding: "4px 10px", fontSize: "0.75rem" }}
+                          title="Add dropdown column"
+                        >
+                          <Columns size={13} style={{ color: "#b91c1c" }} />
+                          <span>Add Column</span>
+                        </button>
+                      )}
+
+                      {/* Edit Item */}
+                      <button
+                        type="button"
+                        onClick={() => handleEditItem(item)}
+                        className="admin-icon-button"
+                        style={{ width: "32px", height: "32px", minWidth: "32px", minHeight: "32px" }}
+                        title="Edit item details"
+                      >
+                        <Pencil size={14} />
+                      </button>
+
+                      {/* Delete Item */}
+                      <button
+                        type="button"
+                        onClick={() => promptDelete("ITEM", item.id, item.label)}
+                        className="admin-icon-button"
+                        style={{ width: "32px", height: "32px", minWidth: "32px", minHeight: "32px", color: "#dc2626" }}
+                        title="Delete item"
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Subtree: Columns and Links */}
+                  {item.panelType !== "NONE" && (
+                    <div style={{ padding: "16px", background: "#ffffff" }}>
+                      {item.columns.length === 0 ? (
+                        <div style={{ padding: "16px", textAlign: "center", border: "1px dashed var(--border)", borderRadius: "8px", fontSize: "0.75rem", color: "#9ca3af" }}>
+                          No columns added yet. Click &ldquo;Add Column&rdquo; above to group dropdown links.
+                        </div>
+                      ) : (
+                        <div className="admin-form-grid-3">
+                          {item.columns.map((column, cIdx) => (
+                            <div
+                              key={column.id}
+                              style={{
+                                padding: "14px",
+                                borderRadius: "10px",
+                                border: "1px solid var(--border)",
+                                background: column.isPublished ? "#f9fafb" : "#f3f4f6",
+                                display: "flex",
+                                flexDirection: "column",
+                                justifyContent: "space-between",
+                                gap: "10px",
+                              }}
+                            >
+                              {/* Column Header */}
+                              <div>
+                                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", paddingBottom: "8px", marginBottom: "8px", borderBottom: "1px solid var(--border)" }}>
+                                  <div style={{ display: "flex", alignItems: "center", gap: "6px", minWidth: 0 }}>
+                                    <Columns size={14} style={{ color: "#6b7280", flexShrink: 0 }} />
+                                    <span style={{ fontFamily: "var(--heading-font)", fontWeight: 700, fontSize: "0.75rem", textTransform: "uppercase", letterSpacing: "0.05em", color: "#374151" }}>
+                                      {column.heading || `Column ${cIdx + 1}`}
+                                    </span>
+                                  </div>
+                                  <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
+                                    <button
+                                      type="button"
+                                      onClick={() => handleToggleColumnStatus(column)}
+                                      title={column.isPublished ? "Unpublish column" : "Publish column"}
+                                      className="admin-icon-button"
+                                      style={{ width: "26px", height: "26px", minWidth: "26px", minHeight: "26px", padding: 0 }}
+                                    >
+                                      {column.isPublished ? <Eye size={12} style={{ color: "#059669" }} /> : <EyeOff size={12} style={{ color: "#9ca3af" }} />}
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => handleEditColumn(column)}
+                                      className="admin-icon-button"
+                                      style={{ width: "26px", height: "26px", minWidth: "26px", minHeight: "26px", padding: 0 }}
+                                      title="Edit column heading"
+                                    >
+                                      <Pencil size={12} />
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() =>
+                                        promptDelete(
+                                          "COLUMN",
+                                          column.id,
+                                          column.heading || `Column ${cIdx + 1}`
+                                        )
+                                      }
+                                      className="admin-icon-button"
+                                      style={{ width: "26px", height: "26px", minWidth: "26px", minHeight: "26px", padding: 0, color: "#dc2626" }}
+                                      title="Delete column"
+                                    >
+                                      <Trash2 size={12} />
+                                    </button>
+                                  </div>
+                                </div>
+
+                                {/* Links List inside Column */}
+                                <div style={{ display: "flex", flexDirection: "column", gap: "6px", minHeight: "40px" }}>
+                                  {column.links.length === 0 ? (
+                                    <p style={{ margin: 0, fontSize: "0.6875rem", color: "#9ca3af", fontStyle: "italic", textAlign: "center", padding: "8px 0" }}>
+                                      No links in this column.
+                                    </p>
+                                  ) : (
+                                    column.links.map((link) => (
+                                      <div
+                                        key={link.id}
+                                        style={{
+                                          padding: "8px 10px",
+                                          borderRadius: "6px",
+                                          border: "1px solid var(--border)",
+                                          background: link.isPublished ? "#ffffff" : "#f3f4f6",
+                                          display: "flex",
+                                          alignItems: "center",
+                                          justifyContent: "space-between",
+                                          gap: "8px",
+                                        }}
+                                      >
+                                        <div style={{ minWidth: 0 }}>
+                                          <div style={{ display: "flex", alignItems: "center", gap: "4px", fontWeight: 600, fontSize: "0.75rem", color: "#1f2937" }}>
+                                            <ChevronRight size={12} style={{ color: "#9ca3af", flexShrink: 0 }} />
+                                            <span>{link.label}</span>
+                                            {link.badge && (
+                                              <span style={{ fontSize: "0.5625rem", fontWeight: 700, padding: "1px 4px", background: "#b91c1c", color: "#ffffff", borderRadius: "9999px" }}>
+                                                {link.badge}
+                                              </span>
+                                            )}
+                                          </div>
+                                          <span style={{ display: "block", fontSize: "0.625rem", color: "#9ca3af", fontFamily: "monospace", paddingLeft: "16px" }}>
+                                            {link.href}
+                                          </span>
+                                        </div>
+
+                                        <div style={{ display: "flex", alignItems: "center", gap: "3px", flexShrink: 0 }}>
+                                          <button
+                                            type="button"
+                                            onClick={() => handleToggleLinkStatus(link)}
+                                            title={link.isPublished ? "Unpublish link" : "Publish link"}
+                                            className="admin-icon-button"
+                                            style={{ width: "24px", height: "24px", minWidth: "24px", minHeight: "24px", padding: 0 }}
+                                          >
+                                            {link.isPublished ? <Eye size={11} style={{ color: "#059669" }} /> : <EyeOff size={11} style={{ color: "#9ca3af" }} />}
+                                          </button>
+                                          <button
+                                            type="button"
+                                            onClick={() => handleEditLink(link)}
+                                            className="admin-icon-button"
+                                            style={{ width: "24px", height: "24px", minWidth: "24px", minHeight: "24px", padding: 0 }}
+                                            title="Edit link"
+                                          >
+                                            <Pencil size={11} />
+                                          </button>
+                                          <button
+                                            type="button"
+                                            onClick={() => promptDelete("LINK", link.id, link.label)}
+                                            className="admin-icon-button"
+                                            style={{ width: "24px", height: "24px", minWidth: "24px", minHeight: "24px", padding: 0, color: "#dc2626" }}
+                                            title="Delete link"
+                                          >
+                                            <Trash2 size={11} />
+                                          </button>
+                                        </div>
+                                      </div>
+                                    ))
+                                  )}
+                                </div>
+                              </div>
+
+                              {/* Add Link Button inside Column */}
+                              <button
+                                type="button"
+                                onClick={() => handleAddLink(column.id)}
+                                className="admin-button admin-button--secondary"
+                                style={{ width: "100%", minHeight: "32px", padding: "4px 8px", fontSize: "0.75rem", color: "#b91c1c" }}
+                              >
+                                <Plus size={13} />
+                                <span>Add Link</span>
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
 
-      {items.length === 0 ? (
-        <div className="p-8 text-center bg-gray-50 rounded-2xl border border-dashed border-gray-200">
-          <p className="text-sm text-gray-500 mb-3">No header navigation items defined.</p>
-          <button
-            type="button"
-            onClick={handleAddItem}
-            className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#B91C1C] text-white text-xs font-semibold rounded-xl"
-          >
-            <Plus className="w-4 h-4" />
-            <span>Create First Item</span>
-          </button>
-        </div>
-      ) : (
-        <div className="space-y-4">
-          {items.map((item, index) => {
-            const maxCols = getMaxColumnsForPanelType(item.panelType);
-            const canAddColumn = item.panelType !== "NONE" && item.columns.length < maxCols;
-
-            return (
-              <div
-                key={item.id}
-                className={`bg-white rounded-2xl border transition-all ${
-                  item.isPublished
-                    ? "border-gray-200 shadow-xs hover:border-gray-300"
-                    : "border-gray-200 bg-gray-50/60 opacity-80"
-                }`}
-              >
-                {/* Top-Level Item Header Bar */}
-                <div className="p-4 flex flex-wrap items-center justify-between gap-3 bg-gray-50/80 rounded-t-2xl border-b border-gray-100">
-                  <div className="flex items-center gap-2.5 min-w-0">
-                    {/* Order Steppers */}
-                    <div className="flex flex-col gap-0.5">
-                      <button
-                        type="button"
-                        onClick={() => handleMoveItem(index, "up")}
-                        disabled={index === 0}
-                        aria-label="Move item up"
-                        className="p-1 text-gray-400 hover:text-gray-700 disabled:opacity-20 transition-colors"
-                      >
-                        <ArrowUp className="w-3.5 h-3.5" />
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handleMoveItem(index, "down")}
-                        disabled={index === items.length - 1}
-                        aria-label="Move item down"
-                        className="p-1 text-gray-400 hover:text-gray-700 disabled:opacity-20 transition-colors"
-                      >
-                        <ArrowDown className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <span className="font-heading font-bold text-sm text-gray-900">
-                          {item.label}
-                        </span>
-                        {item.badge && (
-                          <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 bg-[#B91C1C] text-white rounded-full">
-                            <Sparkles className="w-2.5 h-2.5" />
-                            {item.badge}
-                          </span>
-                        )}
-                        <span
-                          className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider ${
-                            item.panelType === "MEGA"
-                              ? "bg-purple-100 text-purple-800"
-                              : item.panelType === "MEDIUM"
-                              ? "bg-blue-100 text-blue-800"
-                              : item.panelType === "COMPACT"
-                              ? "bg-emerald-100 text-emerald-800"
-                              : "bg-gray-100 text-gray-700"
-                          }`}
-                        >
-                          {item.panelType}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-2 text-xs text-gray-500 mt-0.5">
-                        <span className="font-mono text-gray-600 truncate max-w-xs">{item.href}</span>
-                        {item.openInNewTab && (
-                          <span title="Opens in new tab">
-                            <ExternalLink className="w-3 h-3 text-gray-400" />
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-1.5 shrink-0">
-                    {/* Toggle Published */}
-                    <button
-                      type="button"
-                      onClick={() => handleToggleItemStatus(item)}
-                      title={item.isPublished ? "Unpublish item" : "Publish item"}
-                      className={`p-1.5 rounded-lg border text-xs font-medium inline-flex items-center gap-1 transition-colors ${
-                        item.isPublished
-                          ? "bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100"
-                          : "bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100"
-                      }`}
-                    >
-                      {item.isPublished ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
-                      <span>{item.isPublished ? "Live" : "Draft"}</span>
-                    </button>
-
-                    {/* Add Column Button */}
-                    {canAddColumn && (
-                      <button
-                        type="button"
-                        onClick={() => handleAddColumn(item.id)}
-                        className="p-1.5 text-xs font-medium text-gray-700 bg-white hover:bg-gray-100 border border-gray-200 rounded-lg inline-flex items-center gap-1 transition-colors"
-                        title="Add dropdown column"
-                      >
-                        <Columns className="w-3.5 h-3.5 text-[#B91C1C]" />
-                        <span className="hidden sm:inline">Add Column</span>
-                      </button>
-                    )}
-
-                    {/* Edit Item */}
-                    <button
-                      type="button"
-                      onClick={() => handleEditItem(item)}
-                      className="p-1.5 text-gray-600 hover:text-gray-900 hover:bg-gray-200/60 rounded-lg transition-colors"
-                      title="Edit item details"
-                    >
-                      <Pencil className="w-3.5 h-3.5" />
-                    </button>
-
-                    {/* Delete Item */}
-                    <button
-                      type="button"
-                      onClick={() => promptDelete("ITEM", item.id, item.label)}
-                      className="p-1.5 text-red-600 hover:text-red-800 hover:bg-red-50 rounded-lg transition-colors"
-                      title="Delete item"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-                </div>
-
-                {/* Subtree: Columns and Links */}
-                {item.panelType !== "NONE" && (
-                  <div className="p-4 bg-white rounded-b-2xl">
-                    {item.columns.length === 0 ? (
-                      <div className="p-4 text-center border border-dashed border-gray-200 rounded-xl text-xs text-gray-400">
-                        No columns added yet. Click &ldquo;Add Column&rdquo; above to group dropdown links.
-                      </div>
-                    ) : (
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                        {item.columns.map((column, cIdx) => (
-                          <div
-                            key={column.id}
-                            className={`p-3.5 rounded-xl border flex flex-col justify-between ${
-                              column.isPublished
-                                ? "bg-[#F9FAFB] border-gray-200"
-                                : "bg-gray-100/60 border-gray-200 opacity-75"
-                            }`}
-                          >
-                            {/* Column Header */}
-                            <div>
-                              <div className="flex items-center justify-between pb-2 mb-2 border-b border-gray-200/80">
-                                <div className="flex items-center gap-1.5 min-w-0">
-                                  <Columns className="w-3.5 h-3.5 text-gray-400 shrink-0" />
-                                  <span className="font-heading font-bold text-xs uppercase tracking-wider text-gray-700 truncate">
-                                    {column.heading || `Column ${cIdx + 1}`}
-                                  </span>
-                                </div>
-                                <div className="flex items-center gap-1 shrink-0">
-                                  <button
-                                    type="button"
-                                    onClick={() => handleToggleColumnStatus(column)}
-                                    title={column.isPublished ? "Unpublish column" : "Publish column"}
-                                    className={`p-1 rounded text-[11px] ${
-                                      column.isPublished ? "text-emerald-700" : "text-amber-700"
-                                    }`}
-                                  >
-                                    {column.isPublished ? <Eye className="w-3 h-3" /> : <EyeOff className="w-3 h-3" />}
-                                  </button>
-                                  <button
-                                    type="button"
-                                    onClick={() => handleEditColumn(column)}
-                                    className="p-1 text-gray-500 hover:text-gray-800 rounded"
-                                    title="Edit column heading"
-                                  >
-                                    <Pencil className="w-3 h-3" />
-                                  </button>
-                                  <button
-                                    type="button"
-                                    onClick={() =>
-                                      promptDelete(
-                                        "COLUMN",
-                                        column.id,
-                                        column.heading || `Column ${cIdx + 1}`
-                                      )
-                                    }
-                                    className="p-1 text-red-500 hover:text-red-700 rounded"
-                                    title="Delete column"
-                                  >
-                                    <Trash2 className="w-3 h-3" />
-                                  </button>
-                                </div>
-                              </div>
-
-                              {/* Links List inside Column */}
-                              <div className="space-y-1.5 min-h-[48px]">
-                                {column.links.length === 0 ? (
-                                  <p className="text-[11px] text-gray-400 italic py-2 text-center">
-                                    No links in this column.
-                                  </p>
-                                ) : (
-                                  column.links.map((link) => (
-                                    <div
-                                      key={link.id}
-                                      className={`p-2 rounded-lg text-xs flex items-center justify-between gap-2 border ${
-                                        link.isPublished
-                                          ? "bg-white border-gray-200/90 shadow-2xs"
-                                          : "bg-gray-50 border-gray-200 opacity-70"
-                                      }`}
-                                    >
-                                      <div className="min-w-0">
-                                        <div className="flex items-center gap-1.5 font-medium text-gray-800">
-                                          <ChevronRight className="w-3 h-3 text-gray-400 shrink-0" />
-                                          <span className="truncate">{link.label}</span>
-                                          {link.badge && (
-                                            <span className="text-[9px] font-bold px-1.5 py-0.2 bg-[#B91C1C] text-white rounded-full shrink-0">
-                                              {link.badge}
-                                            </span>
-                                          )}
-                                        </div>
-                                        <span className="block text-[10px] text-gray-400 font-mono pl-4 truncate">
-                                          {link.href}
-                                        </span>
-                                      </div>
-
-                                      <div className="flex items-center gap-1 shrink-0">
-                                        <button
-                                          type="button"
-                                          onClick={() => handleToggleLinkStatus(link)}
-                                          title={link.isPublished ? "Unpublish link" : "Publish link"}
-                                          className={`p-1 rounded ${
-                                            link.isPublished ? "text-emerald-700" : "text-amber-700"
-                                          }`}
-                                        >
-                                          {link.isPublished ? <Eye className="w-3 h-3" /> : <EyeOff className="w-3 h-3" />}
-                                        </button>
-                                        <button
-                                          type="button"
-                                          onClick={() => handleEditLink(link)}
-                                          className="p-1 text-gray-500 hover:text-gray-800"
-                                          title="Edit link"
-                                        >
-                                          <Pencil className="w-3 h-3" />
-                                        </button>
-                                        <button
-                                          type="button"
-                                          onClick={() => promptDelete("LINK", link.id, link.label)}
-                                          className="p-1 text-red-500 hover:text-red-700"
-                                          title="Delete link"
-                                        >
-                                          <Trash2 className="w-3 h-3" />
-                                        </button>
-                                      </div>
-                                    </div>
-                                  ))
-                                )}
-                              </div>
-                            </div>
-
-                            {/* Add Link Button inside Column */}
-                            <button
-                              type="button"
-                              onClick={() => handleAddLink(column.id)}
-                              className="mt-3 w-full py-1.5 px-2 bg-white hover:bg-gray-50 border border-gray-200 rounded-lg text-xs font-semibold text-[#B91C1C] inline-flex items-center justify-center gap-1 transition-colors"
-                            >
-                              <Plus className="w-3 h-3" />
-                              <span>Add Link</span>
-                            </button>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-            );
-          })}
-        </div>
-      )}
-
-      {/* Dialogs */}
+      {/* Item Dialog */}
       <ItemFormDialog
         isOpen={itemDialogOpen}
         location="HEADER_PRIMARY"
@@ -469,6 +497,7 @@ export function HeaderMenuEditor({ items, onRefresh }: HeaderMenuEditorProps) {
         onSuccess={onRefresh}
       />
 
+      {/* Column Dialog */}
       <ColumnFormDialog
         isOpen={columnDialogOpen}
         itemId={selectedColumnItemId}
@@ -477,6 +506,7 @@ export function HeaderMenuEditor({ items, onRefresh }: HeaderMenuEditorProps) {
         onSuccess={onRefresh}
       />
 
+      {/* Link Dialog */}
       <LinkFormDialog
         isOpen={linkDialogOpen}
         columnId={selectedLinkColumnId}
@@ -485,19 +515,15 @@ export function HeaderMenuEditor({ items, onRefresh }: HeaderMenuEditorProps) {
         onSuccess={onRefresh}
       />
 
-      {deleteTarget && (
-        <DeleteNavigationDialog
-          isOpen={deleteDialogOpen}
-          targetType={deleteTarget.type}
-          targetId={deleteTarget.id}
-          targetLabel={deleteTarget.label}
-          onClose={() => {
-            setDeleteDialogOpen(false);
-            setDeleteTarget(null);
-          }}
-          onSuccess={onRefresh}
-        />
-      )}
+      {/* Delete Confirmation Dialog */}
+      <DeleteNavigationDialog
+        isOpen={deleteDialogOpen}
+        targetType={deleteTarget?.type || "ITEM"}
+        targetId={deleteTarget?.id || ""}
+        targetLabel={deleteTarget?.label || ""}
+        onClose={() => setDeleteDialogOpen(false)}
+        onSuccess={onRefresh}
+      />
     </div>
   );
 }

@@ -10,7 +10,6 @@ import {
   Trash2,
   Eye,
   EyeOff,
-  BarChart3,
 } from "lucide-react";
 import {
   toggleHomepageStatisticStatusAction,
@@ -83,156 +82,157 @@ export function StatisticsEditor({ statistics, onRefresh }: StatisticsEditorProp
   };
 
   return (
-    <div className="space-y-6">
-      <div className="topper-workspace-toolbar flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-5 rounded-2xl border border-gray-200 shadow-xs">
-        <div>
-          <h2 className="text-lg font-heading font-bold text-gray-900 flex items-center gap-2">
-            <BarChart3 className="w-5 h-5 text-[#B91C1C]" />
-            <span>Key Statistics & Trust Metrics</span>
-          </h2>
-          <p className="text-xs text-gray-500 font-sans mt-0.5">
-            Institutional milestones, student-teacher ratio, and heritage numbers ({statistics.length} total).
-          </p>
+    <div className="admin-workspace">
+      <div className="admin-section-card">
+        <div className="admin-card-header">
+          <div>
+            <h2 className="admin-workspace-toolbar__title">
+              Key Statistics &amp; Trust Metrics
+            </h2>
+            <p className="admin-workspace-toolbar__count">
+              Institutional milestones, student-teacher ratio, and heritage numbers ({statistics.length} total).
+            </p>
+          </div>
+
+          <div className="admin-card-actions">
+            <button
+              type="button"
+              onClick={handleCreate}
+              className="admin-button admin-button--primary"
+            >
+              <Plus size={16} />
+              <span>Add Statistic</span>
+            </button>
+          </div>
         </div>
 
-        <button
-          type="button"
-          onClick={handleCreate}
-          className="topper-button topper-button--primary min-h-[44px] px-4 gap-1.5 self-start sm:self-auto"
-        >
-          <Plus className="w-4 h-4" />
-          <span>Add Statistic</span>
-        </button>
-      </div>
-
-      {statistics.length === 0 ? (        <div className="bg-white rounded-2xl p-12 text-center border border-dashed border-gray-300">
-          <p className="text-gray-500 text-sm">No statistics configured yet.</p>
-        </div>
-      ) : (
-        <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden shadow-xs">
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
+        {statistics.length === 0 ? (
+          <div className="admin-empty-state">
+            <p>No statistics configured yet. Click &quot;Add Statistic&quot; to create one.</p>
+          </div>
+        ) : (
+          <div className="admin-table-container">
+            <table className="admin-table" aria-label="Key Statistics Roster">
               <thead>
-                <tr className="border-b border-gray-200 bg-gray-50/75 text-xs font-heading font-bold text-gray-600 uppercase tracking-wider">
-                  <th className="py-3.5 px-4 w-12 text-center">#</th>
-                  <th className="py-3.5 px-4">Metric & Value</th>
-                  <th className="py-3.5 px-4">Subtext & Badge</th>
-                  <th className="py-3.5 px-4">Photo</th>
-                  <th className="py-3.5 px-4 text-center">Status</th>
-                  <th className="py-3.5 px-4 text-center">Reorder</th>
-                  <th className="py-3.5 px-4 text-right">Actions</th>
+                <tr>
+                  <th scope="col" style={{ width: "48px", textAlign: "center" }}>#</th>
+                  <th scope="col">Metric &amp; Value</th>
+                  <th scope="col">Subtext &amp; Badge</th>
+                  <th scope="col">Photo</th>
+                  <th scope="col" style={{ textAlign: "center" }}>Status</th>
+                  <th scope="col" style={{ textAlign: "center" }}>Reorder</th>
+                  <th scope="col" style={{ textAlign: "right" }}>Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100 text-sm">
+              <tbody>
                 {statistics.map((stat, idx) => (
                   <tr
                     key={stat.id}
-                    className={`hover:bg-gray-50/60 transition-colors ${
-                      !stat.isPublished ? "opacity-60 bg-gray-50/30" : ""
-                    }`}
+                    style={{ opacity: !stat.isPublished ? 0.6 : 1 }}
                   >
-                    <td className="py-3.5 px-4 text-center font-mono text-xs text-gray-400">
+                    <td style={{ textAlign: "center", fontFamily: "monospace", color: "#9ca3af", fontSize: "0.75rem" }}>
                       {idx + 1}
                     </td>
 
-                    <td className="py-3.5 px-4">
-                      <div className="font-heading font-bold text-gray-900 text-base">
-                        {stat.numericValue} {stat.suffix && <span className="text-xs font-normal text-gray-500">{stat.suffix}</span>}
+                    <td>
+                      <div style={{ fontFamily: "var(--heading-font)", fontWeight: 700, color: "#111827", fontSize: "1rem" }}>
+                        {stat.numericValue} {stat.suffix && <span style={{ fontSize: "0.75rem", fontWeight: 400, color: "#6b7280" }}>{stat.suffix}</span>}
                       </div>
-                      <div className="text-xs text-gray-600 font-medium">{stat.label}</div>
+                      <div style={{ fontSize: "0.75rem", color: "#4b5563", fontWeight: 500 }}>{stat.label}</div>
                     </td>
 
-                    <td className="py-3.5 px-4">
-                      <div className="text-xs text-gray-600">{stat.subtext || "—"}</div>
+                    <td>
+                      <div style={{ fontSize: "0.75rem", color: "#4b5563" }}>{stat.subtext || "—"}</div>
                       {stat.badge && (
-                        <span className="inline-block mt-1 px-2 py-0.5 rounded text-[10px] font-heading font-bold uppercase tracking-wider bg-gray-100 text-gray-700 border border-gray-200">
+                        <span style={{ display: "inline-block", marginTop: "2px", padding: "1px 6px", borderRadius: "4px", fontSize: "0.625rem", fontWeight: 700, textTransform: "uppercase", background: "#f3f4f6", color: "#374151", border: "1px solid #e5e7eb" }}>
                           {stat.badge}
                         </span>
                       )}
                     </td>
 
-                    <td className="py-3.5 px-4">
+                    <td>
                       {stat.imageUrl ? (
-                        <div className="relative w-12 h-12 rounded-lg overflow-hidden bg-gray-100 border border-gray-200">
+                        <div style={{ position: "relative", width: "48px", height: "48px", borderRadius: "8px", overflow: "hidden", background: "#f3f4f6", border: "1px solid #e5e7eb" }}>
                           <Image
                             src={stat.imageUrl}
                             alt={stat.label}
                             fill
                             sizes="48px"
-                            className="object-cover"
+                            style={{ objectFit: "cover" }}
                           />
                         </div>
                       ) : (
-                        <span className="text-xs text-gray-400 italic">No image</span>
+                        <span style={{ fontSize: "0.75rem", color: "#9ca3af", fontStyle: "italic" }}>No image</span>
                       )}
                     </td>
 
-                    <td className="py-3.5 px-4 text-center">
+                    <td style={{ textAlign: "center" }}>
                       <button
                         type="button"
                         onClick={() => handleToggleStatus(stat)}
                         disabled={isPending}
                         aria-label={`Toggle status for ${stat.label}`}
-                        className={`inline-flex items-center gap-1 min-h-[36px] px-2.5 py-1 rounded-full text-xs font-medium transition-colors cursor-pointer ${
-                          stat.isPublished
-                            ? "bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100"
-                            : "bg-gray-100 text-gray-600 border border-gray-200 hover:bg-gray-200"
-                        }`}
+                        className={`admin-pill ${stat.isPublished ? "admin-pill--published" : "admin-pill--draft"}`}
+                        style={{ cursor: "pointer", border: "none", minHeight: "28px" }}
                       >
                         {stat.isPublished ? (
                           <>
-                            <Eye className="w-3.5 h-3.5 text-emerald-600" />
+                            <Eye size={12} style={{ marginRight: "4px" }} />
                             <span>Published</span>
                           </>
                         ) : (
                           <>
-                            <EyeOff className="w-3.5 h-3.5 text-gray-500" />
+                            <EyeOff size={12} style={{ marginRight: "4px" }} />
                             <span>Draft</span>
                           </>
                         )}
                       </button>
                     </td>
 
-                    <td className="py-3.5 px-4 text-center">
-                      <div className="topper-card-actions justify-center">
+                    <td style={{ textAlign: "center" }}>
+                      <div style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}>
                         <button
                           type="button"
                           onClick={() => handleMove(idx, "UP")}
                           disabled={isPending || idx === 0}
                           aria-label={`Move ${stat.label} up`}
-                          className="topper-icon-button"
+                          className="admin-icon-button"
+                          style={{ width: "32px", height: "32px", minWidth: "32px", minHeight: "32px" }}
                         >
-                          <ArrowUp className="w-4 h-4" />
+                          <ArrowUp size={14} />
                         </button>
                         <button
                           type="button"
                           onClick={() => handleMove(idx, "DOWN")}
                           disabled={isPending || idx === statistics.length - 1}
                           aria-label={`Move ${stat.label} down`}
-                          className="topper-icon-button"
+                          className="admin-icon-button"
+                          style={{ width: "32px", height: "32px", minWidth: "32px", minHeight: "32px" }}
                         >
-                          <ArrowDown className="w-4 h-4" />
+                          <ArrowDown size={14} />
                         </button>
                       </div>
                     </td>
 
-                    <td className="py-3.5 px-4 text-right">
-                      <div className="topper-card-actions justify-end">
+                    <td style={{ textAlign: "right" }}>
+                      <div style={{ display: "inline-flex", alignItems: "center", gap: "4px", justifyContent: "flex-end" }}>
                         <button
                           type="button"
                           onClick={() => handleEdit(stat)}
                           aria-label={`Edit ${stat.label}`}
-                          className="topper-icon-button"
+                          className="admin-icon-button"
+                          style={{ width: "32px", height: "32px", minWidth: "32px", minHeight: "32px" }}
                         >
-                          <Edit2 className="w-4 h-4" />
+                          <Edit2 size={14} />
                         </button>
                         <button
                           type="button"
                           onClick={() => setDeleteTarget(stat)}
                           aria-label={`Delete ${stat.label}`}
-                          className="topper-icon-button topper-icon-button--danger"
+                          className="admin-icon-button"
+                          style={{ width: "32px", height: "32px", minWidth: "32px", minHeight: "32px", color: "#dc2626" }}
                         >
-                          <Trash2 className="w-4 h-4" />
+                          <Trash2 size={14} />
                         </button>
                       </div>
                     </td>
@@ -241,8 +241,8 @@ export function StatisticsEditor({ statistics, onRefresh }: StatisticsEditorProp
               </tbody>
             </table>
           </div>
-        </div>
-      )}
+        )}
+      </div>
 
       {/* Form Dialog */}
       <StatisticFormDialog

@@ -26,48 +26,42 @@ export function NavigationWorkspace({
   };
 
   return (
-    <div className="topper-workspace-wrapper space-y-6">
+    <div className="admin-workspace">
       {/* Top Navigation Level Tab Switcher */}
-      <div className="topper-workspace-toolbar p-2 rounded-2xl bg-white border border-gray-200 shadow-xs">
-        <div
-          role="tablist"
-          aria-label="Navigation Menu Levels"
-          className="flex items-center gap-2 overflow-x-auto no-scrollbar py-1"
+      <div
+        role="tablist"
+        aria-label="Navigation Menu Levels"
+        className="admin-tabs"
+      >
+        <button
+          role="tab"
+          id="tab-header"
+          aria-selected={activeTab === "HEADER"}
+          aria-controls="tabpanel-header"
+          tabIndex={activeTab === "HEADER" ? 0 : -1}
+          type="button"
+          onClick={() => setActiveTab("HEADER")}
+          className={`admin-tab ${activeTab === "HEADER" ? "admin-tab--active" : ""}`}
         >
-          <button
-            role="tab"
-            id="tab-header"
-            aria-selected={activeTab === "HEADER"}
-            aria-controls="tabpanel-header"
-            type="button"
-            onClick={() => setActiveTab("HEADER")}
-            className={`min-h-[44px] px-4 py-2 text-sm font-heading font-bold rounded-xl inline-flex items-center gap-2 shrink-0 transition-all cursor-pointer ${
-              activeTab === "HEADER"
-                ? "bg-[#B91C1C] text-white shadow-xs"
-                : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-            }`}
-          >
-            <Menu className="w-4 h-4 shrink-0" />
-            <span>Header Primary Menu ({headerItems.length})</span>
-          </button>
+          <Menu size={16} aria-hidden="true" />
+          <span>Header Primary Menu</span>
+          <span className="admin-tab__badge">{headerItems.length}</span>
+        </button>
 
-          <button
-            role="tab"
-            id="tab-footer"
-            aria-selected={activeTab === "FOOTER"}
-            aria-controls="tabpanel-footer"
-            type="button"
-            onClick={() => setActiveTab("FOOTER")}
-            className={`min-h-[44px] px-4 py-2 text-sm font-heading font-bold rounded-xl inline-flex items-center gap-2 shrink-0 transition-all cursor-pointer ${
-              activeTab === "FOOTER"
-                ? "bg-[#B91C1C] text-white shadow-xs"
-                : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-            }`}
-          >
-            <LayoutGrid className="w-4 h-4 shrink-0" />
-            <span>Footer Link Columns ({footerAdmissions.length + footerCommunity.length})</span>
-          </button>
-        </div>
+        <button
+          role="tab"
+          id="tab-footer"
+          aria-selected={activeTab === "FOOTER"}
+          aria-controls="tabpanel-footer"
+          tabIndex={activeTab === "FOOTER" ? 0 : -1}
+          type="button"
+          onClick={() => setActiveTab("FOOTER")}
+          className={`admin-tab ${activeTab === "FOOTER" ? "admin-tab--active" : ""}`}
+        >
+          <LayoutGrid size={16} aria-hidden="true" />
+          <span>Footer Link Columns</span>
+          <span className="admin-tab__badge">{footerAdmissions.length + footerCommunity.length}</span>
+        </button>
       </div>
 
       {/* Active Tab Content */}

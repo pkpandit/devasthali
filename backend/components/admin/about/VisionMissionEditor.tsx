@@ -167,49 +167,46 @@ export function VisionMissionEditor({
   };
 
   return (
-    <div className="space-y-10">
+    <div className="admin-workspace">
       {/* Notifications */}
       {successBanner && (
-        <div className="p-4 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 flex items-center gap-3">
-          <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
-          <p className="text-sm font-medium">
-            Vision & Mission settings have been successfully saved and published.
-          </p>
+        <div className="admin-banner--success" role="status">
+          <CheckCircle2 size={18} aria-hidden="true" />
+          <span>Vision &amp; Mission settings have been successfully saved and published.</span>
         </div>
       )}
 
       {/* 1. Header & Vision/Mission Statements */}
-      <form onSubmit={handleSettingSubmit} className="space-y-6 bg-white p-6 sm:p-8 rounded-2xl border border-gray-200 shadow-xs">
-        <div className="flex flex-wrap items-center justify-between gap-3 pb-4 border-b border-gray-100">
+      <form onSubmit={handleSettingSubmit} className="admin-section-card">
+        <div className="admin-card-header">
           <div>
-            <h2 className="text-base font-heading font-bold text-gray-900">
-              Vision & Mission Statements
-            </h2>
-            <p className="text-xs text-gray-500 font-sans mt-0.5">
-              Control the header intro and the twin statements of institutional purpose.
-            </p>
+            <h2 className="admin-workspace-toolbar__title">Vision &amp; Mission Statements</h2>
+            <p className="admin-workspace-toolbar__count">Control the header intro and the twin statements of institutional purpose.</p>
           </div>
-          <a
-            href="/vision-mission"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-xs font-semibold text-[#B91C1C] hover:underline inline-flex items-center gap-1"
-          >
-            <span>View Public /vision-mission</span>
-            <ExternalLink className="w-3.5 h-3.5" />
-          </a>
+          <div className="admin-card-actions">
+            <a
+              href="/vision-mission"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="admin-button admin-button--secondary"
+              style={{ minHeight: "36px", padding: "6px 12px", fontSize: "0.8125rem" }}
+            >
+              <span>View Public /vision-mission</span>
+              <ExternalLink size={14} aria-hidden="true" />
+            </a>
+          </div>
         </div>
 
         {serverError && (
-          <div className="topper-dialog-error-banner" role="alert">
+          <div className="admin-banner--error" role="alert">
             {serverError}
           </div>
         )}
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="topper-field">
-            <label htmlFor="vm-breadcrumb" className="topper-label">
-              Breadcrumb Text <span className="text-red-500">*</span>
+        <div className="admin-form-grid-2">
+          <div className="admin-field">
+            <label htmlFor="vm-breadcrumb" className="admin-label">
+              Breadcrumb Text *
             </label>
             <input
               id="vm-breadcrumb"
@@ -217,17 +214,17 @@ export function VisionMissionEditor({
               name="breadcrumb"
               value={formData.breadcrumb}
               onChange={handleSettingChange}
-              className={`topper-input ${fieldErrors.breadcrumb ? "topper-input--error" : ""}`}
+              className="admin-input"
               required
             />
             {fieldErrors.breadcrumb && (
-              <p className="topper-field-error">{fieldErrors.breadcrumb}</p>
+              <p className="admin-field-error">{fieldErrors.breadcrumb}</p>
             )}
           </div>
 
-          <div className="topper-field">
-            <label htmlFor="vm-heading" className="topper-label">
-              Page Heading <span className="text-red-500">*</span>
+          <div className="admin-field">
+            <label htmlFor="vm-heading" className="admin-label">
+              Page Heading *
             </label>
             <input
               id="vm-heading"
@@ -236,18 +233,18 @@ export function VisionMissionEditor({
               value={formData.heading}
               onChange={handleSettingChange}
               placeholder="e.g. Vision & Mission"
-              className={`topper-input ${fieldErrors.heading ? "topper-input--error" : ""}`}
+              className="admin-input"
               required
             />
             {fieldErrors.heading && (
-              <p className="topper-field-error">{fieldErrors.heading}</p>
+              <p className="admin-field-error">{fieldErrors.heading}</p>
             )}
           </div>
         </div>
 
-        <div className="topper-field">
-          <label htmlFor="vm-subheading" className="topper-label">
-            Subheading <span className="text-red-500">*</span>
+        <div className="admin-field">
+          <label htmlFor="vm-subheading" className="admin-label">
+            Subheading *
           </label>
           <textarea
             id="vm-subheading"
@@ -255,26 +252,26 @@ export function VisionMissionEditor({
             value={formData.subheading}
             onChange={handleSettingChange}
             rows={2}
-            className={`topper-input ${fieldErrors.subheading ? "topper-input--error" : ""}`}
+            className="admin-textarea"
             required
           />
           {fieldErrors.subheading && (
-            <p className="topper-field-error">{fieldErrors.subheading}</p>
+            <p className="admin-field-error">{fieldErrors.subheading}</p>
           )}
         </div>
 
         {/* Vision Statement Box */}
-        <div className="p-5 rounded-2xl bg-amber-50/50 border border-amber-200/60 space-y-4">
-          <div className="flex items-center gap-2">
-            <Compass className="w-5 h-5 text-amber-700" />
-            <h3 className="text-sm font-heading font-bold text-gray-900">
+        <div style={{ padding: "18px", borderRadius: "10px", background: "#fffbeb", border: "1px solid #fde68a", display: "flex", flexDirection: "column", gap: "12px" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+            <Compass size={18} style={{ color: "#b45309" }} />
+            <h3 style={{ margin: 0, fontSize: "0.875rem", fontFamily: "var(--heading-font)", fontWeight: 700, color: "#111827" }}>
               Vision Statement
             </h3>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="md:col-span-2 topper-field">
-              <label htmlFor="vm-visionTitle" className="topper-label">
-                Vision Title <span className="text-red-500">*</span>
+          <div className="admin-form-grid-2">
+            <div className="admin-field">
+              <label htmlFor="vm-visionTitle" className="admin-label">
+                Vision Title *
               </label>
               <input
                 id="vm-visionTitle"
@@ -282,12 +279,12 @@ export function VisionMissionEditor({
                 name="visionTitle"
                 value={formData.visionTitle}
                 onChange={handleSettingChange}
-                className="topper-input"
+                className="admin-input"
                 required
               />
             </div>
-            <div className="topper-field">
-              <label htmlFor="vm-visionIcon" className="topper-label">
+            <div className="admin-field">
+              <label htmlFor="vm-visionIcon" className="admin-label">
                 Vision Icon Name
               </label>
               <input
@@ -297,13 +294,13 @@ export function VisionMissionEditor({
                 value={formData.visionIcon}
                 onChange={handleSettingChange}
                 placeholder="Compass"
-                className="topper-input"
+                className="admin-input"
               />
             </div>
           </div>
-          <div className="topper-field">
-            <label htmlFor="vm-visionBody" className="topper-label">
-              Vision Statement Text <span className="text-red-500">*</span>
+          <div className="admin-field">
+            <label htmlFor="vm-visionBody" className="admin-label">
+              Vision Statement Text *
             </label>
             <textarea
               id="vm-visionBody"
@@ -311,24 +308,24 @@ export function VisionMissionEditor({
               value={formData.visionBody}
               onChange={handleSettingChange}
               rows={4}
-              className="topper-input"
+              className="admin-textarea"
               required
             />
           </div>
         </div>
 
         {/* Mission Statement Box */}
-        <div className="p-5 rounded-2xl bg-blue-50/50 border border-blue-200/60 space-y-4">
-          <div className="flex items-center gap-2">
-            <Target className="w-5 h-5 text-blue-700" />
-            <h3 className="text-sm font-heading font-bold text-gray-900">
+        <div style={{ padding: "18px", borderRadius: "10px", background: "#eff6ff", border: "1px solid #bfdbfe", display: "flex", flexDirection: "column", gap: "12px" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+            <Target size={18} style={{ color: "#1d4ed8" }} />
+            <h3 style={{ margin: 0, fontSize: "0.875rem", fontFamily: "var(--heading-font)", fontWeight: 700, color: "#111827" }}>
               Mission Statement
             </h3>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="md:col-span-2 topper-field">
-              <label htmlFor="vm-missionTitle" className="topper-label">
-                Mission Title <span className="text-red-500">*</span>
+          <div className="admin-form-grid-2">
+            <div className="admin-field">
+              <label htmlFor="vm-missionTitle" className="admin-label">
+                Mission Title *
               </label>
               <input
                 id="vm-missionTitle"
@@ -336,12 +333,12 @@ export function VisionMissionEditor({
                 name="missionTitle"
                 value={formData.missionTitle}
                 onChange={handleSettingChange}
-                className="topper-input"
+                className="admin-input"
                 required
               />
             </div>
-            <div className="topper-field">
-              <label htmlFor="vm-missionIcon" className="topper-label">
+            <div className="admin-field">
+              <label htmlFor="vm-missionIcon" className="admin-label">
                 Mission Icon Name
               </label>
               <input
@@ -351,13 +348,13 @@ export function VisionMissionEditor({
                 value={formData.missionIcon}
                 onChange={handleSettingChange}
                 placeholder="Target"
-                className="topper-input"
+                className="admin-input"
               />
             </div>
           </div>
-          <div className="topper-field">
-            <label htmlFor="vm-missionBody" className="topper-label">
-              Mission Statement Text <span className="text-red-500">*</span>
+          <div className="admin-field">
+            <label htmlFor="vm-missionBody" className="admin-label">
+              Mission Statement Text *
             </label>
             <textarea
               id="vm-missionBody"
@@ -365,136 +362,126 @@ export function VisionMissionEditor({
               value={formData.missionBody}
               onChange={handleSettingChange}
               rows={4}
-              className="topper-input"
+              className="admin-textarea"
               required
             />
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center justify-between gap-4 pt-4 border-t border-gray-100">
-          <label className="topper-checkbox-wrapper min-h-[44px]">
+        <div className="admin-form-row">
+          <label className="admin-checkbox-row">
             <input
               type="checkbox"
               id="isPublishedVMSetting"
               name="isPublished"
               checked={formData.isPublished}
               onChange={handleSettingChange}
-              className="topper-checkbox"
+              className="admin-toggle"
             />
-            <span className="topper-checkbox-label">
-              Publish Vision & Mission Header and Statements
-            </span>
+            <span>Publish Vision &amp; Mission Header and Statements</span>
           </label>
 
           <button
             type="submit"
             disabled={isPending}
-            className="topper-button topper-button--primary min-h-[44px] px-5 gap-2"
+            className="admin-button admin-button--primary"
           >
             {isPending ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
+              <Loader2 size={16} className="animate-spin" />
             ) : (
-              <Save className="w-4 h-4" />
+              <Save size={16} />
             )}
-            <span>Save Vision & Mission</span>
+            <span>Save Vision &amp; Mission</span>
           </button>
         </div>
       </form>
 
       {/* 2. Institutional Core Values */}
-      <div className="space-y-4 bg-white p-6 sm:p-8 rounded-2xl border border-gray-200 shadow-xs">
-        <div className="flex flex-wrap items-center justify-between gap-3 pb-4 border-b border-gray-100">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-purple-100 text-purple-800 flex items-center justify-center shrink-0">
-              <Compass className="w-5 h-5" />
-            </div>
-            <div>
-              <h2 className="text-base font-heading font-bold text-gray-900">
-                Institutional Core Values & Principles ({coreValues.length})
-              </h2>
-              <p className="text-xs text-gray-500 font-sans mt-0.5">
-                Core philosophical pillars shown on the Vision & Mission page.
-              </p>
-            </div>
+      <div className="admin-section-card">
+        <div className="admin-card-header">
+          <div>
+            <h2 className="admin-workspace-toolbar__title">
+              Institutional Core Values &amp; Principles ({coreValues.length})
+            </h2>
+            <p className="admin-workspace-toolbar__count">
+              Core philosophical pillars shown on the Vision &amp; Mission page.
+            </p>
           </div>
-          <button
-            type="button"
-            onClick={() => {
-              setEditingCoreValue(null);
-              setIsCoreValueDialogOpen(true);
-            }}
-            className="topper-button topper-button--primary min-h-[44px] px-4 gap-1.5"
-          >
-            <Plus className="w-4 h-4" />
-            <span>Add Core Value</span>
-          </button>
+          <div className="admin-card-actions">
+            <button
+              type="button"
+              onClick={() => {
+                setEditingCoreValue(null);
+                setIsCoreValueDialogOpen(true);
+              }}
+              className="admin-button admin-button--primary"
+            >
+              <Plus size={16} />
+              <span>Add Core Value</span>
+            </button>
+          </div>
         </div>
 
         {coreValues.length === 0 ? (
-          <div className="p-8 text-center border-2 border-dashed border-gray-200 rounded-xl text-gray-500 text-sm">
+          <div className="admin-empty-state">
             No core values created yet. Click &quot;Add Core Value&quot; to add one.
           </div>
         ) : (
-          <div className="divide-y divide-gray-100">
+          <div className="admin-record-list">
             {coreValues.map((val, idx) => (
-              <div
-                key={val.id}
-                className="py-3 flex flex-wrap sm:flex-nowrap items-start justify-between gap-4 hover:bg-gray-50/50 px-2 rounded-lg transition-colors"
-              >
-                <div className="flex items-start gap-3 min-w-0">
-                  <span className="text-xs font-mono font-bold text-gray-400 w-6 pt-1">
+              <div key={val.id} className="admin-record-item">
+                <div className="admin-record-item__info">
+                  <span style={{ fontSize: "0.75rem", fontFamily: "monospace", fontWeight: 700, color: "#9ca3af", width: "24px" }}>
                     #{idx + 1}
                   </span>
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm font-heading font-bold text-gray-900">
+                  <div>
+                    <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "2px" }}>
+                      <span style={{ fontSize: "0.875rem", fontWeight: 700, color: "#111827" }}>
                         {val.title}
                       </span>
                       {!val.isPublished && (
-                        <span className="px-2 py-0.5 text-[10px] font-bold bg-amber-100 text-amber-800 rounded-full">
-                          Draft
-                        </span>
+                        <span className="admin-pill admin-pill--draft">Draft</span>
                       )}
                     </div>
-                    <p className="text-xs text-gray-500 mt-0.5 font-sans">
+                    <p style={{ margin: "2px 0 0", fontSize: "0.75rem", color: "#6b7280" }}>
                       {val.description}
                     </p>
                   </div>
                 </div>
 
-                <div className="topper-card-actions shrink-0 pt-1">
+                <div className="admin-record-item__actions">
                   <button
                     type="button"
                     onClick={() => handleMoveCoreValue(idx, "UP")}
                     disabled={idx === 0 || isPending}
-                    className="topper-icon-button"
+                    className="admin-icon-button"
                     aria-label={`Move core value ${val.title} up`}
                     title="Move Up"
                   >
-                    <ArrowUp className="w-4 h-4" />
+                    <ArrowUp size={16} />
                   </button>
                   <button
                     type="button"
                     onClick={() => handleMoveCoreValue(idx, "DOWN")}
                     disabled={idx === coreValues.length - 1 || isPending}
-                    className="topper-icon-button"
+                    className="admin-icon-button"
                     aria-label={`Move core value ${val.title} down`}
                     title="Move Down"
                   >
-                    <ArrowDown className="w-4 h-4" />
+                    <ArrowDown size={16} />
                   </button>
                   <button
                     type="button"
                     onClick={() => handleToggleCoreValueStatus(val.id, val.isPublished)}
                     disabled={isPending}
-                    className="topper-icon-button"
+                    className="admin-icon-button"
                     aria-label={val.isPublished ? `Unpublish core value ${val.title}` : `Publish core value ${val.title}`}
                     title={val.isPublished ? "Unpublish" : "Publish"}
                   >
                     {val.isPublished ? (
-                      <Eye className="w-4 h-4 text-emerald-600" />
+                      <Eye size={16} style={{ color: "#059669" }} />
                     ) : (
-                      <EyeOff className="w-4 h-4 text-gray-400" />
+                      <EyeOff size={16} style={{ color: "#9ca3af" }} />
                     )}
                   </button>
                   <button
@@ -503,11 +490,11 @@ export function VisionMissionEditor({
                       setEditingCoreValue(val);
                       setIsCoreValueDialogOpen(true);
                     }}
-                    className="topper-icon-button"
+                    className="admin-icon-button"
                     aria-label={`Edit core value ${val.title}`}
                     title="Edit Core Value"
                   >
-                    <Pencil className="w-4 h-4" />
+                    <Pencil size={16} />
                   </button>
                   <button
                     type="button"
@@ -517,11 +504,12 @@ export function VisionMissionEditor({
                         title: val.title,
                       })
                     }
-                    className="topper-icon-button topper-icon-button--danger"
+                    className="admin-icon-button"
+                    style={{ color: "#dc2626" }}
                     aria-label={`Delete core value ${val.title}`}
                     title="Delete Core Value"
                   >
-                    <Trash2 className="w-4 h-4" />
+                    <Trash2 size={16} />
                   </button>
                 </div>
               </div>

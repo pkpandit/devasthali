@@ -85,154 +85,164 @@ export function FooterMenuEditor({
   };
 
   return (
-    <div className="space-y-6">
+    <div className="admin-workspace">
       {/* Sub-tab selection */}
-      <div className="flex border-b border-gray-200">
+      <div
+        role="tablist"
+        aria-label="Footer Link Columns"
+        className="admin-tabs"
+      >
         <button
+          role="tab"
+          id="tab-footer-admissions"
+          aria-selected={activeLocation === "FOOTER_ADMISSIONS"}
+          tabIndex={activeLocation === "FOOTER_ADMISSIONS" ? 0 : -1}
           type="button"
           onClick={() => setActiveLocation("FOOTER_ADMISSIONS")}
-          className={`py-2.5 px-4 text-xs font-heading font-bold border-b-2 inline-flex items-center gap-2 transition-colors ${
-            activeLocation === "FOOTER_ADMISSIONS"
-              ? "border-[#B91C1C] text-[#B91C1C]"
-              : "border-transparent text-gray-500 hover:text-gray-700"
-          }`}
+          className={`admin-tab ${activeLocation === "FOOTER_ADMISSIONS" ? "admin-tab--active" : ""}`}
         >
-          <GraduationCap className="w-4 h-4" />
-          <span>Column 2: Admissions & Academics ({admissionsLinks.length})</span>
+          <GraduationCap size={16} aria-hidden="true" />
+          <span>Column 2: Admissions &amp; Academics</span>
+          <span className="admin-tab__badge">{admissionsLinks.length}</span>
         </button>
 
         <button
+          role="tab"
+          id="tab-footer-community"
+          aria-selected={activeLocation === "FOOTER_COMMUNITY"}
+          tabIndex={activeLocation === "FOOTER_COMMUNITY" ? 0 : -1}
           type="button"
           onClick={() => setActiveLocation("FOOTER_COMMUNITY")}
-          className={`py-2.5 px-4 text-xs font-heading font-bold border-b-2 inline-flex items-center gap-2 transition-colors ${
-            activeLocation === "FOOTER_COMMUNITY"
-              ? "border-[#B91C1C] text-[#B91C1C]"
-              : "border-transparent text-gray-500 hover:text-gray-700"
-          }`}
+          className={`admin-tab ${activeLocation === "FOOTER_COMMUNITY" ? "admin-tab--active" : ""}`}
         >
-          <Users className="w-4 h-4" />
-          <span>Column 3: Life at School & Community ({communityLinks.length})</span>
+          <Users size={16} aria-hidden="true" />
+          <span>Column 3: Life at School &amp; Community</span>
+          <span className="admin-tab__badge">{communityLinks.length}</span>
         </button>
       </div>
 
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h3 className="text-sm font-bold text-gray-900">
-            {activeLocation === "FOOTER_ADMISSIONS"
-              ? "Admissions & Academics Links"
-              : "Life at School & Community Links"}
-          </h3>
-          <p className="text-xs text-gray-500">
-            These links appear in the institutional footer across all public pages.
-          </p>
-        </div>
-        <button
-          type="button"
-          onClick={handleAddItem}
-          className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#B91C1C] hover:bg-[#991B1B] text-white text-xs font-semibold rounded-xl shadow-xs transition-colors shrink-0"
-        >
-          <Plus className="w-4 h-4" />
-          <span>Add Footer Link</span>
-        </button>
-      </div>
-
-      {currentLinks.length === 0 ? (
-        <div className="p-8 text-center bg-gray-50 rounded-2xl border border-dashed border-gray-200">
-          <p className="text-sm text-gray-500 mb-3">No links in this footer column.</p>
-          <button
-            type="button"
-            onClick={handleAddItem}
-            className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#B91C1C] text-white text-xs font-semibold rounded-xl"
-          >
-            <Plus className="w-4 h-4" />
-            <span>Create First Link</span>
-          </button>
-        </div>
-      ) : (
-        <div className="bg-white rounded-2xl border border-gray-200 divide-y divide-gray-100 overflow-hidden shadow-xs">
-          {currentLinks.map((link, index) => (
-            <div
-              key={link.id}
-              className={`p-3.5 flex items-center justify-between gap-3 hover:bg-gray-50/80 transition-colors ${
-                !link.isPublished ? "bg-gray-50/60 opacity-70" : ""
-              }`}
+      <div className="admin-section-card">
+        <div className="admin-card-header">
+          <div>
+            <h3 className="admin-workspace-toolbar__title">
+              {activeLocation === "FOOTER_ADMISSIONS"
+                ? "Admissions & Academics Links"
+                : "Life at School & Community Links"}
+            </h3>
+            <p className="admin-workspace-toolbar__count">
+              These links appear in the institutional footer across all public pages.
+            </p>
+          </div>
+          <div className="admin-card-actions">
+            <button
+              type="button"
+              onClick={handleAddItem}
+              className="admin-button admin-button--primary"
             >
-              <div className="flex items-center gap-3 min-w-0">
-                <div className="flex flex-col gap-0.5 shrink-0">
-                  <button
-                    type="button"
-                    onClick={() => handleMove(index, "up")}
-                    disabled={index === 0}
-                    aria-label="Move link up"
-                    className="p-0.5 text-gray-400 hover:text-gray-700 disabled:opacity-20"
-                  >
-                    <ArrowUp className="w-3 h-3" />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleMove(index, "down")}
-                    disabled={index === currentLinks.length - 1}
-                    aria-label="Move link down"
-                    className="p-0.5 text-gray-400 hover:text-gray-700 disabled:opacity-20"
-                  >
-                    <ArrowDown className="w-3 h-3" />
-                  </button>
-                </div>
-
-                <div className="min-w-0">
-                  <div className="flex items-center gap-2">
-                    <span className="font-heading font-semibold text-sm text-gray-900 truncate">
-                      {link.label}
-                    </span>
-                    {link.openInNewTab && (
-                      <span title="Opens in new tab">
-                        <ExternalLink className="w-3 h-3 text-gray-400" />
-                      </span>
-                    )}
-                  </div>
-                  <span className="block font-mono text-xs text-gray-400 truncate">
-                    {link.href}
-                  </span>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-1.5 shrink-0">
-                <button
-                  type="button"
-                  onClick={() => handleToggleStatus(link)}
-                  title={link.isPublished ? "Unpublish link" : "Publish link"}
-                  className={`p-1.5 rounded-lg border text-xs font-medium inline-flex items-center gap-1 transition-colors ${
-                    link.isPublished
-                      ? "bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100"
-                      : "bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100"
-                  }`}
-                >
-                  {link.isPublished ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
-                  <span>{link.isPublished ? "Live" : "Draft"}</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => handleEditItem(link)}
-                  className="p-1.5 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
-                  title="Edit link"
-                >
-                  <Pencil className="w-3.5 h-3.5" />
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => promptDelete(link.id, link.label)}
-                  className="p-1.5 text-red-600 hover:text-red-800 hover:bg-red-50 rounded-lg transition-colors"
-                  title="Delete link"
-                >
-                  <Trash2 className="w-3.5 h-3.5" />
-                </button>
-              </div>
-            </div>
-          ))}
+              <Plus size={16} />
+              <span>Add Footer Link</span>
+            </button>
+          </div>
         </div>
-      )}
+
+        {currentLinks.length === 0 ? (
+          <div className="admin-empty-state">
+            <p style={{ margin: "0 0 12px" }}>No links in this footer column.</p>
+            <button
+              type="button"
+              onClick={handleAddItem}
+              className="admin-button admin-button--primary"
+            >
+              <Plus size={16} />
+              <span>Create First Link</span>
+            </button>
+          </div>
+        ) : (
+          <div className="admin-record-list">
+            {currentLinks.map((link, index) => (
+              <div
+                key={link.id}
+                className="admin-record-item"
+                style={{ opacity: link.isPublished ? 1 : 0.75 }}
+              >
+                <div className="admin-record-item__info">
+                  <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
+                    <button
+                      type="button"
+                      onClick={() => handleMove(index, "up")}
+                      disabled={index === 0}
+                      aria-label="Move link up"
+                      className="admin-icon-button"
+                      style={{ width: "24px", height: "24px", minWidth: "24px", minHeight: "24px", padding: 0 }}
+                    >
+                      <ArrowUp size={12} />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleMove(index, "down")}
+                      disabled={index === currentLinks.length - 1}
+                      aria-label="Move link down"
+                      className="admin-icon-button"
+                      style={{ width: "24px", height: "24px", minWidth: "24px", minHeight: "24px", padding: 0 }}
+                    >
+                      <ArrowDown size={12} />
+                    </button>
+                  </div>
+
+                  <div>
+                    <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                      <span style={{ fontFamily: "var(--heading-font)", fontWeight: 600, fontSize: "0.875rem", color: "#111827" }}>
+                        {link.label}
+                      </span>
+                      {link.openInNewTab && (
+                        <span title="Opens in new tab">
+                          <ExternalLink size={12} style={{ color: "#9ca3af" }} />
+                        </span>
+                      )}
+                    </div>
+                    <span style={{ display: "block", fontFamily: "monospace", fontSize: "0.75rem", color: "#6b7280" }}>
+                      {link.href}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="admin-record-item__actions">
+                  <button
+                    type="button"
+                    onClick={() => handleToggleStatus(link)}
+                    title={link.isPublished ? "Unpublish link" : "Publish link"}
+                    className={`admin-pill ${link.isPublished ? "admin-pill--published" : "admin-pill--draft"}`}
+                    style={{ cursor: "pointer", border: "none", minHeight: "28px" }}
+                  >
+                    {link.isPublished ? <Eye size={12} style={{ marginRight: "3px" }} /> : <EyeOff size={12} style={{ marginRight: "3px" }} />}
+                    <span>{link.isPublished ? "Live" : "Draft"}</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => handleEditItem(link)}
+                    className="admin-icon-button"
+                    style={{ width: "32px", height: "32px", minWidth: "32px", minHeight: "32px" }}
+                    title="Edit link"
+                  >
+                    <Pencil size={14} />
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => promptDelete(link.id, link.label)}
+                    className="admin-icon-button"
+                    style={{ width: "32px", height: "32px", minWidth: "32px", minHeight: "32px", color: "#dc2626" }}
+                    title="Delete link"
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
 
       {/* Item Form Dialog */}
       <ItemFormDialog

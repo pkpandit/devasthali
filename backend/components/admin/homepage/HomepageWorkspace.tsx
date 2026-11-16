@@ -40,14 +40,14 @@ export function HomepageWorkspace({
   ];
 
   return (
-    <div className="topper-workspace-wrapper">
+    <div className="admin-workspace">
       {/* Top Workspace Header */}
-      <div className="topper-workspace-toolbar">
-        <div className="topper-workspace-toolbar__info">
-          <h2 className="topper-workspace-toolbar__title">
+      <div className="admin-workspace-toolbar">
+        <div>
+          <h2 className="admin-workspace-toolbar__title">
             Homepage Content Management
           </h2>
-          <p className="topper-workspace-toolbar__count">
+          <p className="admin-workspace-toolbar__count">
             4 sections configured &bull; Live public synchronization &bull; Hero, stats &amp; highlights active
           </p>
         </div>
@@ -57,7 +57,7 @@ export function HomepageWorkspace({
       <div
         role="tablist"
         aria-label="Homepage Sections"
-        className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1 border-b border-gray-200"
+        className="admin-tabs"
       >
         {tabs.map((tab) => {
           const Icon = tab.icon;
@@ -72,20 +72,12 @@ export function HomepageWorkspace({
               tabIndex={isActive ? 0 : -1}
               type="button"
               onClick={() => setActiveTab(tab.key)}
-              className={`min-h-[44px] px-4 py-2 text-xs sm:text-sm font-heading font-bold rounded-xl inline-flex items-center gap-2 shrink-0 transition-all cursor-pointer focus-visible:outline-2 focus-visible:outline-[#B91C1C] focus-visible:outline-offset-2 ${
-                isActive
-                  ? "bg-[#B91C1C] text-white shadow-xs"
-                  : "bg-gray-100 text-gray-700 hover:bg-gray-200 hover:text-gray-900"
-              }`}
+              className={`admin-tab ${isActive ? "admin-tab--active" : ""}`}
             >
-              <Icon className="w-4 h-4 shrink-0" aria-hidden="true" />
+              <Icon size={16} aria-hidden="true" />
               <span>{tab.label}</span>
               {typeof tab.count === "number" && (
-                <span
-                  className={`text-xs px-2 py-0.5 rounded-full font-bold ${
-                    isActive ? "bg-white/20 text-white" : "bg-gray-200 text-gray-700"
-                  }`}
-                >
+                <span className="admin-tab__badge">
                   {tab.count}
                 </span>
               )}
@@ -99,7 +91,6 @@ export function HomepageWorkspace({
         role="tabpanel"
         id={`homepage-panel-${activeTab.toLowerCase()}`}
         aria-labelledby={`homepage-tab-${activeTab.toLowerCase()}`}
-        className="focus-visible:outline-none"
       >
         {activeTab === "HERO" && <HeroSectionEditor initialHero={hero} />}
         {activeTab === "PRINCIPAL" && <PrincipalMessageEditor initialPrincipal={principal} />}

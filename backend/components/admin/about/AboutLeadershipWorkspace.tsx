@@ -38,65 +38,55 @@ export function AboutLeadershipWorkspace({
   const [activeTab, setActiveTab] = useState<"ABOUT" | "VISION_MISSION" | "LEADERSHIP">("ABOUT");
 
   return (
-    <div className="topper-workspace-wrapper space-y-6">
+    <div className="admin-workspace">
       {/* 3-Section Accessible Top Switcher */}
-      <div className="topper-workspace-toolbar p-2 rounded-2xl bg-white border border-gray-200 shadow-xs">
-        <div
-          role="tablist"
-          aria-label="About and Leadership Sections"
-          className="flex items-center gap-2 overflow-x-auto no-scrollbar py-1"
+      <div
+        role="tablist"
+        aria-label="About and Leadership Sections"
+        className="admin-tabs"
+      >
+        <button
+          role="tab"
+          id="tab-about"
+          aria-selected={activeTab === "ABOUT"}
+          aria-controls="tabpanel-about"
+          tabIndex={activeTab === "ABOUT" ? 0 : -1}
+          type="button"
+          onClick={() => setActiveTab("ABOUT")}
+          className={`admin-tab ${activeTab === "ABOUT" ? "admin-tab--active" : ""}`}
         >
-          <button
-            role="tab"
-            id="tab-about"
-            aria-selected={activeTab === "ABOUT"}
-            aria-controls="tabpanel-about"
-            type="button"
-            onClick={() => setActiveTab("ABOUT")}
-            className={`min-h-[44px] px-4 py-2.5 text-sm font-heading font-bold rounded-xl inline-flex items-center gap-2 shrink-0 transition-all cursor-pointer ${
-              activeTab === "ABOUT"
-                ? "bg-[#B91C1C] text-white shadow-xs"
-                : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-            }`}
-          >
-            <BookOpen className="w-4 h-4 shrink-0" />
-            <span>About School & Narrative</span>
-          </button>
+          <BookOpen size={16} aria-hidden="true" />
+          <span>About School &amp; Narrative</span>
+        </button>
 
-          <button
-            role="tab"
-            id="tab-vision-mission"
-            aria-selected={activeTab === "VISION_MISSION"}
-            aria-controls="tabpanel-vision-mission"
-            type="button"
-            onClick={() => setActiveTab("VISION_MISSION")}
-            className={`min-h-[44px] px-4 py-2.5 text-sm font-heading font-bold rounded-xl inline-flex items-center gap-2 shrink-0 transition-all cursor-pointer ${
-              activeTab === "VISION_MISSION"
-                ? "bg-[#B91C1C] text-white shadow-xs"
-                : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-            }`}
-          >
-            <Compass className="w-4 h-4 shrink-0" />
-            <span>Vision & Mission</span>
-          </button>
+        <button
+          role="tab"
+          id="tab-vision-mission"
+          aria-selected={activeTab === "VISION_MISSION"}
+          aria-controls="tabpanel-vision-mission"
+          tabIndex={activeTab === "VISION_MISSION" ? 0 : -1}
+          type="button"
+          onClick={() => setActiveTab("VISION_MISSION")}
+          className={`admin-tab ${activeTab === "VISION_MISSION" ? "admin-tab--active" : ""}`}
+        >
+          <Compass size={16} aria-hidden="true" />
+          <span>Vision &amp; Mission</span>
+        </button>
 
-          <button
-            role="tab"
-            id="tab-leadership"
-            aria-selected={activeTab === "LEADERSHIP"}
-            aria-controls="tabpanel-leadership"
-            type="button"
-            onClick={() => setActiveTab("LEADERSHIP")}
-            className={`min-h-[44px] px-4 py-2.5 text-sm font-heading font-bold rounded-xl inline-flex items-center gap-2 shrink-0 transition-all cursor-pointer ${
-              activeTab === "LEADERSHIP"
-                ? "bg-[#B91C1C] text-white shadow-xs"
-                : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-            }`}
-          >
-            <Users className="w-4 h-4 shrink-0" />
-            <span>Leadership Messages & Profiles (5)</span>
-          </button>
-        </div>
+        <button
+          role="tab"
+          id="tab-leadership"
+          aria-selected={activeTab === "LEADERSHIP"}
+          aria-controls="tabpanel-leadership"
+          tabIndex={activeTab === "LEADERSHIP" ? 0 : -1}
+          type="button"
+          onClick={() => setActiveTab("LEADERSHIP")}
+          className={`admin-tab ${activeTab === "LEADERSHIP" ? "admin-tab--active" : ""}`}
+        >
+          <Users size={16} aria-hidden="true" />
+          <span>Leadership Messages &amp; Profiles</span>
+          <span className="admin-tab__badge">5</span>
+        </button>
       </div>
 
       {/* Tab Panels */}
