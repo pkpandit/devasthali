@@ -1,12 +1,12 @@
 "use client";
 
 import { useState, useTransition, useEffect, useRef } from "react";
-import Image from "next/image";
 import { X, Loader2, Sparkles } from "lucide-react";
 import {
   createFacultyMember,
   updateFacultyMember,
 } from "@/lib/server/faculty-actions";
+import { AdminImageUploadField } from "@/components/admin/ui/AdminImageUploadField";
 
 export interface SerializedFacultyMember {
   id: string;
@@ -32,6 +32,21 @@ interface FacultyFormDialogProps {
   onSuccess: () => void;
 }
 
+const DEPARTMENTS = [
+  "Mathematics",
+  "Physics",
+  "Chemistry",
+  "Biology",
+  "English",
+  "Hindi",
+  "Computer Science",
+  "Social Studies & Humanities",
+  "Commerce",
+  "Physical Education & Sports",
+  "Arts & Performing Arts",
+  "Administration & Leadership",
+];
+
 export function FacultyFormDialog({
   isOpen,
   member,
@@ -39,13 +54,11 @@ export function FacultyFormDialog({
   onSuccess,
 }: FacultyFormDialogProps) {
   useEffect(() => {
-    function handleKeyDown(e: KeyboardEvent) {
-      if (!isOpen) return;
-      if (e.key === "Escape") {
-        e.preventDefault();
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && isOpen) {
         onClose();
       }
-    }
+    };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [isOpen, onClose]);
@@ -88,6 +101,10 @@ function FacultyFormInner({
     isPublished: member ? member.isPublished : true,
   });
 
+  // Photo state
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [isPhotoRemoved, setIsPhotoRemoved] = useState(false);
+
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [generalError, setGeneralError] = useState<string | null>(null);
   const nameInputRef = useRef<HTMLInputElement>(null);
@@ -102,25 +119,35 @@ function FacultyFormInner({
     setGeneralError(null);
 
     startTransition(async () => {
-      const payload = {
-        name: formData.name,
-        designation: formData.designation,
-        department: formData.department,
-        qualification: formData.qualification || null,
-        experienceYears: Number(formData.experienceYears),
-        bio: formData.bio || null,
-        imageUrl: formData.imageUrl || null,
-        imageAlt: formData.imageAlt,
-        displayOrder: Number(formData.displayOrder),
-        isPublished: formData.isPublished,
-      };
+      const payload = new FormData();
+      if (member) {
+        payload.append("id", member.id);
+      }
+      payload.append("name", formData.name.trim());
+      payload.append("designation", formData.designation.trim());
+      payload.append("department", formData.department.trim());
+      if (formData.qualification.trim()) {
+        payload.append("qualification", formData.qualification.trim());
+      }
+      payload.append("experienceYears", String(formData.experienceYears));
+      if (formData.bio.trim()) {
+        payload.append("bio", formData.bio.trim());
+      }
+      payload.append("imageAlt", formData.imageAlt.trim());
+      payload.append("displayOrder", String(formData.displayOrder));
+      payload.append("isPublished", String(formData.isPublished));
+
+      if (selectedFile) {
+        payload.append("photoFile", selectedFile);
+      } else if (isPhotoRemoved) {
+        payload.append("removePhoto", "true");
+      } else if (formData.imageUrl) {
+        payload.append("imageUrl", formData.imageUrl);
+      }
 
       let result;
       if (member) {
-        result = await updateFacultyMember({
-          id: member.id,
-          ...payload,
-        });
+        result = await updateFacultyMember(payload);
       } else {
         result = await createFacultyMember(payload);
       }
@@ -148,27 +175,33 @@ function FacultyFormInner({
       aria-labelledby="faculty-dialog-title"
       onClick={(e) => e.stopPropagation()}
     >
+      {/* Header */}
       <div className="topper-dialog-header">
-        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-          <Sparkles size={20} style={{ color: "#b91c1c" }} />
+        <div>
           <h2 id="faculty-dialog-title" className="topper-dialog-title">
             {member ? "Edit Faculty Member" : "Add Faculty Member"}
           </h2>
+          <p className="admin-field-note" style={{ margin: "2px 0 0" }}>
+            {member
+              ? "Update profile details, designations, qualifications, and portrait photo."
+              : "Create a new verified faculty or department leadership record."}
+          </p>
         </div>
         <button
           type="button"
           onClick={onClose}
+          className="topper-dialog-close"
           aria-label="Close dialog"
-          className="admin-icon-button"
         >
           <X size={18} />
         </button>
       </div>
 
+      {/* Form Content */}
       <form onSubmit={handleSubmit}>
-        <div className="topper-dialog-body" style={{ maxHeight: "70vh", overflowY: "auto" }}>
+        <div className="topper-dialog-body" style={{ maxHeight: "calc(85vh - 130px)" }}>
           {generalError && (
-            <div className="admin-banner--warning" role="alert" style={{ marginBottom: "16px" }}>
+            <div className="topper-dialog-error-banner" role="alert">
               {generalError}
             </div>
           )}
@@ -181,7 +214,6 @@ function FacultyFormInner({
               <input
                 ref={nameInputRef}
                 type="text"
-                required
                 placeholder="e.g. Dr. K. N. Pandey"
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
@@ -196,13 +228,14 @@ function FacultyFormInner({
               </label>
               <input
                 type="text"
-                required
                 placeholder="e.g. Principal & Academic Director"
                 value={formData.designation}
                 onChange={(e) => setFormData({ ...formData, designation: e.target.value })}
                 className="admin-input"
               />
-              {errors.designation && <p className="admin-field-error">{errors.designation}</p>}
+              {errors.designation && (
+                <p className="admin-field-error">{errors.designation}</p>
+              )}
             </div>
           </div>
 
@@ -213,28 +246,43 @@ function FacultyFormInner({
               </label>
               <input
                 type="text"
-                required
-                placeholder="e.g. Mathematics, Science & Biology"
+                list="department-suggestions"
+                placeholder="e.g. Administration & Leadership, Mathematics"
                 value={formData.department}
                 onChange={(e) => setFormData({ ...formData, department: e.target.value })}
                 className="admin-input"
               />
-              {errors.department && <p className="admin-field-error">{errors.department}</p>}
+              <datalist id="department-suggestions">
+                {DEPARTMENTS.map((dept) => (
+                  <option key={dept} value={dept} />
+                ))}
+              </datalist>
+              <p className="admin-field-note">
+                Pick from standard departments or type a specialized subject.
+              </p>
+              {errors.department && (
+                <p className="admin-field-error">{errors.department}</p>
+              )}
             </div>
 
             <div className="admin-field">
-              <label className="admin-label">Experience (Years)</label>
+              <label className="admin-label">
+                Years of Experience <span style={{ color: "#dc2626" }}>*</span>
+              </label>
               <input
                 type="number"
-                min={0}
-                max={99}
-                placeholder="e.g. 18"
+                min="0"
+                max="99"
                 value={formData.experienceYears}
                 onChange={(e) =>
-                  setFormData({ ...formData, experienceYears: parseInt(e.target.value) || 0 })
+                  setFormData({
+                    ...formData,
+                    experienceYears: Math.max(0, parseInt(e.target.value) || 0),
+                  })
                 }
                 className="admin-input"
               />
+              <p className="admin-field-note">Teaching & academic experience (0–99 years).</p>
               {errors.experienceYears && (
                 <p className="admin-field-error">{errors.experienceYears}</p>
               )}
@@ -270,142 +318,107 @@ function FacultyFormInner({
             {errors.bio && <p className="admin-field-error">{errors.bio}</p>}
           </div>
 
-          <div className="admin-form-grid-2" style={{ marginTop: "16px" }}>
-            <div className="admin-field">
-              <label className="admin-label">Portrait Image Path</label>
-              <input
-                type="text"
-                placeholder="/images/academics/faculty/faculty-teachers.jpg"
-                value={formData.imageUrl}
-                onChange={(e) => setFormData({ ...formData, imageUrl: e.target.value })}
-                className="admin-input"
-              />
-              <p className="admin-field-note">
-                Root-relative path (/images/...) or approved secure HTTPS URL.
-              </p>
-              {errors.imageUrl && <p className="admin-field-error">{errors.imageUrl}</p>}
-            </div>
-
-            <div className="admin-field">
-              <label className="admin-label">
-                Image Alt Text{" "}
-                {formData.imageUrl && <span style={{ color: "#dc2626" }}>*</span>}
-              </label>
-              <input
-                type="text"
-                placeholder="e.g. Dr. K. N. Pandey - Principal & Academic Director"
-                value={formData.imageAlt}
-                onChange={(e) => setFormData({ ...formData, imageAlt: e.target.value })}
-                className="admin-input"
-              />
-              <p className="admin-field-note">Accessible description for screen readers.</p>
-              {errors.imageAlt && <p className="admin-field-error">{errors.imageAlt}</p>}
-            </div>
-          </div>
-
-          {/* Live Portrait Preview Box */}
-          {formData.imageUrl && (
-            <div
-              style={{
-                marginTop: "16px",
-                padding: "16px",
-                borderRadius: "12px",
-                background: "#f9fafb",
-                border: "1px solid #e5e7eb",
-                display: "flex",
-                alignItems: "center",
-                gap: "16px",
+          {/* Standardized Portrait Image Upload Field */}
+          <div style={{ marginTop: "16px" }}>
+            <AdminImageUploadField
+              label="Faculty Portrait"
+              variant="circular"
+              currentImageUrl={formData.imageUrl}
+              selectedFile={selectedFile}
+              isRemoved={isPhotoRemoved}
+              onFileSelect={(file) => {
+                setSelectedFile(file);
+                setIsPhotoRemoved(false);
               }}
-            >
-              <div
-                style={{
-                  position: "relative",
-                  width: "64px",
-                  height: "64px",
-                  borderRadius: "50%",
-                  overflow: "hidden",
-                  background: "#e5e7eb",
-                  border: "2px solid #ffffff",
-                  boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
-                  flexShrink: 0,
-                }}
-              >
-                <Image
-                  src={formData.imageUrl}
-                  alt={formData.imageAlt || "Faculty Preview"}
-                  fill
-                  sizes="64px"
-                  unoptimized
-                  style={{ objectFit: "cover", objectPosition: "top" }}
-                  onError={() => {}}
-                />
-              </div>
-              <div>
-                <div style={{ fontWeight: 700, fontSize: "0.875rem", color: "#111827" }}>
-                  {formData.name || "Faculty Member Preview"}
-                </div>
-                <div style={{ fontSize: "0.75rem", color: "#6b7280" }}>
-                  {formData.designation || "Designation"} • {formData.department || "Department"}
-                </div>
-                <div style={{ fontSize: "0.6875rem", color: "#9ca3af", marginTop: "2px" }}>
-                  Alt: {formData.imageAlt || "(Alt text empty)"}
-                </div>
-              </div>
-            </div>
-          )}
+              onRemove={() => {
+                setSelectedFile(null);
+                setIsPhotoRemoved(true);
+              }}
+              error={errors.imageFile || errors.imageUrl}
+              disabled={isPending}
+              isPending={isPending}
+              altText={formData.imageAlt}
+              onAltChange={(alt) => setFormData({ ...formData, imageAlt: alt })}
+              altLabel="Portrait Alt Text"
+              altPlaceholder="e.g. Dr. K. N. Pandey - Principal & Academic Director"
+              altRequired={Boolean(selectedFile || (!isPhotoRemoved && formData.imageUrl))}
+              altError={errors.imageAlt}
+            />
+          </div>
 
           <div className="admin-form-grid-2" style={{ marginTop: "16px" }}>
             <div className="admin-field">
               <label className="admin-label">Display Order</label>
               <input
                 type="number"
-                min={0}
+                min="0"
                 value={formData.displayOrder}
                 onChange={(e) =>
-                  setFormData({ ...formData, displayOrder: parseInt(e.target.value) || 0 })
+                  setFormData({
+                    ...formData,
+                    displayOrder: parseInt(e.target.value) || 0,
+                  })
                 }
                 className="admin-input"
               />
-              <p className="admin-field-note">Lower numbers appear first on the public roster.</p>
+              <p className="admin-field-note">Lower numbers appear first on the public directory.</p>
+              {errors.displayOrder && (
+                <p className="admin-field-error">{errors.displayOrder}</p>
+              )}
             </div>
 
             <div className="admin-field" style={{ justifyContent: "center" }}>
-              <label className="admin-checkbox-row" style={{ marginTop: "24px" }}>
+              <label
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "10px",
+                  cursor: "pointer",
+                  marginTop: "24px",
+                }}
+              >
                 <input
                   type="checkbox"
                   checked={formData.isPublished}
                   onChange={(e) =>
                     setFormData({ ...formData, isPublished: e.target.checked })
                   }
-                  className="admin-toggle"
+                  style={{ width: "18px", height: "18px", accentColor: "#b91c1c" }}
                 />
-                <span style={{ fontWeight: 600, color: "#111827" }}>Publish to Directory</span>
+                <span style={{ fontSize: "0.875rem", fontWeight: 600, color: "#374151" }}>
+                  Published to Directory
+                </span>
               </label>
             </div>
           </div>
         </div>
 
+        {/* Footer Actions */}
         <div className="topper-dialog-actions">
           <button
             type="button"
             onClick={onClose}
             disabled={isPending}
-            className="admin-button admin-button--secondary"
+            className="topper-button topper-button--secondary"
           >
             Cancel
           </button>
           <button
             type="submit"
             disabled={isPending}
-            className="admin-button admin-button--primary"
+            className="topper-button topper-button--primary"
+            style={{ display: "inline-flex", alignItems: "center", gap: "8px" }}
           >
             {isPending ? (
               <>
-                <Loader2 size={16} className="animate-spin" />
+                <Loader2 size={16} className="topper-spin" />
                 <span>Saving...</span>
               </>
             ) : (
-              <span>{member ? "Update Member" : "Create Member"}</span>
+              <>
+                <Sparkles size={16} />
+                <span>{member ? "Update Member" : "Create Member"}</span>
+              </>
             )}
           </button>
         </div>

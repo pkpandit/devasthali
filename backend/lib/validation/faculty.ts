@@ -206,16 +206,32 @@ export const facultyMemberReorderSchema = z.object({
 
 /**
  * Normalizes string inputs: trims values and transforms empty strings into null.
+ * Supports both FormData and plain object payloads.
  */
-export function normalizeFacultyPayload<T extends Record<string, unknown>>(data: T): T {
+export function normalizeFacultyPayload(
+  raw: FormData | Record<string, unknown> | null | undefined
+): Record<string, unknown> {
   const result: Record<string, unknown> = {};
 
-  for (const [key, value] of Object.entries(data)) {
-    if (typeof value === "string") {
-      const trimmed = value.trim();
-      result[key] = trimmed.length === 0 ? null : trimmed;
-    } else {
-      result[key] = value;
+  if (!raw) return result;
+
+  if (typeof FormData !== "undefined" && raw instanceof FormData) {
+    for (const [key, value] of raw.entries()) {
+      if (typeof value === "string") {
+        const trimmed = value.trim();
+        result[key] = trimmed.length === 0 ? null : trimmed;
+      } else {
+        result[key] = value;
+      }
+    }
+  } else if (typeof raw === "object") {
+    for (const [key, value] of Object.entries(raw)) {
+      if (typeof value === "string") {
+        const trimmed = value.trim();
+        result[key] = trimmed.length === 0 ? null : trimmed;
+      } else {
+        result[key] = value;
+      }
     }
   }
 
@@ -224,7 +240,7 @@ export function normalizeFacultyPayload<T extends Record<string, unknown>>(data:
     result.imageAlt = "";
   }
 
-  return result as T;
+  return result;
 }
 
 /**
@@ -248,7 +264,14 @@ export function computeFacultyDiff(
     const normNew = newVal === "" ? null : newVal;
 
     if (normOld !== normNew) {
-      diff[key] = { from: normOld, to: normNew };
+      if (key === "imageUrl" || key === "imageStorageKey") {
+        diff[key] = {
+          from: normOld ? "[PRESENT]" : "[NONE]",
+          to: normNew ? "[PRESENT]" : "[NONE]",
+        };
+      } else {
+        diff[key] = { from: normOld, to: normNew };
+      }
     }
   }
 

@@ -5,6 +5,14 @@ import { prisma } from "@/lib/server/prisma";
 import { requireRole } from "@/lib/server/auth";
 import { recordAuditEvent } from "@/lib/server/audit";
 import {
+  extractUploadedFile,
+  isRemovalRequested,
+  processAndSaveUploadedImage,
+  cleanupOrphanFile,
+  ImageProcessingError,
+  deleteManagedPhotoIfUnreferenced,
+} from "@/lib/server/admin-media";
+import {
   facultyMemberCreateSchema,
   facultyMemberUpdateSchema,
   facultyMemberDeleteSchema,
@@ -45,12 +53,49 @@ export async function createFacultyMember(
 ): Promise<ActionResult<{ id: string }>> {
   const adminUser = await requireRole(["SUPER_ADMIN"]);
 
-  const normalized = normalizeFacultyPayload(
-    (rawPayload && typeof rawPayload === "object" ? rawPayload : {}) as Record<string, unknown>
-  );
+  const rawInput = (rawPayload && typeof rawPayload === "object" ? rawPayload : {}) as
+    | FormData
+    | Record<string, unknown>;
+
+  const photoFile =
+    extractUploadedFile(rawInput, "photoFile") ||
+    extractUploadedFile(rawInput, "imageFile");
+
+  let newlyManagedKey: string | null = null;
+  let newlyPublicUrl: string | null = null;
+
+  if (photoFile) {
+    try {
+      const saved = await processAndSaveUploadedImage(photoFile);
+      newlyManagedKey = saved.storageKey;
+      newlyPublicUrl = saved.publicUrl;
+    } catch (procErr) {
+      if (procErr instanceof ImageProcessingError) {
+        return {
+          success: false,
+          error: procErr.message,
+          fieldErrors: { imageFile: procErr.message },
+        };
+      }
+      return {
+        success: false,
+        error:
+          "Failed to process uploaded photo. Please ensure it is a valid JPEG, PNG, or WebP image under 2 MiB.",
+      };
+    }
+  }
+
+  const normalized = normalizeFacultyPayload(rawInput);
+  if (newlyPublicUrl) {
+    normalized.imageUrl = newlyPublicUrl;
+    normalized.imageStorageKey = newlyManagedKey;
+  }
 
   const parsed = facultyMemberCreateSchema.safeParse(normalized);
   if (!parsed.success) {
+    if (newlyManagedKey) {
+      await cleanupOrphanFile(newlyManagedKey);
+    }
     return {
       success: false,
       error: "Validation failed. Please correct the highlighted errors.",
@@ -111,6 +156,7 @@ export async function createFacultyMember(
             department: member.department,
             designation: member.designation,
             isPublished: member.isPublished,
+            hasPhoto: Boolean(member.imageUrl && member.imageUrl.trim() !== ""),
           },
         },
         tx
@@ -122,6 +168,9 @@ export async function createFacultyMember(
     revalidatePath("/admin/academics/faculty");
     return { success: true, data: { id: created.id } };
   } catch (error) {
+    if (newlyManagedKey) {
+      await cleanupOrphanFile(newlyManagedKey);
+    }
     console.error("[createFacultyMember] Error:", error);
     return {
       success: false,
@@ -135,12 +184,56 @@ export async function updateFacultyMember(
 ): Promise<ActionResult<{ id: string }>> {
   const adminUser = await requireRole(["SUPER_ADMIN"]);
 
-  const normalized = normalizeFacultyPayload(
-    (rawPayload && typeof rawPayload === "object" ? rawPayload : {}) as Record<string, unknown>
-  );
+  const rawInput = (rawPayload && typeof rawPayload === "object" ? rawPayload : {}) as
+    | FormData
+    | Record<string, unknown>;
+
+  const photoFile =
+    extractUploadedFile(rawInput, "photoFile") ||
+    extractUploadedFile(rawInput, "imageFile");
+  const isRemoval =
+    isRemovalRequested(rawInput, "removePhoto") ||
+    isRemovalRequested(rawInput, "removeImage");
+
+  let newlyManagedKey: string | null = null;
+  let newlyPublicUrl: string | null = null;
+
+  if (photoFile) {
+    try {
+      const saved = await processAndSaveUploadedImage(photoFile);
+      newlyManagedKey = saved.storageKey;
+      newlyPublicUrl = saved.publicUrl;
+    } catch (procErr) {
+      if (procErr instanceof ImageProcessingError) {
+        return {
+          success: false,
+          error: procErr.message,
+          fieldErrors: { imageFile: procErr.message },
+        };
+      }
+      return {
+        success: false,
+        error:
+          "Failed to process uploaded photo. Please ensure it is a valid JPEG, PNG, or WebP image under 2 MiB.",
+      };
+    }
+  }
+
+  const normalized = normalizeFacultyPayload(rawInput);
+  if (newlyPublicUrl) {
+    normalized.imageUrl = newlyPublicUrl;
+    normalized.imageStorageKey = newlyManagedKey;
+  } else if (isRemoval) {
+    normalized.imageUrl = null;
+    normalized.imageStorageKey = null;
+    normalized.imageAlt = "";
+  }
 
   const parsed = facultyMemberUpdateSchema.safeParse(normalized);
   if (!parsed.success) {
+    if (newlyManagedKey) {
+      await cleanupOrphanFile(newlyManagedKey);
+    }
     return {
       success: false,
       error: "Validation failed. Please correct the highlighted errors.",
@@ -164,7 +257,7 @@ export async function updateFacultyMember(
   } = parsed.data;
 
   try {
-    const updated = await prisma.$transaction(async (tx) => {
+    const txResult = await prisma.$transaction(async (tx) => {
       const existing = await tx.facultyMember.findUnique({
         where: { id },
       });
@@ -213,12 +306,24 @@ export async function updateFacultyMember(
         );
       }
 
-      return member;
+      const oldStorageKeyToDelete =
+        (newlyManagedKey || isRemoval) && existing.imageStorageKey
+          ? existing.imageStorageKey
+          : null;
+
+      return { member, oldStorageKeyToDelete };
     });
 
+    if (txResult.oldStorageKeyToDelete) {
+      await deleteManagedPhotoIfUnreferenced(txResult.oldStorageKeyToDelete);
+    }
+
     revalidatePath("/admin/academics/faculty");
-    return { success: true, data: { id: updated.id } };
+    return { success: true, data: { id: txResult.member.id } };
   } catch (error) {
+    if (newlyManagedKey) {
+      await cleanupOrphanFile(newlyManagedKey);
+    }
     console.error("[updateFacultyMember] Error:", error);
     const message =
       error instanceof Error && error.message === "Faculty member not found"
@@ -241,7 +346,7 @@ export async function deleteFacultyMember(
   const { id } = parsed.data;
 
   try {
-    await prisma.$transaction(async (tx) => {
+    const txResult = await prisma.$transaction(async (tx) => {
       const existing = await tx.facultyMember.findUnique({
         where: { id },
       });
@@ -267,7 +372,13 @@ export async function deleteFacultyMember(
         },
         tx
       );
+
+      return { oldStorageKeyToDelete: existing.imageStorageKey };
     });
+
+    if (txResult.oldStorageKeyToDelete) {
+      await deleteManagedPhotoIfUnreferenced(txResult.oldStorageKeyToDelete);
+    }
 
     revalidatePath("/admin/academics/faculty");
     return { success: true, data: { id } };

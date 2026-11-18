@@ -7,7 +7,6 @@ const dotenv = require("dotenv");
 const { PrismaClient } = require("@prisma/client");
 const {
   validateFacultyUrl,
-  optionalFacultyUrlSchema,
   facultyMemberCreateSchema,
   facultyMemberUpdateSchema,
   facultyMemberDeleteSchema,
@@ -23,12 +22,13 @@ const prisma = new PrismaClient();
 async function runSuite() {
   const results = [];
 
-  function assert(name, condition, details = "") {
-    results.push({ name, passed: Boolean(condition), details });
-    if (!condition) {
-      console.error(`  [FAIL] ${name}: ${details}`);
-    } else {
+  function assert(name, condition, errorDetail) {
+    if (condition) {
+      results.push({ name, passed: true });
       console.log(`  [PASS] ${name}`);
+    } else {
+      results.push({ name, passed: false, error: errorDetail || "Assertion failed" });
+      console.error(`  [FAIL] ${name} ${errorDetail ? `- ${errorDetail}` : ""}`);
     }
   }
 
@@ -40,15 +40,24 @@ async function runSuite() {
   // 1. URL Safety Validation Tests
   // -------------------------------------------------------------
   console.log("\n--- 1. URL Safety Validation Tests ---");
+
   assert("Accepts root-relative image path", validateFacultyUrl("/images/academics/faculty/teacher.jpg").valid === true);
-  assert("Accepts secure HTTPS URL", validateFacultyUrl("https://example.com/photo.webp").valid === true);
-  assert("Rejects plain HTTP", validateFacultyUrl("http://example.com/photo.webp").valid === false);
+  assert("Accepts secure HTTPS URL", validateFacultyUrl("https://images.unsplash.com/photo-123.jpg").valid === true);
+  assert("Rejects plain HTTP", validateFacultyUrl("http://insecure.com/photo.jpg").valid === false);
   assert("Rejects javascript scheme", validateFacultyUrl("javascript:alert(1)").valid === false);
-  assert("Rejects data URI", validateFacultyUrl("data:text/html,<script>").valid === false);
-  assert("Rejects protocol-relative '//evil.com'", validateFacultyUrl("//evil.com/photo.jpg").valid === false);
+  assert("Rejects data URI", validateFacultyUrl("data:image/png;base64,abc").valid === false);
+  assert("Rejects protocol-relative '//evil.com'", validateFacultyUrl("//evil.com/img.jpg").valid === false);
   assert("Optional null allows valid=true", validateFacultyUrl(null).valid === true);
   assert("Optional empty string allows valid=true", validateFacultyUrl("").valid === true);
-  assert("Schema rejects invalid scheme", optionalFacultyUrlSchema.safeParse("javascript:void(0)").success === false);
+
+  const schemaRejects = facultyMemberCreateSchema.safeParse({
+    name: "Dr. Test Mentor",
+    designation: "PGT Senior Physics",
+    department: "Physics",
+    imageUrl: "http://insecure.com/test.jpg",
+    imageAlt: "Test Alt",
+  });
+  assert("Schema rejects invalid scheme", schemaRejects.success === false);
 
   // -------------------------------------------------------------
   // 2. Safe Text & Schema Validation Tests
@@ -160,6 +169,16 @@ async function runSuite() {
   assert("Normalizer converts empty string to null", normalized.bio === null);
   assert("Normalizer preserves numbers", normalized.experienceYears === 10);
 
+  // Test FormData payload normalization
+  const formData = new FormData();
+  formData.append("name", "  FormData Teacher  ");
+  formData.append("qualification", "");
+  formData.append("experienceYears", "8");
+  formData.append("isPublished", "true");
+  const normalizedFormData = normalizeFacultyPayload(formData);
+  assert("Normalizer processes FormData correctly", normalizedFormData.name === "FormData Teacher");
+  assert("Normalizer converts empty FormData value to null", normalizedFormData.qualification === null);
+
   const diff = computeFacultyDiff(
     { name: "Old Name", designation: "PGT", department: "Science", experienceYears: 10 },
     { name: "New Name", designation: "PGT", department: "Science", experienceYears: 12 }
@@ -167,6 +186,19 @@ async function runSuite() {
   assert("Diff detects modified name", diff.name && diff.name.from === "Old Name" && diff.name.to === "New Name");
   assert("Diff detects modified experience", diff.experienceYears && diff.experienceYears.from === 10 && diff.experienceYears.to === 12);
   assert("Diff ignores unchanged designation", diff.designation === undefined);
+
+  // Test photo diff masking
+  const photoDiff = computeFacultyDiff(
+    { imageUrl: "/images/old.jpg", imageStorageKey: null },
+    { imageUrl: "/api/public/media/toppers/top_123.webp", imageStorageKey: "toppers/top_123.webp" }
+  );
+  assert("Diff masks imageUrl changes cleanly", photoDiff.imageUrl && photoDiff.imageUrl.from === "[PRESENT]" && photoDiff.imageUrl.to === "[PRESENT]");
+
+  const photoRemovalDiff = computeFacultyDiff(
+    { imageUrl: "/images/old.jpg", imageStorageKey: null },
+    { imageUrl: null, imageStorageKey: null }
+  );
+  assert("Diff masks image removal to [NONE]", photoRemovalDiff.imageUrl && photoRemovalDiff.imageUrl.from === "[PRESENT]" && photoRemovalDiff.imageUrl.to === "[NONE]");
 
   // -------------------------------------------------------------
   // 4. Role Authorization Matrix
