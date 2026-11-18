@@ -113,10 +113,42 @@ export async function deleteManagedPhotoIfUnreferenced(
 
   assertLocalStoragePermitted();
 
-  // Reference check: ensure no active records in PostgreSQL reference this key
-  const refCount = await prisma.boardResultTopper.count({
-    where: { photoStorageKey: storageKey },
-  });
+  // Reference check: ensure no active records in PostgreSQL reference this key across all modules
+  const [
+    topperCount,
+    heroCount,
+    principalCount,
+    statCount,
+    highlightCount,
+    aboutSettingCount,
+    narrativeCount,
+    leadershipImageCount,
+    leadershipSignatureCount,
+    facultyCount,
+  ] = await Promise.all([
+    prisma.boardResultTopper.count({ where: { photoStorageKey: storageKey } }),
+    prisma.homepageHero.count({ where: { backgroundImageStorageKey: storageKey } }),
+    prisma.homepagePrincipalMessage.count({ where: { imageStorageKey: storageKey } }),
+    prisma.homepageStatistic.count({ where: { imageStorageKey: storageKey } }),
+    prisma.homepageHighlight.count({ where: { imageStorageKey: storageKey } }),
+    prisma.aboutPageSetting.count({ where: { showcaseImageStorageKey: storageKey } }),
+    prisma.aboutNarrativeSection.count({ where: { imageStorageKey: storageKey } }),
+    prisma.leadershipMember.count({ where: { imageStorageKey: storageKey } }),
+    prisma.leadershipMember.count({ where: { signatureStorageKey: storageKey } }),
+    prisma.facultyMember.count({ where: { imageStorageKey: storageKey } }),
+  ]);
+
+  const refCount =
+    topperCount +
+    heroCount +
+    principalCount +
+    statCount +
+    highlightCount +
+    aboutSettingCount +
+    narrativeCount +
+    leadershipImageCount +
+    leadershipSignatureCount +
+    facultyCount;
 
   if (refCount > 0) {
     console.warn(

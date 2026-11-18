@@ -125,3 +125,9 @@ export async function processTopperPhoto(
     sizeBytes: info.size,
   };
 }
+
+/**
+ * Standard alias for generic admin image uploads.
+ */
+export const processAdminPhoto = processTopperPhoto;
+export const processAdminImage = processTopperPhoto;
