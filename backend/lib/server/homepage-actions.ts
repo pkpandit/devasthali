@@ -7,6 +7,14 @@ import { prisma } from "@/lib/server/prisma";
 import { recordAuditEvent } from "@/lib/server/audit";
 import { AuthorizationError, requireRole } from "@/lib/server/auth";
 import {
+  extractUploadedFile,
+  isRemovalRequested,
+  processAndSaveUploadedImage,
+  cleanupOrphanFile,
+  ImageProcessingError,
+  deleteManagedPhotoIfUnreferenced,
+} from "@/lib/server/admin-media";
+import {
   homepageHeroSchema,
   homepagePrincipalMessageSchema,
   homepageStatisticCreateSchema,
@@ -45,17 +53,21 @@ async function getClientIp(): Promise<string> {
 }
 
 function parsePayload(payload: FormData | Record<string, unknown>): Record<string, unknown> {
-  if (payload instanceof FormData) {
+  if (typeof FormData !== "undefined" && payload instanceof FormData) {
     const obj: Record<string, unknown> = {};
     payload.forEach((value, key) => {
-      if (value === "true") obj[key] = true;
-      else if (value === "false") obj[key] = false;
-      else if (value === "") obj[key] = null;
-      else obj[key] = value;
+      if (typeof value === "string") {
+        if (value === "true") obj[key] = true;
+        else if (value === "false") obj[key] = false;
+        else if (value === "") obj[key] = null;
+        else obj[key] = value;
+      } else {
+        obj[key] = value;
+      }
     });
     return obj;
   }
-  return payload;
+  return payload as Record<string, unknown>;
 }
 
 function revalidateHomepagePaths() {
@@ -77,14 +89,56 @@ export async function updateHomepageHeroAction(
   _prevState: ActionState | null,
   rawPayload: FormData | Record<string, unknown>
 ): Promise<ActionState> {
+  let newlyManagedKey: string | null = null;
+  let newlyPublicUrl: string | null = null;
+
   try {
     const adminUser = await requireRole(["SUPER_ADMIN"]);
     const clientIp = await getClientIp();
 
+    const imageFile =
+      extractUploadedFile(rawPayload, "backgroundImageFile") ||
+      extractUploadedFile(rawPayload, "imageFile") ||
+      extractUploadedFile(rawPayload, "photoFile");
+    const isRemoval =
+      isRemovalRequested(rawPayload, "removeBackgroundImage") ||
+      isRemovalRequested(rawPayload, "removeImage") ||
+      isRemovalRequested(rawPayload, "removePhoto");
+
+    if (imageFile) {
+      try {
+        const saved = await processAndSaveUploadedImage(imageFile);
+        newlyManagedKey = saved.storageKey;
+        newlyPublicUrl = saved.publicUrl;
+      } catch (procErr) {
+        if (procErr instanceof ImageProcessingError) {
+          return {
+            success: false,
+            error: procErr.message,
+            fieldErrors: { backgroundImageFile: procErr.message },
+          };
+        }
+        return {
+          success: false,
+          error:
+            "Failed to process uploaded background image. Please ensure it is a valid JPEG, PNG, or WebP image under 2 MiB.",
+        };
+      }
+    }
+
     const normalized = normalizeHomepagePayload(parsePayload(rawPayload));
+    if (newlyPublicUrl) {
+      normalized.backgroundImageUrl = newlyPublicUrl;
+      normalized.backgroundImageStorageKey = newlyManagedKey;
+    } else if (isRemoval) {
+      normalized.backgroundImageUrl = null;
+      normalized.backgroundImageStorageKey = null;
+    }
+
     const parsed = homepageHeroSchema.safeParse(normalized);
 
     if (!parsed.success) {
+      if (newlyManagedKey) await cleanupOrphanFile(newlyManagedKey);
       return {
         success: false,
         error: "Validation failed. Please review the highlighted fields.",
@@ -100,6 +154,11 @@ export async function updateHomepageHeroAction(
       (currentHero as unknown as Record<string, unknown>) || {},
       parsed.data as Record<string, unknown>
     );
+
+    const oldStorageKeyToDelete =
+      (newlyManagedKey || isRemoval) && currentHero?.backgroundImageStorageKey
+        ? currentHero.backgroundImageStorageKey
+        : null;
 
     const updated = await prisma.$transaction(async (tx) => {
       const result = await tx.homepageHero.upsert({
@@ -129,6 +188,10 @@ export async function updateHomepageHeroAction(
       return result;
     });
 
+    if (oldStorageKeyToDelete) {
+      await deleteManagedPhotoIfUnreferenced(oldStorageKeyToDelete);
+    }
+
     revalidateHomepagePaths();
 
     return {
@@ -136,6 +199,7 @@ export async function updateHomepageHeroAction(
       data: updated,
     };
   } catch (error) {
+    if (newlyManagedKey) await cleanupOrphanFile(newlyManagedKey);
     if (error instanceof AuthorizationError) {
       return {
         success: false,
@@ -158,14 +222,54 @@ export async function updateHomepagePrincipalMessageAction(
   _prevState: ActionState | null,
   rawPayload: FormData | Record<string, unknown>
 ): Promise<ActionState> {
+  let newlyManagedKey: string | null = null;
+  let newlyPublicUrl: string | null = null;
+
   try {
     const adminUser = await requireRole(["SUPER_ADMIN"]);
     const clientIp = await getClientIp();
 
+    const imageFile =
+      extractUploadedFile(rawPayload, "photoFile") ||
+      extractUploadedFile(rawPayload, "imageFile");
+    const isRemoval =
+      isRemovalRequested(rawPayload, "removePhoto") ||
+      isRemovalRequested(rawPayload, "removeImage");
+
+    if (imageFile) {
+      try {
+        const saved = await processAndSaveUploadedImage(imageFile);
+        newlyManagedKey = saved.storageKey;
+        newlyPublicUrl = saved.publicUrl;
+      } catch (procErr) {
+        if (procErr instanceof ImageProcessingError) {
+          return {
+            success: false,
+            error: procErr.message,
+            fieldErrors: { photoFile: procErr.message },
+          };
+        }
+        return {
+          success: false,
+          error:
+            "Failed to process uploaded photo. Please ensure it is a valid JPEG, PNG, or WebP image under 2 MiB.",
+        };
+      }
+    }
+
     const normalized = normalizeHomepagePayload(parsePayload(rawPayload));
+    if (newlyPublicUrl) {
+      normalized.imageUrl = newlyPublicUrl;
+      normalized.imageStorageKey = newlyManagedKey;
+    } else if (isRemoval) {
+      normalized.imageUrl = null;
+      normalized.imageStorageKey = null;
+    }
+
     const parsed = homepagePrincipalMessageSchema.safeParse(normalized);
 
     if (!parsed.success) {
+      if (newlyManagedKey) await cleanupOrphanFile(newlyManagedKey);
       return {
         success: false,
         error: "Validation failed. Please review the highlighted fields.",
@@ -181,6 +285,11 @@ export async function updateHomepagePrincipalMessageAction(
       (currentPrincipal as unknown as Record<string, unknown>) || {},
       parsed.data as Record<string, unknown>
     );
+
+    const oldStorageKeyToDelete =
+      (newlyManagedKey || isRemoval) && currentPrincipal?.imageStorageKey
+        ? currentPrincipal.imageStorageKey
+        : null;
 
     const updated = await prisma.$transaction(async (tx) => {
       const result = await tx.homepagePrincipalMessage.upsert({
@@ -210,6 +319,10 @@ export async function updateHomepagePrincipalMessageAction(
       return result;
     });
 
+    if (oldStorageKeyToDelete) {
+      await deleteManagedPhotoIfUnreferenced(oldStorageKeyToDelete);
+    }
+
     revalidateHomepagePaths();
 
     return {
@@ -217,6 +330,7 @@ export async function updateHomepagePrincipalMessageAction(
       data: updated,
     };
   } catch (error) {
+    if (newlyManagedKey) await cleanupOrphanFile(newlyManagedKey);
     if (error instanceof AuthorizationError) {
       return {
         success: false,
@@ -239,14 +353,48 @@ export async function createHomepageStatisticAction(
   _prevState: ActionState | null,
   rawPayload: FormData | Record<string, unknown>
 ): Promise<ActionState> {
+  let newlyManagedKey: string | null = null;
+  let newlyPublicUrl: string | null = null;
+
   try {
     const adminUser = await requireRole(["SUPER_ADMIN"]);
     const clientIp = await getClientIp();
 
+    const imageFile =
+      extractUploadedFile(rawPayload, "imageFile") ||
+      extractUploadedFile(rawPayload, "photoFile");
+
+    if (imageFile) {
+      try {
+        const saved = await processAndSaveUploadedImage(imageFile);
+        newlyManagedKey = saved.storageKey;
+        newlyPublicUrl = saved.publicUrl;
+      } catch (procErr) {
+        if (procErr instanceof ImageProcessingError) {
+          return {
+            success: false,
+            error: procErr.message,
+            fieldErrors: { imageFile: procErr.message },
+          };
+        }
+        return {
+          success: false,
+          error:
+            "Failed to process uploaded image. Please ensure it is a valid JPEG, PNG, or WebP image under 2 MiB.",
+        };
+      }
+    }
+
     const normalized = normalizeHomepagePayload(parsePayload(rawPayload));
+    if (newlyPublicUrl) {
+      normalized.imageUrl = newlyPublicUrl;
+      normalized.imageStorageKey = newlyManagedKey;
+    }
+
     const parsed = homepageStatisticCreateSchema.safeParse(normalized);
 
     if (!parsed.success) {
+      if (newlyManagedKey) await cleanupOrphanFile(newlyManagedKey);
       return {
         success: false,
         error: "Validation failed. Please review the highlighted fields.",
@@ -298,6 +446,7 @@ export async function createHomepageStatisticAction(
       data: created,
     };
   } catch (error) {
+    if (newlyManagedKey) await cleanupOrphanFile(newlyManagedKey);
     if (error instanceof AuthorizationError) {
       return {
         success: false,
@@ -316,14 +465,54 @@ export async function updateHomepageStatisticAction(
   _prevState: ActionState | null,
   rawPayload: FormData | Record<string, unknown>
 ): Promise<ActionState> {
+  let newlyManagedKey: string | null = null;
+  let newlyPublicUrl: string | null = null;
+
   try {
     const adminUser = await requireRole(["SUPER_ADMIN"]);
     const clientIp = await getClientIp();
 
+    const imageFile =
+      extractUploadedFile(rawPayload, "imageFile") ||
+      extractUploadedFile(rawPayload, "photoFile");
+    const isRemoval =
+      isRemovalRequested(rawPayload, "removeImage") ||
+      isRemovalRequested(rawPayload, "removePhoto");
+
+    if (imageFile) {
+      try {
+        const saved = await processAndSaveUploadedImage(imageFile);
+        newlyManagedKey = saved.storageKey;
+        newlyPublicUrl = saved.publicUrl;
+      } catch (procErr) {
+        if (procErr instanceof ImageProcessingError) {
+          return {
+            success: false,
+            error: procErr.message,
+            fieldErrors: { imageFile: procErr.message },
+          };
+        }
+        return {
+          success: false,
+          error:
+            "Failed to process uploaded image. Please ensure it is a valid JPEG, PNG, or WebP image under 2 MiB.",
+        };
+      }
+    }
+
     const normalized = normalizeHomepagePayload(parsePayload(rawPayload));
+    if (newlyPublicUrl) {
+      normalized.imageUrl = newlyPublicUrl;
+      normalized.imageStorageKey = newlyManagedKey;
+    } else if (isRemoval) {
+      normalized.imageUrl = null;
+      normalized.imageStorageKey = null;
+    }
+
     const parsed = homepageStatisticUpdateSchema.safeParse(normalized);
 
     if (!parsed.success) {
+      if (newlyManagedKey) await cleanupOrphanFile(newlyManagedKey);
       return {
         success: false,
         error: "Validation failed. Please review the highlighted fields.",
@@ -336,6 +525,7 @@ export async function updateHomepageStatisticAction(
     });
 
     if (!existing) {
+      if (newlyManagedKey) await cleanupOrphanFile(newlyManagedKey);
       return {
         success: false,
         error: "Statistic record not found.",
@@ -348,6 +538,11 @@ export async function updateHomepageStatisticAction(
       existing as unknown as Record<string, unknown>,
       dataToUpdate as Record<string, unknown>
     );
+
+    const oldStorageKeyToDelete =
+      (newlyManagedKey || isRemoval) && existing.imageStorageKey
+        ? existing.imageStorageKey
+        : null;
 
     const updated = await prisma.$transaction(async (tx) => {
       const result = await tx.homepageStatistic.update({
@@ -373,6 +568,10 @@ export async function updateHomepageStatisticAction(
       return result;
     });
 
+    if (oldStorageKeyToDelete) {
+      await deleteManagedPhotoIfUnreferenced(oldStorageKeyToDelete);
+    }
+
     revalidateHomepagePaths();
 
     return {
@@ -380,6 +579,7 @@ export async function updateHomepageStatisticAction(
       data: updated,
     };
   } catch (error) {
+    if (newlyManagedKey) await cleanupOrphanFile(newlyManagedKey);
     if (error instanceof AuthorizationError) {
       return {
         success: false,
@@ -442,6 +642,10 @@ export async function deleteHomepageStatisticAction(
         tx
       );
     });
+
+    if (existing.imageStorageKey) {
+      await deleteManagedPhotoIfUnreferenced(existing.imageStorageKey);
+    }
 
     revalidateHomepagePaths();
 
@@ -597,14 +801,48 @@ export async function createHomepageHighlightAction(
   _prevState: ActionState | null,
   rawPayload: FormData | Record<string, unknown>
 ): Promise<ActionState> {
+  let newlyManagedKey: string | null = null;
+  let newlyPublicUrl: string | null = null;
+
   try {
     const adminUser = await requireRole(["SUPER_ADMIN"]);
     const clientIp = await getClientIp();
 
+    const imageFile =
+      extractUploadedFile(rawPayload, "imageFile") ||
+      extractUploadedFile(rawPayload, "photoFile");
+
+    if (imageFile) {
+      try {
+        const saved = await processAndSaveUploadedImage(imageFile);
+        newlyManagedKey = saved.storageKey;
+        newlyPublicUrl = saved.publicUrl;
+      } catch (procErr) {
+        if (procErr instanceof ImageProcessingError) {
+          return {
+            success: false,
+            error: procErr.message,
+            fieldErrors: { imageFile: procErr.message },
+          };
+        }
+        return {
+          success: false,
+          error:
+            "Failed to process uploaded image. Please ensure it is a valid JPEG, PNG, or WebP image under 2 MiB.",
+        };
+      }
+    }
+
     const normalized = normalizeHomepagePayload(parsePayload(rawPayload));
+    if (newlyPublicUrl) {
+      normalized.imageUrl = newlyPublicUrl;
+      normalized.imageStorageKey = newlyManagedKey;
+    }
+
     const parsed = homepageHighlightCreateSchema.safeParse(normalized);
 
     if (!parsed.success) {
+      if (newlyManagedKey) await cleanupOrphanFile(newlyManagedKey);
       return {
         success: false,
         error: "Validation failed. Please review the highlighted fields.",
@@ -656,6 +894,7 @@ export async function createHomepageHighlightAction(
       data: created,
     };
   } catch (error) {
+    if (newlyManagedKey) await cleanupOrphanFile(newlyManagedKey);
     if (error instanceof AuthorizationError) {
       return {
         success: false,
@@ -674,14 +913,54 @@ export async function updateHomepageHighlightAction(
   _prevState: ActionState | null,
   rawPayload: FormData | Record<string, unknown>
 ): Promise<ActionState> {
+  let newlyManagedKey: string | null = null;
+  let newlyPublicUrl: string | null = null;
+
   try {
     const adminUser = await requireRole(["SUPER_ADMIN"]);
     const clientIp = await getClientIp();
 
+    const imageFile =
+      extractUploadedFile(rawPayload, "imageFile") ||
+      extractUploadedFile(rawPayload, "photoFile");
+    const isRemoval =
+      isRemovalRequested(rawPayload, "removeImage") ||
+      isRemovalRequested(rawPayload, "removePhoto");
+
+    if (imageFile) {
+      try {
+        const saved = await processAndSaveUploadedImage(imageFile);
+        newlyManagedKey = saved.storageKey;
+        newlyPublicUrl = saved.publicUrl;
+      } catch (procErr) {
+        if (procErr instanceof ImageProcessingError) {
+          return {
+            success: false,
+            error: procErr.message,
+            fieldErrors: { imageFile: procErr.message },
+          };
+        }
+        return {
+          success: false,
+          error:
+            "Failed to process uploaded image. Please ensure it is a valid JPEG, PNG, or WebP image under 2 MiB.",
+        };
+      }
+    }
+
     const normalized = normalizeHomepagePayload(parsePayload(rawPayload));
+    if (newlyPublicUrl) {
+      normalized.imageUrl = newlyPublicUrl;
+      normalized.imageStorageKey = newlyManagedKey;
+    } else if (isRemoval) {
+      normalized.imageUrl = null;
+      normalized.imageStorageKey = null;
+    }
+
     const parsed = homepageHighlightUpdateSchema.safeParse(normalized);
 
     if (!parsed.success) {
+      if (newlyManagedKey) await cleanupOrphanFile(newlyManagedKey);
       return {
         success: false,
         error: "Validation failed. Please review the highlighted fields.",
@@ -694,6 +973,7 @@ export async function updateHomepageHighlightAction(
     });
 
     if (!existing) {
+      if (newlyManagedKey) await cleanupOrphanFile(newlyManagedKey);
       return {
         success: false,
         error: "Highlight record not found.",
@@ -706,6 +986,11 @@ export async function updateHomepageHighlightAction(
       existing as unknown as Record<string, unknown>,
       dataToUpdate as Record<string, unknown>
     );
+
+    const oldStorageKeyToDelete =
+      (newlyManagedKey || isRemoval) && existing.imageStorageKey
+        ? existing.imageStorageKey
+        : null;
 
     const updated = await prisma.$transaction(async (tx) => {
       const result = await tx.homepageHighlight.update({
@@ -731,6 +1016,10 @@ export async function updateHomepageHighlightAction(
       return result;
     });
 
+    if (oldStorageKeyToDelete) {
+      await deleteManagedPhotoIfUnreferenced(oldStorageKeyToDelete);
+    }
+
     revalidateHomepagePaths();
 
     return {
@@ -738,6 +1027,7 @@ export async function updateHomepageHighlightAction(
       data: updated,
     };
   } catch (error) {
+    if (newlyManagedKey) await cleanupOrphanFile(newlyManagedKey);
     if (error instanceof AuthorizationError) {
       return {
         success: false,
@@ -800,6 +1090,10 @@ export async function deleteHomepageHighlightAction(
         tx
       );
     });
+
+    if (existing.imageStorageKey) {
+      await deleteManagedPhotoIfUnreferenced(existing.imageStorageKey);
+    }
 
     revalidateHomepagePaths();
 

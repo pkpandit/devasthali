@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Save, Loader2, CheckCircle2, AlertCircle, Sparkles, ExternalLink } from "lucide-react";
 import { updateHomepageHeroAction } from "@/lib/server/homepage-actions";
+import { AdminImageUploadField } from "@/components/admin/ui/AdminImageUploadField";
 
 export interface SerializedHomepageHero {
   id: string;
@@ -42,6 +43,9 @@ export function HeroSectionEditor({ initialHero }: HeroSectionEditorProps) {
     isPublished: initialHero?.isPublished ?? true,
   });
 
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [isImageRemoved, setIsImageRemoved] = useState(false);
+
   const [serverError, setServerError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [successBanner, setSuccessBanner] = useState(false);
@@ -75,7 +79,30 @@ export function HeroSectionEditor({ initialHero }: HeroSectionEditorProps) {
     setSuccessBanner(false);
 
     startTransition(async () => {
-      const res = await updateHomepageHeroAction(null, formData);
+      const payload = new FormData();
+      payload.append("badgeText", formData.badgeText.trim());
+      payload.append("heading", formData.heading.trim());
+      payload.append("highlightText", formData.highlightText.trim());
+      payload.append("subheading", formData.subheading.trim());
+      payload.append("primaryCtaLabel", formData.primaryCtaLabel.trim());
+      payload.append("primaryCtaHref", formData.primaryCtaHref.trim());
+      if (formData.secondaryCtaLabel.trim()) {
+        payload.append("secondaryCtaLabel", formData.secondaryCtaLabel.trim());
+      }
+      if (formData.secondaryCtaHref.trim()) {
+        payload.append("secondaryCtaHref", formData.secondaryCtaHref.trim());
+      }
+      payload.append("isPublished", String(formData.isPublished));
+
+      if (selectedFile) {
+        payload.append("backgroundImageFile", selectedFile);
+      } else if (isImageRemoved) {
+        payload.append("removeBackgroundImage", "true");
+      } else if (formData.backgroundImageUrl) {
+        payload.append("backgroundImageUrl", formData.backgroundImageUrl);
+      }
+
+      const res = await updateHomepageHeroAction(null, payload);
 
       if (!res.success) {
         setServerError(res.error || "Failed to update hero section");
@@ -154,10 +181,10 @@ export function HeroSectionEditor({ initialHero }: HeroSectionEditorProps) {
             </p>
           </div>
 
-          {/* Highlight Accent Text */}
+          {/* Highlight Keyphrase */}
           <div className="admin-field">
             <label htmlFor="highlightText" className="admin-label">
-              Highlighted Accent Text (Gold Underline)
+              Accent Highlight Keyphrase
             </label>
             <input
               id="highlightText"
@@ -165,7 +192,7 @@ export function HeroSectionEditor({ initialHero }: HeroSectionEditorProps) {
               name="highlightText"
               value={formData.highlightText}
               onChange={handleChange}
-              placeholder="e.g. Since 1988"
+              placeholder="e.g. Nurturing Future Leaders"
               maxLength={80}
               className="admin-input"
             />
@@ -173,15 +200,15 @@ export function HeroSectionEditor({ initialHero }: HeroSectionEditorProps) {
               <p className="admin-field-error">{fieldErrors.highlightText}</p>
             )}
             <p className="admin-field-note">
-              Rendered with gold styling and red underline accent.
+              Golden gradient text emphasis inside the hero headline.
             </p>
           </div>
         </div>
 
-        {/* Main Heading H1 */}
+        {/* Main Heading */}
         <div className="admin-field">
           <label htmlFor="heading" className="admin-label">
-            Main Display Heading H1 *
+            Main Hero Heading *
           </label>
           <input
             id="heading"
@@ -189,7 +216,7 @@ export function HeroSectionEditor({ initialHero }: HeroSectionEditorProps) {
             name="heading"
             value={formData.heading}
             onChange={handleChange}
-            placeholder="e.g. Nurturing Academic Rigour, Moral Character & Leadership"
+            placeholder="e.g. Welcome to Devasthaly Vidyapeeth"
             maxLength={180}
             className="admin-input"
             required
@@ -199,10 +226,10 @@ export function HeroSectionEditor({ initialHero }: HeroSectionEditorProps) {
           )}
         </div>
 
-        {/* Subheading */}
+        {/* Subheading Narrative */}
         <div className="admin-field">
           <label htmlFor="subheading" className="admin-label">
-            Subheading &amp; Introduction *
+            Hero Subheading Narrative *
           </label>
           <textarea
             id="subheading"
@@ -210,8 +237,8 @@ export function HeroSectionEditor({ initialHero }: HeroSectionEditorProps) {
             value={formData.subheading}
             onChange={handleChange}
             rows={3}
-            placeholder="Welcome to Devasthaly Vidyapeeth, a premier residential..."
-            maxLength={600}
+            placeholder="Inspiring lead paragraph outlining school philosophy and values..."
+            maxLength={1000}
             className="admin-textarea"
             required
           />
@@ -232,8 +259,8 @@ export function HeroSectionEditor({ initialHero }: HeroSectionEditorProps) {
               name="primaryCtaLabel"
               value={formData.primaryCtaLabel}
               onChange={handleChange}
-              placeholder="e.g. Apply for Admission"
-              maxLength={60}
+              placeholder="e.g. Apply for Admission 2026–27"
+              maxLength={50}
               className="admin-input"
               required
             />
@@ -304,27 +331,27 @@ export function HeroSectionEditor({ initialHero }: HeroSectionEditorProps) {
           </div>
         </div>
 
-        {/* Background Image URL */}
-        <div className="admin-field">
-          <label htmlFor="backgroundImageUrl" className="admin-label">
-            Background Showcase Image URL
-          </label>
-          <input
-            id="backgroundImageUrl"
-            type="text"
-            name="backgroundImageUrl"
-            value={formData.backgroundImageUrl}
-            onChange={handleChange}
-            placeholder="e.g. /images/about/campus-showcase.jpg"
-            maxLength={500}
-            className="admin-input"
+        {/* Standardized Background Image Upload */}
+        <div style={{ marginTop: "16px" }}>
+          <AdminImageUploadField
+            label="Hero Background Showcase Image"
+            variant="landscape"
+            currentImageUrl={formData.backgroundImageUrl}
+            selectedFile={selectedFile}
+            isRemoved={isImageRemoved}
+            onFileSelect={(file) => {
+              setSelectedFile(file);
+              setIsImageRemoved(false);
+            }}
+            onRemove={() => {
+              setSelectedFile(null);
+              setIsImageRemoved(true);
+            }}
+            error={fieldErrors.backgroundImageFile || fieldErrors.backgroundImageUrl}
+            disabled={isPending}
+            isPending={isPending}
+            helperText="Supported formats: JPEG, PNG, WebP (max 2 MiB). Recommended high-resolution landscape banner (1920x1080)."
           />
-          {fieldErrors.backgroundImageUrl && (
-            <p className="admin-field-error">{fieldErrors.backgroundImageUrl}</p>
-          )}
-          <p className="admin-field-note">
-            Use a root-relative path (e.g. /images/...) or secure HTTPS image URL.
-          </p>
         </div>
 
         {/* Action Controls */}
@@ -349,44 +376,124 @@ export function HeroSectionEditor({ initialHero }: HeroSectionEditorProps) {
         </div>
       </form>
 
-      {/* Live Preview Card */}
-      <div style={{ background: "#111827", color: "#ffffff", borderRadius: "14px", padding: "24px", border: "1px solid #1f2937", display: "flex", flexDirection: "column", gap: "16px" }}>
-        <div style={{ fontSize: "0.75rem", fontFamily: "monospace", color: "#9ca3af", textTransform: "uppercase", letterSpacing: "0.1em" }}>
-          Interactive Live Preview (Section 1: Hero Banner)
+      {/* Preview Card */}
+      <div className="admin-section-card" style={{ marginTop: "24px" }}>
+        <div className="admin-card-header">
+          <div>
+            <h3 className="admin-workspace-toolbar__title" style={{ fontSize: "1rem" }}>
+              Live Hero Banner Presentation Preview
+            </h3>
+            <p className="admin-workspace-toolbar__count">
+              Synthesized visual arrangement matching public layout styling.
+            </p>
+          </div>
+          <span className="admin-badge admin-badge--success">Public Layout</span>
         </div>
 
-        <div style={{ maxWidth: "640px", display: "flex", flexDirection: "column", gap: "12px", textAlign: "left" }}>
+        <div
+          style={{
+            position: "relative",
+            padding: "48px 32px",
+            borderRadius: "12px",
+            background: "linear-gradient(135deg, #0f172a 0%, #1e293b 60%, #0f172a 100%)",
+            color: "#ffffff",
+            overflow: "hidden",
+          }}
+        >
           {formData.badgeText && (
-            <div style={{ display: "inline-flex", alignItems: "center", gap: "6px", padding: "4px 12px", borderRadius: "9999px", background: "#b91c1c", color: "#ffffff", fontSize: "0.75rem", fontWeight: 700, textTransform: "uppercase", width: "fit-content" }}>
-              <Sparkles size={14} style={{ color: "#f4cd13" }} />
+            <div
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "6px",
+                padding: "4px 12px",
+                borderRadius: "9999px",
+                background: "rgba(217, 119, 6, 0.2)",
+                border: "1px solid rgba(245, 158, 11, 0.4)",
+                color: "#fbbf24",
+                fontSize: "0.75rem",
+                fontWeight: 600,
+                marginBottom: "16px",
+              }}
+            >
+              <Sparkles size={12} />
               <span>{formData.badgeText}</span>
             </div>
           )}
 
-          <h1 style={{ margin: 0, fontFamily: "var(--heading-font)", fontSize: "1.75rem", fontWeight: 700, lineHeight: 1.25, color: "#ffffff" }}>
-            {formData.heading || "Hero Heading Preview"}{" "}
+          <h1
+            style={{
+              fontFamily: "var(--heading-font, serif)",
+              fontSize: "2rem",
+              fontWeight: 800,
+              lineHeight: 1.2,
+              marginBottom: "12px",
+              maxWidth: "800px",
+            }}
+          >
+            {formData.heading || "Hero Heading Preview"}
             {formData.highlightText && (
-              <span style={{ color: "#f4cd13", textDecoration: "underline", textDecorationColor: "#b91c1c", textUnderlineOffset: "4px" }}>
+              <span
+                style={{
+                  display: "block",
+                  color: "#f59e0b",
+                  fontSize: "1.75rem",
+                  marginTop: "4px",
+                }}
+              >
                 {formData.highlightText}
               </span>
             )}
           </h1>
 
-          <p style={{ margin: 0, fontSize: "0.875rem", color: "#d1d5db", lineHeight: 1.6 }}>
-            {formData.subheading || "Hero subheading preview description..."}
+          <p
+            style={{
+              color: "#cbd5e1",
+              fontSize: "0.9375rem",
+              lineHeight: 1.6,
+              maxWidth: "650px",
+              marginBottom: "24px",
+            }}
+          >
+            {formData.subheading || "Hero narrative subheading preview..."}
           </p>
 
-          <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "12px", paddingTop: "8px" }}>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: "12px" }}>
             {formData.primaryCtaLabel && (
-              <div style={{ padding: "8px 16px", borderRadius: "8px", background: "#b91c1c", color: "#ffffff", fontSize: "0.875rem", fontWeight: 700, display: "inline-flex", alignItems: "center", gap: "6px" }}>
+              <span
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "6px",
+                  padding: "10px 20px",
+                  borderRadius: "8px",
+                  background: "#b91c1c",
+                  color: "#ffffff",
+                  fontSize: "0.875rem",
+                  fontWeight: 600,
+                }}
+              >
                 <span>{formData.primaryCtaLabel}</span>
                 <ExternalLink size={14} />
-              </div>
+              </span>
             )}
             {formData.secondaryCtaLabel && (
-              <div style={{ padding: "8px 16px", borderRadius: "8px", background: "rgba(255,255,255,0.1)", color: "#ffffff", fontSize: "0.875rem", fontWeight: 700, border: "1px solid rgba(255,255,255,0.2)", display: "inline-flex", alignItems: "center", gap: "6px" }}>
+              <span
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "6px",
+                  padding: "10px 20px",
+                  borderRadius: "8px",
+                  background: "rgba(255, 255, 255, 0.1)",
+                  border: "1px solid rgba(255, 255, 255, 0.2)",
+                  color: "#ffffff",
+                  fontSize: "0.875rem",
+                  fontWeight: 500,
+                }}
+              >
                 <span>{formData.secondaryCtaLabel}</span>
-              </div>
+              </span>
             )}
           </div>
         </div>

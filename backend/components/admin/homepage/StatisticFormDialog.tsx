@@ -1,11 +1,12 @@
 "use client";
 
-import { useEffect, useRef, useState, useTransition } from "react";
-import { X, Loader2, Save, AlertCircle } from "lucide-react";
+import { useState, useTransition, useEffect, useRef } from "react";
+import { X, Loader2, Sparkles } from "lucide-react";
 import {
   createHomepageStatisticAction,
   updateHomepageStatisticAction,
 } from "@/lib/server/homepage-actions";
+import { AdminImageUploadField } from "@/components/admin/ui/AdminImageUploadField";
 
 export interface SerializedStatistic {
   id: string;
@@ -25,7 +26,7 @@ export interface SerializedStatistic {
 
 interface StatisticFormDialogProps {
   isOpen: boolean;
-  statistic: SerializedStatistic | null; // null for Create mode
+  statistic?: SerializedStatistic | null;
   onClose: () => void;
   onSuccess: () => void;
 }
@@ -37,13 +38,11 @@ export function StatisticFormDialog({
   onSuccess,
 }: StatisticFormDialogProps) {
   useEffect(() => {
-    function handleKeyDown(e: KeyboardEvent) {
-      if (!isOpen) return;
-      if (e.key === "Escape") {
-        e.preventDefault();
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && isOpen) {
         onClose();
       }
-    }
+    };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [isOpen, onClose]);
@@ -67,7 +66,7 @@ function StatisticFormInner({
   onClose,
   onSuccess,
 }: {
-  statistic: SerializedStatistic | null;
+  statistic?: SerializedStatistic | null;
   onClose: () => void;
   onSuccess: () => void;
 }) {
@@ -84,6 +83,9 @@ function StatisticFormInner({
     imageUrl: statistic?.imageUrl || "",
     isPublished: statistic ? statistic.isPublished : true,
   });
+
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [isImageRemoved, setIsImageRemoved] = useState(false);
 
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [serverError, setServerError] = useState<string | null>(null);
@@ -116,14 +118,31 @@ function StatisticFormInner({
     setFieldErrors({});
 
     startTransition(async () => {
+      const payload = new FormData();
+      if (statistic) {
+        payload.append("id", statistic.id);
+      }
+      payload.append("label", formData.label.trim());
+      payload.append("numericValue", formData.numericValue.trim());
+      if (formData.suffix.trim()) payload.append("suffix", formData.suffix.trim());
+      if (formData.subtext.trim()) payload.append("subtext", formData.subtext.trim());
+      if (formData.badge.trim()) payload.append("badge", formData.badge.trim());
+      if (formData.iconName.trim()) payload.append("iconName", formData.iconName.trim());
+      payload.append("isPublished", String(formData.isPublished));
+
+      if (selectedFile) {
+        payload.append("imageFile", selectedFile);
+      } else if (isImageRemoved) {
+        payload.append("removeImage", "true");
+      } else if (formData.imageUrl) {
+        payload.append("imageUrl", formData.imageUrl);
+      }
+
       let res;
       if (statistic) {
-        res = await updateHomepageStatisticAction(null, {
-          id: statistic.id,
-          ...formData,
-        });
+        res = await updateHomepageStatisticAction(null, payload);
       } else {
-        res = await createHomepageStatisticAction(null, formData);
+        res = await createHomepageStatisticAction(null, payload);
       }
 
       if (!res.success) {
@@ -148,31 +167,37 @@ function StatisticFormInner({
     >
       <form onSubmit={handleSubmit} className="topper-dialog-form">
         <div className="topper-dialog-header">
-          <h2 id="stat-dialog-title" className="topper-dialog-title">
-            {statistic ? "Edit Trust Statistic" : "Add Trust Statistic"}
-          </h2>
+          <div>
+            <h2 id="stat-dialog-title" className="topper-dialog-title">
+              {statistic ? "Edit Key Metric Card" : "Add Key Metric Card"}
+            </h2>
+            <p className="admin-field-note" style={{ margin: "2px 0 0" }}>
+              {statistic
+                ? "Update numbers, labels, units, and background visuals."
+                : "Create a prominent data statistic for the homepage showcase strip."}
+            </p>
+          </div>
           <button
             type="button"
             onClick={onClose}
-            aria-label="Close dialog"
             className="topper-dialog-close"
+            aria-label="Close dialog"
           >
             <X size={18} />
           </button>
         </div>
 
-        <div className="topper-dialog-body space-y-4">
+        <div className="topper-dialog-body">
           {serverError && (
-            <div className="topper-dialog-error-banner flex items-center gap-2" role="alert">
-              <AlertCircle className="w-4 h-4 text-red-600 shrink-0" />
-              <span>{serverError}</span>
+            <div className="topper-dialog-error-banner" role="alert">
+              {serverError}
             </div>
           )}
 
           <div className="topper-form-grid">
             <div className="topper-field">
               <label htmlFor="stat-label" className="topper-label">
-                Metric Label <span className="text-red-500">*</span>
+                Metric Label / Description <span className="text-red-500">*</span>
               </label>
               <input
                 ref={labelInputRef}
@@ -292,30 +317,31 @@ function StatisticFormInner({
             </div>
           </div>
 
-          <div className="topper-field topper-field--full">
-            <label htmlFor="stat-imageUrl" className="topper-label">
-              Photographic Background Image URL
-            </label>
-            <input
-              id="stat-imageUrl"
-              type="text"
-              name="imageUrl"
-              value={formData.imageUrl}
-              onChange={handleChange}
-              placeholder="e.g. /images/about/campus-showcase.jpg"
-              maxLength={500}
-              className={`topper-input ${fieldErrors.imageUrl ? "topper-input--error" : ""}`}
+          {/* Standardized Background Image Upload */}
+          <div style={{ marginTop: "14px" }}>
+            <AdminImageUploadField
+              label="Photographic Background Image"
+              variant="landscape"
+              currentImageUrl={formData.imageUrl}
+              selectedFile={selectedFile}
+              isRemoved={isImageRemoved}
+              onFileSelect={(file) => {
+                setSelectedFile(file);
+                setIsImageRemoved(false);
+              }}
+              onRemove={() => {
+                setSelectedFile(null);
+                setIsImageRemoved(true);
+              }}
+              error={fieldErrors.imageFile || fieldErrors.imageUrl}
+              disabled={isPending}
+              isPending={isPending}
+              helperText="Supported formats: JPEG, PNG, WebP (max 2 MiB). High-resolution image is automatically converted to optimized WebP."
             />
-            {fieldErrors.imageUrl && (
-              <p className="topper-field-error">{fieldErrors.imageUrl}</p>
-            )}
-            <p className="topper-field-note">
-              Use a root-relative path (e.g. /images/...) or secure HTTPS image URL.
-            </p>
           </div>
 
-          <div className="topper-field topper-field--checkbox">
-            <label className="topper-checkbox-wrapper min-h-[44px]">
+          <div className="topper-field--checkbox">
+            <label className="topper-checkbox-wrapper">
               <input
                 type="checkbox"
                 name="isPublished"
@@ -323,7 +349,7 @@ function StatisticFormInner({
                 onChange={handleChange}
                 className="topper-checkbox"
               />
-              <span className="topper-checkbox-label">Published on Public Homepage</span>
+              <span className="topper-checkbox-label">Published (Visible on Live Website)</span>
             </label>
           </div>
         </div>
@@ -333,23 +359,24 @@ function StatisticFormInner({
             type="button"
             onClick={onClose}
             disabled={isPending}
-            className="topper-button topper-button--secondary min-h-[44px]"
+            className="topper-button topper-button--secondary"
           >
             Cancel
           </button>
           <button
             type="submit"
             disabled={isPending}
-            className="topper-button topper-button--primary min-h-[44px] gap-2"
+            className="topper-button topper-button--primary"
+            style={{ display: "inline-flex", alignItems: "center", gap: "8px" }}
           >
             {isPending ? (
               <>
-                <Loader2 className="w-4 h-4 animate-spin" />
+                <Loader2 size={16} className="topper-spin" />
                 <span>Saving...</span>
               </>
             ) : (
               <>
-                <Save className="w-4 h-4" />
+                <Sparkles size={16} />
                 <span>{statistic ? "Update Statistic" : "Create Statistic"}</span>
               </>
             )}

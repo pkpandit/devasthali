@@ -188,6 +188,27 @@ async function runSuite() {
   const normalized = normalizeHomepagePayload({ a: "  hello  ", b: "   ", c: 42, d: null });
   assert("normalizeHomepagePayload trims strings and nullifies empty", normalized.a === "hello" && normalized.b === null && normalized.c === 42 && normalized.d === null);
 
+  // Test FormData payload normalization
+  const homeFormData = new FormData();
+  homeFormData.append("heading", "  New Hero Heading  ");
+  homeFormData.append("highlightText", "");
+  homeFormData.append("isPublished", "true");
+  const normalizedHomeFormData = normalizeHomepagePayload(homeFormData);
+  assert("normalizeHomepagePayload handles FormData correctly", normalizedHomeFormData.heading === "New Hero Heading" && normalizedHomeFormData.highlightText === null);
+
+  // Test image diff masking
+  const heroImageDiff = computeHomepageDiff(
+    { backgroundImageUrl: "/images/hero.jpg", backgroundImageStorageKey: null },
+    { backgroundImageUrl: "/api/public/media/toppers/top_hero.webp", backgroundImageStorageKey: "toppers/top_hero.webp" }
+  );
+  assert("computeHomepageDiff masks background image changes cleanly", heroImageDiff.backgroundImageUrl?.from === "[PRESENT]" && heroImageDiff.backgroundImageUrl?.to === "[PRESENT]");
+
+  const statImageRemovalDiff = computeHomepageDiff(
+    { imageUrl: "/images/stat.jpg", imageStorageKey: null },
+    { imageUrl: null, imageStorageKey: null }
+  );
+  assert("computeHomepageDiff masks image removal to [NONE]", statImageRemovalDiff.imageUrl?.from === "[PRESENT]" && statImageRemovalDiff.imageUrl?.to === "[NONE]");
+
   // -------------------------------------------------------------
   // 4. Role Authorization Matrix Tests
   // -------------------------------------------------------------

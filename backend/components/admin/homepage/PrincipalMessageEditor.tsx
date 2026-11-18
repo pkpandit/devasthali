@@ -2,9 +2,9 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import Image from "next/image";
-import { Save, Loader2, CheckCircle2, AlertCircle, ExternalLink } from "lucide-react";
+import { Save, Loader2, CheckCircle2, AlertCircle, Quote, ArrowRight } from "lucide-react";
 import { updateHomepagePrincipalMessageAction } from "@/lib/server/homepage-actions";
+import { AdminImageUploadField } from "@/components/admin/ui/AdminImageUploadField";
 
 export interface SerializedHomepagePrincipalMessage {
   id: string;
@@ -22,25 +22,32 @@ export interface SerializedHomepagePrincipalMessage {
 }
 
 interface PrincipalMessageEditorProps {
-  initialPrincipal: SerializedHomepagePrincipalMessage | null;
+  initialPrincipal?: SerializedHomepagePrincipalMessage | null;
+  initialMessage?: SerializedHomepagePrincipalMessage | null;
 }
 
-export function PrincipalMessageEditor({ initialPrincipal }: PrincipalMessageEditorProps) {
+export function PrincipalMessageEditor({
+  initialPrincipal,
+  initialMessage,
+}: PrincipalMessageEditorProps) {
+  const message = initialPrincipal ?? initialMessage ?? null;
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
 
   const [formData, setFormData] = useState({
-    heading: initialPrincipal?.heading || "Principal’s Message",
-    principalName: initialPrincipal?.principalName || "P. C. Shrivastava",
-    principalDesignation:
-      initialPrincipal?.principalDesignation || "Principal, Devasthaly Vidyapeeth",
-    quote: initialPrincipal?.quote || "",
-    excerpt: initialPrincipal?.excerpt || "",
-    imageUrl: initialPrincipal?.imageUrl || "/images/leadership/principal_sir.webp",
-    ctaLabel: initialPrincipal?.ctaLabel || "Read Full Message",
-    ctaHref: initialPrincipal?.ctaHref || "/principals-message",
-    isPublished: initialPrincipal?.isPublished ?? true,
+    heading: message?.heading || "",
+    principalName: message?.principalName || "",
+    principalDesignation: message?.principalDesignation || "",
+    quote: message?.quote || "",
+    excerpt: message?.excerpt || "",
+    imageUrl: message?.imageUrl || "",
+    ctaLabel: message?.ctaLabel || "",
+    ctaHref: message?.ctaHref || "",
+    isPublished: message?.isPublished ?? true,
   });
+
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [isPhotoRemoved, setIsPhotoRemoved] = useState(false);
 
   const [serverError, setServerError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
@@ -75,7 +82,29 @@ export function PrincipalMessageEditor({ initialPrincipal }: PrincipalMessageEdi
     setSuccessBanner(false);
 
     startTransition(async () => {
-      const res = await updateHomepagePrincipalMessageAction(null, formData);
+      const payload = new FormData();
+      payload.append("heading", formData.heading.trim());
+      payload.append("principalName", formData.principalName.trim());
+      payload.append("principalDesignation", formData.principalDesignation.trim());
+      payload.append("quote", formData.quote.trim());
+      payload.append("excerpt", formData.excerpt.trim());
+      if (formData.ctaLabel.trim()) {
+        payload.append("ctaLabel", formData.ctaLabel.trim());
+      }
+      if (formData.ctaHref.trim()) {
+        payload.append("ctaHref", formData.ctaHref.trim());
+      }
+      payload.append("isPublished", String(formData.isPublished));
+
+      if (selectedFile) {
+        payload.append("photoFile", selectedFile);
+      } else if (isPhotoRemoved) {
+        payload.append("removePhoto", "true");
+      } else if (formData.imageUrl) {
+        payload.append("imageUrl", formData.imageUrl);
+      }
+
+      const res = await updateHomepagePrincipalMessageAction(null, payload);
 
       if (!res.success) {
         setServerError(res.error || "Failed to update Principal's message");
@@ -130,32 +159,32 @@ export function PrincipalMessageEditor({ initialPrincipal }: PrincipalMessageEdi
           </div>
         </div>
 
-        <div className="admin-form-grid-2">
-          {/* Section Heading */}
-          <div className="admin-field">
-            <label htmlFor="heading" className="admin-label">
-              Section Heading Title *
-            </label>
-            <input
-              id="heading"
-              type="text"
-              name="heading"
-              value={formData.heading}
-              onChange={handleChange}
-              placeholder="e.g. Principal’s Message"
-              maxLength={120}
-              className="admin-input"
-              required
-            />
-            {fieldErrors.heading && (
-              <p className="admin-field-error">{fieldErrors.heading}</p>
-            )}
-          </div>
+        {/* Section Heading */}
+        <div className="admin-field">
+          <label htmlFor="heading" className="admin-label">
+            Section Header Title *
+          </label>
+          <input
+            id="heading"
+            type="text"
+            name="heading"
+            value={formData.heading}
+            onChange={handleChange}
+            placeholder="e.g. From the Principal's Desk"
+            maxLength={120}
+            className="admin-input"
+            required
+          />
+          {fieldErrors.heading && (
+            <p className="admin-field-error">{fieldErrors.heading}</p>
+          )}
+        </div>
 
-          {/* Principal Name */}
+        {/* Principal Name & Designation */}
+        <div className="admin-form-grid-2">
           <div className="admin-field">
             <label htmlFor="principalName" className="admin-label">
-              Principal Full Name *
+              Principal&apos;s Full Name *
             </label>
             <input
               id="principalName"
@@ -163,8 +192,8 @@ export function PrincipalMessageEditor({ initialPrincipal }: PrincipalMessageEdi
               name="principalName"
               value={formData.principalName}
               onChange={handleChange}
-              placeholder="e.g. P. C. Shrivastava"
-              maxLength={100}
+              placeholder="e.g. Dr. K. N. Pandey"
+              maxLength={120}
               className="admin-input"
               required
             />
@@ -172,27 +201,26 @@ export function PrincipalMessageEditor({ initialPrincipal }: PrincipalMessageEdi
               <p className="admin-field-error">{fieldErrors.principalName}</p>
             )}
           </div>
-        </div>
 
-        {/* Designation */}
-        <div className="admin-field">
-          <label htmlFor="principalDesignation" className="admin-label">
-            Official Designation *
-          </label>
-          <input
-            id="principalDesignation"
-            type="text"
-            name="principalDesignation"
-            value={formData.principalDesignation}
-            onChange={handleChange}
-            placeholder="e.g. Principal, Devasthaly Vidyapeeth"
-            maxLength={120}
-            className="admin-input"
-            required
-          />
-          {fieldErrors.principalDesignation && (
-            <p className="admin-field-error">{fieldErrors.principalDesignation}</p>
-          )}
+          <div className="admin-field">
+            <label htmlFor="principalDesignation" className="admin-label">
+              Official Designation *
+            </label>
+            <input
+              id="principalDesignation"
+              type="text"
+              name="principalDesignation"
+              value={formData.principalDesignation}
+              onChange={handleChange}
+              placeholder="e.g. Principal, Devasthaly Vidyapeeth"
+              maxLength={120}
+              className="admin-input"
+              required
+            />
+            {fieldErrors.principalDesignation && (
+              <p className="admin-field-error">{fieldErrors.principalDesignation}</p>
+            )}
+          </div>
         </div>
 
         {/* Featured Quote */}
@@ -237,26 +265,31 @@ export function PrincipalMessageEditor({ initialPrincipal }: PrincipalMessageEdi
           )}
         </div>
 
-        <div className="admin-form-grid-3">
-          <div className="admin-field">
-            <label htmlFor="imageUrl" className="admin-label">
-              Portrait Image URL
-            </label>
-            <input
-              id="imageUrl"
-              type="text"
-              name="imageUrl"
-              value={formData.imageUrl}
-              onChange={handleChange}
-              placeholder="e.g. /images/leadership/principal_sir.webp"
-              maxLength={500}
-              className="admin-input"
-            />
-            {fieldErrors.imageUrl && (
-              <p className="admin-field-error">{fieldErrors.imageUrl}</p>
-            )}
-          </div>
+        {/* Standardized Portrait Image Upload */}
+        <div style={{ marginTop: "16px" }}>
+          <AdminImageUploadField
+            label="Principal Portrait Photo"
+            variant="circular"
+            currentImageUrl={formData.imageUrl}
+            selectedFile={selectedFile}
+            isRemoved={isPhotoRemoved}
+            onFileSelect={(file) => {
+              setSelectedFile(file);
+              setIsPhotoRemoved(false);
+            }}
+            onRemove={() => {
+              setSelectedFile(null);
+              setIsPhotoRemoved(true);
+            }}
+            error={fieldErrors.photoFile || fieldErrors.imageUrl}
+            disabled={isPending}
+            isPending={isPending}
+            helperText="Supported formats: JPEG, PNG, WebP (max 2 MiB). High-resolution portrait is automatically formatted and converted to WebP."
+          />
+        </div>
 
+        {/* CTA Controls */}
+        <div className="admin-form-grid-2" style={{ marginTop: "16px" }}>
           <div className="admin-field">
             <label htmlFor="ctaLabel" className="admin-label">
               CTA Button Label
@@ -306,7 +339,7 @@ export function PrincipalMessageEditor({ initialPrincipal }: PrincipalMessageEdi
             {isPending ? (
               <>
                 <Loader2 size={16} className="animate-spin" />
-                <span>Saving Principal&apos;s Message...</span>
+                <span>Saving Message...</span>
               </>
             ) : (
               <>
@@ -318,58 +351,136 @@ export function PrincipalMessageEditor({ initialPrincipal }: PrincipalMessageEdi
         </div>
       </form>
 
-      {/* Live Preview Card */}
-      <div className="admin-section-card" style={{ background: "#f9fafb" }}>
-        <div style={{ fontSize: "0.75rem", fontFamily: "monospace", color: "#6b7280", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "8px" }}>
-          Live Section Preview: {formData.heading}
-        </div>
-
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: "24px", alignItems: "center" }}>
-          {/* Portrait Preview */}
-          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center" }}>
-            <div style={{ position: "relative", width: "160px", height: "200px", borderRadius: "12px", overflow: "hidden", background: "#111827", border: "1px solid #e5e7eb" }}>
-              {formData.imageUrl ? (
-                <Image
-                  src={formData.imageUrl}
-                  alt={formData.principalName || "Principal"}
-                  fill
-                  sizes="160px"
-                  style={{ objectFit: "cover", objectPosition: "top" }}
-                />
-              ) : (
-                <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", color: "#9ca3af", fontSize: "0.75rem" }}>
-                  No Portrait
-                </div>
-              )}
-            </div>
-            <h3 style={{ margin: "12px 0 2px", fontFamily: "var(--heading-font)", fontWeight: 700, color: "#111827", fontSize: "1rem" }}>
-              {formData.principalName}
+      {/* Presentation Preview */}
+      <div className="admin-section-card" style={{ marginTop: "24px" }}>
+        <div className="admin-card-header">
+          <div>
+            <h3 className="admin-workspace-toolbar__title" style={{ fontSize: "1rem" }}>
+              Message Card Presentation Preview
             </h3>
-            <p style={{ margin: 0, fontSize: "0.75rem", color: "#b91c1c", fontWeight: 600 }}>
-              {formData.principalDesignation}
+            <p className="admin-workspace-toolbar__count">
+              Synthesized visual arrangement matching public layout styling.
             </p>
           </div>
+          <span className="admin-badge admin-badge--success">Public Layout</span>
+        </div>
 
-          {/* Quote & Excerpt */}
-          <div style={{ display: "flex", flexDirection: "column", gap: "12px", textAlign: "left" }}>
-            <div style={{ borderLeft: "4px solid #b91c1c", paddingLeft: "16px", paddingTop: "4px", paddingBottom: "4px" }}>
-              <p style={{ margin: 0, fontFamily: "var(--heading-font)", fontWeight: 600, fontSize: "0.9375rem", color: "#111827", fontStyle: "italic" }}>
-                &ldquo;{formData.quote || "Featured highlight quote..."}&rdquo;
-              </p>
-            </div>
-
-            <p style={{ margin: 0, fontSize: "0.875rem", color: "#4b5563", lineHeight: 1.6 }}>
-              {formData.excerpt || "Excerpt message body..."}
-            </p>
-
-            {formData.ctaLabel && (
-              <div style={{ paddingTop: "8px" }}>
-                <span className="admin-button admin-button--primary" style={{ minHeight: "36px", padding: "6px 14px", fontSize: "0.75rem" }}>
-                  <span>{formData.ctaLabel}</span>
-                  <ExternalLink size={12} />
-                </span>
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "auto 1fr",
+            gap: "24px",
+            alignItems: "center",
+            padding: "24px",
+            borderRadius: "12px",
+            background: "#ffffff",
+            border: "1px solid #e2e8f0",
+          }}
+        >
+          {/* Avatar Preview */}
+          <div
+            style={{
+              position: "relative",
+              width: "100px",
+              height: "100px",
+              borderRadius: "50%",
+              overflow: "hidden",
+              border: "3px solid #b91c1c",
+              background: "#f1f5f9",
+              flexShrink: 0,
+            }}
+          >
+            {formData.imageUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={formData.imageUrl}
+                alt={formData.principalName || "Principal preview"}
+                style={{ width: "100%", height: "100%", objectFit: "cover" }}
+              />
+            ) : (
+              <div
+                style={{
+                  width: "100%",
+                  height: "100%",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  color: "#94a3b8",
+                  fontSize: "10px",
+                  textAlign: "center",
+                }}
+              >
+                No Photo
               </div>
             )}
+          </div>
+
+          <div>
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "8px",
+                marginBottom: "8px",
+                color: "#b91c1c",
+              }}
+            >
+              <Quote size={20} />
+              <span style={{ fontSize: "0.875rem", fontWeight: 700, textTransform: "uppercase" }}>
+                {formData.heading || "From the Principal's Desk"}
+              </span>
+            </div>
+
+            <p
+              style={{
+                fontStyle: "italic",
+                color: "#1e293b",
+                fontSize: "1rem",
+                lineHeight: 1.5,
+                marginBottom: "8px",
+                fontWeight: 600,
+              }}
+            >
+              &ldquo;{formData.quote || "Featured quote..."}&rdquo;
+            </p>
+
+            <p
+              style={{
+                color: "#475569",
+                fontSize: "0.875rem",
+                lineHeight: 1.6,
+                marginBottom: "12px",
+              }}
+            >
+              {formData.excerpt || "Excerpt narrative preview text..."}
+            </p>
+
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <div>
+                <div style={{ fontWeight: 700, color: "#0f172a", fontSize: "0.9375rem" }}>
+                  {formData.principalName || "Principal Name"}
+                </div>
+                <div style={{ color: "#64748b", fontSize: "0.8125rem" }}>
+                  {formData.principalDesignation || "Designation"}
+                </div>
+              </div>
+
+              {formData.ctaLabel && (
+                <span
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "4px",
+                    color: "#b91c1c",
+                    fontSize: "0.875rem",
+                    fontWeight: 600,
+                  }}
+                >
+                  <span>{formData.ctaLabel}</span>
+                  <ArrowRight size={14} />
+                </span>
+              )}
+            </div>
           </div>
         </div>
       </div>

@@ -1,11 +1,12 @@
 "use client";
 
-import { useEffect, useRef, useState, useTransition } from "react";
-import { X, Loader2, Save, AlertCircle } from "lucide-react";
+import { useState, useTransition, useEffect, useRef } from "react";
+import { X, Loader2, Sparkles } from "lucide-react";
 import {
   createHomepageHighlightAction,
   updateHomepageHighlightAction,
 } from "@/lib/server/homepage-actions";
+import { AdminImageUploadField } from "@/components/admin/ui/AdminImageUploadField";
 
 export interface SerializedHighlight {
   id: string;
@@ -25,7 +26,7 @@ export interface SerializedHighlight {
 
 interface HighlightFormDialogProps {
   isOpen: boolean;
-  highlight: SerializedHighlight | null; // null for Create mode
+  highlight?: SerializedHighlight | null;
   onClose: () => void;
   onSuccess: () => void;
 }
@@ -37,13 +38,11 @@ export function HighlightFormDialog({
   onSuccess,
 }: HighlightFormDialogProps) {
   useEffect(() => {
-    function handleKeyDown(e: KeyboardEvent) {
-      if (!isOpen) return;
-      if (e.key === "Escape") {
-        e.preventDefault();
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && isOpen) {
         onClose();
       }
-    }
+    };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [isOpen, onClose]);
@@ -67,7 +66,7 @@ function HighlightFormInner({
   onClose,
   onSuccess,
 }: {
-  highlight: SerializedHighlight | null;
+  highlight?: SerializedHighlight | null;
   onClose: () => void;
   onSuccess: () => void;
 }) {
@@ -84,6 +83,9 @@ function HighlightFormInner({
     ctaHref: highlight?.ctaHref || "",
     isPublished: highlight ? highlight.isPublished : true,
   });
+
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [isImageRemoved, setIsImageRemoved] = useState(false);
 
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [serverError, setServerError] = useState<string | null>(null);
@@ -116,14 +118,31 @@ function HighlightFormInner({
     setFieldErrors({});
 
     startTransition(async () => {
+      const payload = new FormData();
+      if (highlight) {
+        payload.append("id", highlight.id);
+      }
+      payload.append("title", formData.title.trim());
+      payload.append("description", formData.description.trim());
+      if (formData.badge.trim()) payload.append("badge", formData.badge.trim());
+      if (formData.iconName.trim()) payload.append("iconName", formData.iconName.trim());
+      payload.append("ctaLabel", formData.ctaLabel.trim());
+      payload.append("ctaHref", formData.ctaHref.trim());
+      payload.append("isPublished", String(formData.isPublished));
+
+      if (selectedFile) {
+        payload.append("imageFile", selectedFile);
+      } else if (isImageRemoved) {
+        payload.append("removeImage", "true");
+      } else if (formData.imageUrl) {
+        payload.append("imageUrl", formData.imageUrl);
+      }
+
       let res;
       if (highlight) {
-        res = await updateHomepageHighlightAction(null, {
-          id: highlight.id,
-          ...formData,
-        });
+        res = await updateHomepageHighlightAction(null, payload);
       } else {
-        res = await createHomepageHighlightAction(null, formData);
+        res = await createHomepageHighlightAction(null, payload);
       }
 
       if (!res.success) {
@@ -148,30 +167,36 @@ function HighlightFormInner({
     >
       <form onSubmit={handleSubmit} className="topper-dialog-form">
         <div className="topper-dialog-header">
-          <h2 id="hl-dialog-title" className="topper-dialog-title">
-            {highlight ? "Edit Promotional Highlight" : "Add Promotional Highlight"}
-          </h2>
+          <div>
+            <h2 id="hl-dialog-title" className="topper-dialog-title">
+              {highlight ? "Edit Promotional Highlight" : "Add Promotional Highlight"}
+            </h2>
+            <p className="admin-field-note" style={{ margin: "2px 0 0" }}>
+              {highlight
+                ? "Update callouts, destination links, badges, and background visual."
+                : "Create an action-oriented callout banner for the homepage grid."}
+            </p>
+          </div>
           <button
             type="button"
             onClick={onClose}
-            aria-label="Close dialog"
             className="topper-dialog-close"
+            aria-label="Close dialog"
           >
             <X size={18} />
           </button>
         </div>
 
-        <div className="topper-dialog-body space-y-4">
+        <div className="topper-dialog-body">
           {serverError && (
-            <div className="topper-dialog-error-banner flex items-center gap-2" role="alert">
-              <AlertCircle className="w-4 h-4 text-red-600 shrink-0" />
-              <span>{serverError}</span>
+            <div className="topper-dialog-error-banner" role="alert">
+              {serverError}
             </div>
           )}
 
           <div className="topper-field topper-field--full">
             <label htmlFor="hl-title" className="topper-label">
-              Highlight Title <span className="text-red-500">*</span>
+              Highlight Card Title <span className="text-red-500">*</span>
             </label>
             <input
               ref={titleInputRef}
@@ -262,7 +287,7 @@ function HighlightFormInner({
                 required
                 value={formData.ctaLabel}
                 onChange={handleChange}
-                placeholder="e.g. Download, View Details"
+                placeholder="e.g. Download PDF"
                 maxLength={60}
                 className={`topper-input ${fieldErrors.ctaLabel ? "topper-input--error" : ""}`}
               />
@@ -273,7 +298,7 @@ function HighlightFormInner({
 
             <div className="topper-field">
               <label htmlFor="hl-ctaHref" className="topper-label">
-                Destination URL <span className="text-red-500">*</span>
+                CTA Destination URL <span className="text-red-500">*</span>
               </label>
               <input
                 id="hl-ctaHref"
@@ -292,30 +317,31 @@ function HighlightFormInner({
             </div>
           </div>
 
-          <div className="topper-field topper-field--full">
-            <label htmlFor="hl-imageUrl" className="topper-label">
-              Photographic Background Image URL
-            </label>
-            <input
-              id="hl-imageUrl"
-              type="text"
-              name="imageUrl"
-              value={formData.imageUrl}
-              onChange={handleChange}
-              placeholder="e.g. /images/admissions/prospectus-brochure.jpg"
-              maxLength={500}
-              className={`topper-input ${fieldErrors.imageUrl ? "topper-input--error" : ""}`}
+          {/* Standardized Background Image Upload */}
+          <div style={{ marginTop: "14px" }}>
+            <AdminImageUploadField
+              label="Photographic Background Image"
+              variant="landscape"
+              currentImageUrl={formData.imageUrl}
+              selectedFile={selectedFile}
+              isRemoved={isImageRemoved}
+              onFileSelect={(file) => {
+                setSelectedFile(file);
+                setIsImageRemoved(false);
+              }}
+              onRemove={() => {
+                setSelectedFile(null);
+                setIsImageRemoved(true);
+              }}
+              error={fieldErrors.imageFile || fieldErrors.imageUrl}
+              disabled={isPending}
+              isPending={isPending}
+              helperText="Supported formats: JPEG, PNG, WebP (max 2 MiB). High-resolution image is automatically converted to optimized WebP."
             />
-            {fieldErrors.imageUrl && (
-              <p className="topper-field-error">{fieldErrors.imageUrl}</p>
-            )}
-            <p className="topper-field-note">
-              Use a root-relative path (e.g. /images/...) or secure HTTPS image URL.
-            </p>
           </div>
 
-          <div className="topper-field topper-field--checkbox">
-            <label className="topper-checkbox-wrapper min-h-[44px]">
+          <div className="topper-field--checkbox">
+            <label className="topper-checkbox-wrapper">
               <input
                 type="checkbox"
                 name="isPublished"
@@ -323,7 +349,7 @@ function HighlightFormInner({
                 onChange={handleChange}
                 className="topper-checkbox"
               />
-              <span className="topper-checkbox-label">Published on Public Homepage</span>
+              <span className="topper-checkbox-label">Published (Visible on Live Website)</span>
             </label>
           </div>
         </div>
@@ -333,23 +359,24 @@ function HighlightFormInner({
             type="button"
             onClick={onClose}
             disabled={isPending}
-            className="topper-button topper-button--secondary min-h-[44px]"
+            className="topper-button topper-button--secondary"
           >
             Cancel
           </button>
           <button
             type="submit"
             disabled={isPending}
-            className="topper-button topper-button--primary min-h-[44px] gap-2"
+            className="topper-button topper-button--primary"
+            style={{ display: "inline-flex", alignItems: "center", gap: "8px" }}
           >
             {isPending ? (
               <>
-                <Loader2 className="w-4 h-4 animate-spin" />
+                <Loader2 size={16} className="topper-spin" />
                 <span>Saving...</span>
               </>
             ) : (
               <>
-                <Save className="w-4 h-4" />
+                <Sparkles size={16} />
                 <span>{highlight ? "Update Highlight" : "Create Highlight"}</span>
               </>
             )}

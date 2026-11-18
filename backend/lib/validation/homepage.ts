@@ -251,17 +251,31 @@ export const homepageHighlightReorderSchema = z.object({
 
 /**
  * Normalizes empty strings to null for database clean persistence.
+ * Supports both FormData and plain object payloads.
  */
 export function normalizeHomepagePayload(
-  raw: Record<string, unknown>
+  raw: FormData | Record<string, unknown> | null | undefined
 ): Record<string, unknown> {
   const result: Record<string, unknown> = {};
-  for (const [key, val] of Object.entries(raw)) {
-    if (typeof val === "string") {
-      const trimmed = val.trim();
-      result[key] = trimmed === "" ? null : trimmed;
-    } else {
-      result[key] = val;
+  if (!raw) return result;
+
+  if (typeof FormData !== "undefined" && raw instanceof FormData) {
+    for (const [key, val] of raw.entries()) {
+      if (typeof val === "string") {
+        const trimmed = val.trim();
+        result[key] = trimmed === "" ? null : trimmed;
+      } else {
+        result[key] = val;
+      }
+    }
+  } else if (typeof raw === "object") {
+    for (const [key, val] of Object.entries(raw)) {
+      if (typeof val === "string") {
+        const trimmed = val.trim();
+        result[key] = trimmed === "" ? null : trimmed;
+      } else {
+        result[key] = val;
+      }
     }
   }
   return result;
@@ -280,7 +294,19 @@ export function computeHomepageDiff(
     const oldVal = oldData[key] ?? null;
     const newVal = newData[key] ?? null;
     if (oldVal !== newVal) {
-      diff[key] = { from: oldVal, to: newVal };
+      if (
+        key === "backgroundImageUrl" ||
+        key === "backgroundImageStorageKey" ||
+        key === "imageUrl" ||
+        key === "imageStorageKey"
+      ) {
+        diff[key] = {
+          from: oldVal ? "[PRESENT]" : "[NONE]",
+          to: newVal ? "[PRESENT]" : "[NONE]",
+        };
+      } else {
+        diff[key] = { from: oldVal, to: newVal };
+      }
     }
   }
   return diff;
