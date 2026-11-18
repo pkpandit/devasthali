@@ -24,6 +24,7 @@ import {
   toggleAboutNarrativeSectionStatusAction,
   reorderAboutNarrativeSectionsAction,
 } from "@/lib/server/about-leadership-actions";
+import { AdminImageUploadField } from "@/components/admin/ui/AdminImageUploadField";
 import {
   CredentialFormDialog,
   type SerializedAboutCredential,
@@ -72,6 +73,9 @@ export function AboutPageEditor({
     isPublished: initialSetting?.isPublished ?? true,
   });
 
+  const [selectedShowcaseFile, setSelectedShowcaseFile] = useState<File | null>(null);
+  const [isShowcaseRemoved, setIsShowcaseRemoved] = useState(false);
+
   const [serverError, setServerError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [successBanner, setSuccessBanner] = useState(false);
@@ -118,7 +122,27 @@ export function AboutPageEditor({
     setSuccessBanner(false);
 
     startTransition(async () => {
-      const res = await updateAboutPageSettingAction(null, formData);
+      const payload = new FormData();
+      payload.append("breadcrumb", formData.breadcrumb.trim());
+      payload.append("heading", formData.heading.trim());
+      payload.append("subheading", formData.subheading.trim());
+      if (formData.showcaseBadge.trim()) {
+        payload.append("showcaseBadge", formData.showcaseBadge.trim());
+      }
+      if (formData.showcaseImageAlt.trim()) {
+        payload.append("showcaseImageAlt", formData.showcaseImageAlt.trim());
+      }
+      payload.append("isPublished", String(formData.isPublished));
+
+      if (selectedShowcaseFile) {
+        payload.append("showcaseImageFile", selectedShowcaseFile);
+      } else if (isShowcaseRemoved) {
+        payload.append("removeShowcaseImage", "true");
+      } else if (formData.showcaseImageUrl) {
+        payload.append("showcaseImageUrl", formData.showcaseImageUrl);
+      }
+
+      const res = await updateAboutPageSettingAction(null, payload);
 
       if (!res.success) {
         setServerError(res.error || "Failed to update About School settings");
@@ -308,66 +332,48 @@ export function AboutPageEditor({
           )}
         </div>
 
-        <div className="admin-form-grid-3">
-          <div className="admin-field">
-            <label htmlFor="about-showcaseBadge" className="admin-label">
-              Showcase Badge (Optional)
-            </label>
-            <input
-              id="about-showcaseBadge"
-              type="text"
-              name="showcaseBadge"
-              value={formData.showcaseBadge}
-              onChange={handleSettingChange}
-              placeholder="e.g. Estd. 1988"
-              className="admin-input"
-            />
-          </div>
-
-          <div className="admin-field">
-            <label htmlFor="about-showcaseImageUrl" className="admin-label">
-              Showcase Image URL
-            </label>
-            <input
-              id="about-showcaseImageUrl"
-              type="text"
-              name="showcaseImageUrl"
-              value={formData.showcaseImageUrl}
-              onChange={handleSettingChange}
-              placeholder="e.g. /images/gallery/image-1-1.webp"
-              className="admin-input"
-            />
-          </div>
-
-          <div className="admin-field">
-            <label htmlFor="about-showcaseImageAlt" className="admin-label">
-              Showcase Image Alt
-            </label>
-            <input
-              id="about-showcaseImageAlt"
-              type="text"
-              name="showcaseImageAlt"
-              value={formData.showcaseImageAlt}
-              onChange={handleSettingChange}
-              placeholder="e.g. School main building"
-              className="admin-input"
-            />
-          </div>
+        <div className="admin-field">
+          <label htmlFor="about-showcaseBadge" className="admin-label">
+            Showcase Badge (Optional)
+          </label>
+          <input
+            id="about-showcaseBadge"
+            type="text"
+            name="showcaseBadge"
+            value={formData.showcaseBadge}
+            onChange={handleSettingChange}
+            placeholder="e.g. Estd. 1988"
+            className="admin-input"
+          />
         </div>
 
-        {formData.showcaseImageUrl && (
-          <div className="admin-field">
-            <span className="admin-label">Image Preview</span>
-            <div className="admin-image-preview-box">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={formData.showcaseImageUrl}
-                alt={formData.showcaseImageAlt || "Showcase preview"}
-                className="admin-image-preview-img"
-              />
-            </div>
-          </div>
-        )}
+        <div className="admin-field">
+          <AdminImageUploadField
+            label="Showcase Campus Image"
+            variant="landscape"
+            currentImageUrl={formData.showcaseImageUrl}
+            selectedFile={selectedShowcaseFile}
+            isRemoved={isShowcaseRemoved}
+            onFileSelect={(file) => {
+              setSelectedShowcaseFile(file);
+              setIsShowcaseRemoved(false);
+            }}
+            onRemove={() => {
+              setSelectedShowcaseFile(null);
+              setIsShowcaseRemoved(true);
+            }}
+            altText={formData.showcaseImageAlt}
+            onAltChange={(alt: string) =>
+              setFormData((prev) => ({ ...prev, showcaseImageAlt: alt }))
+            }
+            altLabel="Showcase Image Alt Text"
+            altError={fieldErrors.showcaseImageAlt}
+            error={fieldErrors.showcaseImageFile || fieldErrors.showcaseImageUrl}
+            disabled={isPending}
+            isPending={isPending}
+            helperText="Supported formats: JPEG, PNG, WebP (max 2 MiB). High-resolution image is automatically formatted and converted to WebP."
+          />
+        </div>
 
         <div className="admin-form-row">
           <label className="admin-checkbox-row">

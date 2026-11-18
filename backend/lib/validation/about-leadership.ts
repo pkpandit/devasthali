@@ -336,10 +336,21 @@ export const leadershipMemberReorderSchema = z.object({
 // ==========================================
 
 export function normalizeAboutPayload(
-  raw: Record<string, unknown>
+  raw: Record<string, unknown> | FormData
 ): Record<string, unknown> {
   const result: Record<string, unknown> = {};
-  for (const [key, val] of Object.entries(raw)) {
+  if (typeof FormData !== "undefined" && raw instanceof FormData) {
+    raw.forEach((value, key) => {
+      if (typeof value === "string") {
+        const trimmed = value.trim();
+        result[key] = trimmed === "" ? null : trimmed;
+      } else {
+        result[key] = value;
+      }
+    });
+    return result;
+  }
+  for (const [key, val] of Object.entries(raw as Record<string, unknown>)) {
     if (typeof val === "string") {
       const trimmed = val.trim();
       result[key] = trimmed === "" ? null : trimmed;
@@ -360,7 +371,18 @@ export function computeAboutLeadershipDiff(
     const oldVal = oldData[key] ?? null;
     const newVal = newData[key] ?? null;
     if (oldVal !== newVal) {
-      diff[key] = { from: oldVal, to: newVal };
+      if (
+        key === "showcaseImageUrl" ||
+        key === "imageUrl" ||
+        key === "signatureImageUrl"
+      ) {
+        diff[key] = {
+          from: oldVal ? "[IMAGE]" : null,
+          to: newVal ? "[IMAGE]" : "[NONE]",
+        };
+      } else {
+        diff[key] = { from: oldVal, to: newVal };
+      }
     }
   }
   return diff;

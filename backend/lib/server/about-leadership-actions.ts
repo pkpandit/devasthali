@@ -5,6 +5,14 @@ import { prisma } from "@/lib/server/prisma";
 import { requireRole } from "@/lib/server/auth";
 import { recordAuditEvent } from "@/lib/server/audit";
 import {
+  extractUploadedFile,
+  isRemovalRequested,
+  processAndSaveUploadedImage,
+  cleanupOrphanFile,
+  ImageProcessingError,
+  deleteManagedPhotoIfUnreferenced,
+} from "@/lib/server/admin-media";
+import {
   aboutPageSettingSchema,
   aboutCredentialCreateSchema,
   aboutCredentialUpdateSchema,
@@ -36,6 +44,24 @@ export interface ActionResult<T = unknown> {
   data?: T;
   error?: string;
   fieldErrors?: Record<string, string>;
+}
+
+function parsePayload(payload: FormData | Record<string, unknown>): Record<string, unknown> {
+  if (typeof FormData !== "undefined" && payload instanceof FormData) {
+    const obj: Record<string, unknown> = {};
+    payload.forEach((value, key) => {
+      if (typeof value === "string") {
+        if (value === "true") obj[key] = true;
+        else if (value === "false") obj[key] = false;
+        else if (value === "") obj[key] = null;
+        else obj[key] = value;
+      } else {
+        obj[key] = value;
+      }
+    });
+    return obj;
+  }
+  return payload as Record<string, unknown>;
 }
 
 // ==========================================
@@ -77,21 +103,72 @@ export async function getAdminAboutLeadershipData() {
 
 export async function updateAboutPageSettingAction(
   _prevState: unknown,
-  rawData: unknown
+  rawPayload: FormData | Record<string, unknown>
 ): Promise<ActionResult> {
-  const adminUser = await requireRole(["SUPER_ADMIN"]);
-  const normalized = normalizeAboutPayload((rawData as Record<string, unknown>) || {});
-
-  const parsed = aboutPageSettingSchema.safeParse(normalized);
-  if (!parsed.success) {
-    return {
-      success: false,
-      error: "Validation failed. Please review the errors below.",
-      fieldErrors: formatZodErrors(parsed.error),
-    };
-  }
+  let newlyManagedKey: string | null = null;
+  let newlyPublicUrl: string | null = null;
 
   try {
+    const adminUser = await requireRole(["SUPER_ADMIN"]);
+
+    const imageFile =
+      extractUploadedFile(rawPayload, "showcaseImageFile") ||
+      extractUploadedFile(rawPayload, "imageFile") ||
+      extractUploadedFile(rawPayload, "photoFile");
+    const isRemoval =
+      isRemovalRequested(rawPayload, "removeShowcaseImage") ||
+      isRemovalRequested(rawPayload, "removeImage") ||
+      isRemovalRequested(rawPayload, "removePhoto");
+
+    if (imageFile) {
+      try {
+        const saved = await processAndSaveUploadedImage(imageFile);
+        newlyManagedKey = saved.storageKey;
+        newlyPublicUrl = saved.publicUrl;
+      } catch (procErr) {
+        if (procErr instanceof ImageProcessingError) {
+          return {
+            success: false,
+            error: procErr.message,
+            fieldErrors: { showcaseImageFile: procErr.message },
+          };
+        }
+        return {
+          success: false,
+          error:
+            "Failed to process uploaded showcase image. Please ensure it is a valid JPEG, PNG, or WebP image under 2 MiB.",
+        };
+      }
+    }
+
+    const normalized = normalizeAboutPayload(parsePayload(rawPayload));
+    if (newlyPublicUrl) {
+      normalized.showcaseImageUrl = newlyPublicUrl;
+      normalized.showcaseImageStorageKey = newlyManagedKey;
+    } else if (isRemoval) {
+      normalized.showcaseImageUrl = null;
+      normalized.showcaseImageStorageKey = null;
+    }
+
+    const parsed = aboutPageSettingSchema.safeParse(normalized);
+    if (!parsed.success) {
+      if (newlyManagedKey) await cleanupOrphanFile(newlyManagedKey);
+      return {
+        success: false,
+        error: "Validation failed. Please review the errors below.",
+        fieldErrors: formatZodErrors(parsed.error),
+      };
+    }
+
+    const currentSetting = await prisma.aboutPageSetting.findUnique({
+      where: { id: "default" },
+    });
+
+    const oldStorageKeyToDelete =
+      (newlyManagedKey || isRemoval) && currentSetting?.showcaseImageStorageKey
+        ? currentSetting.showcaseImageStorageKey
+        : null;
+
     const result = await prisma.$transaction(async (tx) => {
       const existing = await tx.aboutPageSetting.findUnique({
         where: { id: "default" },
@@ -113,7 +190,7 @@ export async function updateAboutPageSettingAction(
         updated as unknown as Record<string, unknown>
       );
 
-            await recordAuditEvent(
+      await recordAuditEvent(
         {
           userId: adminUser.id,
           action: "ABOUT_SETTING_UPDATED",
@@ -127,10 +204,15 @@ export async function updateAboutPageSettingAction(
       return updated;
     });
 
+    if (oldStorageKeyToDelete) {
+      await deleteManagedPhotoIfUnreferenced(oldStorageKeyToDelete);
+    }
+
     revalidatePath("/admin/about-leadership");
     revalidatePath("/about");
     return { success: true, data: result };
   } catch (err: unknown) {
+    if (newlyManagedKey) await cleanupOrphanFile(newlyManagedKey);
     console.error("updateAboutPageSettingAction error:", err);
     return { success: false, error: "Failed to update About School settings." };
   }
@@ -388,21 +470,55 @@ export async function reorderAboutCredentialsAction(
 
 export async function createAboutNarrativeSectionAction(
   _prevState: unknown,
-  rawData: unknown
+  rawPayload: FormData | Record<string, unknown>
 ): Promise<ActionResult> {
-  const adminUser = await requireRole(["SUPER_ADMIN"]);
-  const normalized = normalizeAboutPayload((rawData as Record<string, unknown>) || {});
-
-  const parsed = aboutNarrativeSectionCreateSchema.safeParse(normalized);
-  if (!parsed.success) {
-    return {
-      success: false,
-      error: "Validation failed. Please check the narrative section fields.",
-      fieldErrors: formatZodErrors(parsed.error),
-    };
-  }
+  let newlyManagedKey: string | null = null;
+  let newlyPublicUrl: string | null = null;
 
   try {
+    const adminUser = await requireRole(["SUPER_ADMIN"]);
+
+    const imageFile =
+      extractUploadedFile(rawPayload, "imageFile") ||
+      extractUploadedFile(rawPayload, "photoFile");
+
+    if (imageFile) {
+      try {
+        const saved = await processAndSaveUploadedImage(imageFile);
+        newlyManagedKey = saved.storageKey;
+        newlyPublicUrl = saved.publicUrl;
+      } catch (procErr) {
+        if (procErr instanceof ImageProcessingError) {
+          return {
+            success: false,
+            error: procErr.message,
+            fieldErrors: { imageFile: procErr.message },
+          };
+        }
+        return {
+          success: false,
+          error:
+            "Failed to process uploaded image. Please ensure it is a valid JPEG, PNG, or WebP image under 2 MiB.",
+        };
+      }
+    }
+
+    const normalized = normalizeAboutPayload(parsePayload(rawPayload));
+    if (newlyPublicUrl) {
+      normalized.imageUrl = newlyPublicUrl;
+      normalized.imageStorageKey = newlyManagedKey;
+    }
+
+    const parsed = aboutNarrativeSectionCreateSchema.safeParse(normalized);
+    if (!parsed.success) {
+      if (newlyManagedKey) await cleanupOrphanFile(newlyManagedKey);
+      return {
+        success: false,
+        error: "Validation failed. Please check the narrative section fields.",
+        fieldErrors: formatZodErrors(parsed.error),
+      };
+    }
+
     const result = await prisma.$transaction(async (tx) => {
       const count = await tx.aboutNarrativeSection.count();
       const created = await tx.aboutNarrativeSection.create({
@@ -417,7 +533,7 @@ export async function createAboutNarrativeSectionAction(
         },
       });
 
-            await recordAuditEvent(
+      await recordAuditEvent(
         {
           userId: adminUser.id,
           action: "ABOUT_NARRATIVE_CREATED",
@@ -435,6 +551,7 @@ export async function createAboutNarrativeSectionAction(
     revalidatePath("/about");
     return { success: true, data: result };
   } catch (err: unknown) {
+    if (newlyManagedKey) await cleanupOrphanFile(newlyManagedKey);
     console.error("createAboutNarrativeSectionAction error:", err);
     return { success: false, error: "Failed to create narrative section." };
   }
@@ -442,27 +559,75 @@ export async function createAboutNarrativeSectionAction(
 
 export async function updateAboutNarrativeSectionAction(
   _prevState: unknown,
-  rawData: unknown
+  rawPayload: FormData | Record<string, unknown>
 ): Promise<ActionResult> {
-  const adminUser = await requireRole(["SUPER_ADMIN"]);
-  const normalized = normalizeAboutPayload((rawData as Record<string, unknown>) || {});
-
-  const parsed = aboutNarrativeSectionUpdateSchema.safeParse(normalized);
-  if (!parsed.success) {
-    return {
-      success: false,
-      error: "Validation failed. Please check the narrative section fields.",
-      fieldErrors: formatZodErrors(parsed.error),
-    };
-  }
+  let newlyManagedKey: string | null = null;
+  let newlyPublicUrl: string | null = null;
 
   try {
-    const result = await prisma.$transaction(async (tx) => {
-      const existing = await tx.aboutNarrativeSection.findUnique({
-        where: { id: parsed.data.id },
-      });
-      if (!existing) throw new Error("Narrative section not found.");
+    const adminUser = await requireRole(["SUPER_ADMIN"]);
 
+    const imageFile =
+      extractUploadedFile(rawPayload, "imageFile") ||
+      extractUploadedFile(rawPayload, "photoFile");
+    const isRemoval =
+      isRemovalRequested(rawPayload, "removeImage") ||
+      isRemovalRequested(rawPayload, "removePhoto");
+
+    if (imageFile) {
+      try {
+        const saved = await processAndSaveUploadedImage(imageFile);
+        newlyManagedKey = saved.storageKey;
+        newlyPublicUrl = saved.publicUrl;
+      } catch (procErr) {
+        if (procErr instanceof ImageProcessingError) {
+          return {
+            success: false,
+            error: procErr.message,
+            fieldErrors: { imageFile: procErr.message },
+          };
+        }
+        return {
+          success: false,
+          error:
+            "Failed to process uploaded image. Please ensure it is a valid JPEG, PNG, or WebP image under 2 MiB.",
+        };
+      }
+    }
+
+    const normalized = normalizeAboutPayload(parsePayload(rawPayload));
+    if (newlyPublicUrl) {
+      normalized.imageUrl = newlyPublicUrl;
+      normalized.imageStorageKey = newlyManagedKey;
+    } else if (isRemoval) {
+      normalized.imageUrl = null;
+      normalized.imageStorageKey = null;
+    }
+
+    const parsed = aboutNarrativeSectionUpdateSchema.safeParse(normalized);
+    if (!parsed.success) {
+      if (newlyManagedKey) await cleanupOrphanFile(newlyManagedKey);
+      return {
+        success: false,
+        error: "Validation failed. Please check the narrative section fields.",
+        fieldErrors: formatZodErrors(parsed.error),
+      };
+    }
+
+    const existingSection = await prisma.aboutNarrativeSection.findUnique({
+      where: { id: parsed.data.id },
+    });
+    if (!existingSection) {
+      if (newlyManagedKey) await cleanupOrphanFile(newlyManagedKey);
+      return { success: false, error: "Narrative section not found." };
+    }
+
+    const oldStorageKeyToDelete =
+      (newlyManagedKey || isRemoval) && existingSection.imageStorageKey
+        ? existingSection.imageStorageKey
+        : null;
+
+    const result = await prisma.$transaction(async (tx) => {
       const updated = await tx.aboutNarrativeSection.update({
         where: { id: parsed.data.id },
         data: {
@@ -477,11 +642,11 @@ export async function updateAboutNarrativeSectionAction(
       });
 
       const diff = computeAboutLeadershipDiff(
-        existing as unknown as Record<string, unknown>,
+        existingSection as unknown as Record<string, unknown>,
         updated as unknown as Record<string, unknown>
       );
 
-            await recordAuditEvent(
+      await recordAuditEvent(
         {
           userId: adminUser.id,
           action: "ABOUT_NARRATIVE_UPDATED",
@@ -495,10 +660,15 @@ export async function updateAboutNarrativeSectionAction(
       return updated;
     });
 
+    if (oldStorageKeyToDelete) {
+      await deleteManagedPhotoIfUnreferenced(oldStorageKeyToDelete);
+    }
+
     revalidatePath("/admin/about-leadership");
     revalidatePath("/about");
     return { success: true, data: result };
   } catch (err: unknown) {
+    if (newlyManagedKey) await cleanupOrphanFile(newlyManagedKey);
     console.error("updateAboutNarrativeSectionAction error:", err);
     return { success: false, error: "Failed to update narrative section." };
   }
@@ -516,15 +686,15 @@ export async function deleteAboutNarrativeSectionAction(
   }
 
   try {
-    await prisma.$transaction(async (tx) => {
-      const existing = await tx.aboutNarrativeSection.findUnique({
-        where: { id: parsed.data.id },
-      });
-      if (!existing) throw new Error("Narrative section not found.");
+    const existing = await prisma.aboutNarrativeSection.findUnique({
+      where: { id: parsed.data.id },
+    });
+    if (!existing) throw new Error("Narrative section not found.");
 
+    await prisma.$transaction(async (tx) => {
       await tx.aboutNarrativeSection.delete({ where: { id: parsed.data.id } });
 
-            await recordAuditEvent(
+      await recordAuditEvent(
         {
           userId: adminUser.id,
           action: "ABOUT_NARRATIVE_DELETED",
@@ -535,6 +705,10 @@ export async function deleteAboutNarrativeSectionAction(
         tx
       );
     });
+
+    if (existing.imageStorageKey) {
+      await deleteManagedPhotoIfUnreferenced(existing.imageStorageKey);
+    }
 
     revalidatePath("/admin/about-leadership");
     revalidatePath("/about");
@@ -946,30 +1120,124 @@ export async function reorderInstitutionalCoreValuesAction(
 
 export async function updateLeadershipMemberAction(
   _prevState: unknown,
-  rawData: unknown
+  rawPayload: FormData | Record<string, unknown>
 ): Promise<ActionResult> {
-  const adminUser = await requireRole(["SUPER_ADMIN"]);
-  const normalized = normalizeAboutPayload((rawData as Record<string, unknown>) || {});
-
-  const parsed = leadershipMemberUpdateSchema.safeParse(normalized);
-  if (!parsed.success) {
-    return {
-      success: false,
-      error: "Validation failed. Please check the leadership fields.",
-      fieldErrors: formatZodErrors(parsed.error),
-    };
-  }
-
-  // Ensure slug matches fixed canonical slug for the role (admins cannot change slugs)
-  const canonicalSlug = leadershipSlugs[parsed.data.role];
+  let newlyManagedImageKey: string | null = null;
+  let newlyPublicImageUrl: string | null = null;
+  let newlyManagedSigKey: string | null = null;
+  let newlyPublicSigUrl: string | null = null;
 
   try {
-    const result = await prisma.$transaction(async (tx) => {
-      const existing = await tx.leadershipMember.findUnique({
-        where: { id: parsed.data.id },
-      });
-      if (!existing) throw new Error("Leadership member not found.");
+    const adminUser = await requireRole(["SUPER_ADMIN"]);
 
+    const imageFile =
+      extractUploadedFile(rawPayload, "imageFile") ||
+      extractUploadedFile(rawPayload, "photoFile");
+    const isImageRemoval =
+      isRemovalRequested(rawPayload, "removeImage") ||
+      isRemovalRequested(rawPayload, "removePhoto");
+
+    const signatureFile =
+      extractUploadedFile(rawPayload, "signatureFile") ||
+      extractUploadedFile(rawPayload, "signatureImageFile");
+    const isSignatureRemoval =
+      isRemovalRequested(rawPayload, "removeSignature") ||
+      isRemovalRequested(rawPayload, "removeSignatureImage");
+
+    if (imageFile) {
+      try {
+        const saved = await processAndSaveUploadedImage(imageFile);
+        newlyManagedImageKey = saved.storageKey;
+        newlyPublicImageUrl = saved.publicUrl;
+      } catch (procErr) {
+        if (procErr instanceof ImageProcessingError) {
+          return {
+            success: false,
+            error: procErr.message,
+            fieldErrors: { imageFile: procErr.message },
+          };
+        }
+        return {
+          success: false,
+          error:
+            "Failed to process uploaded portrait. Please ensure it is a valid JPEG, PNG, or WebP image under 2 MiB.",
+        };
+      }
+    }
+
+    if (signatureFile) {
+      try {
+        const saved = await processAndSaveUploadedImage(signatureFile);
+        newlyManagedSigKey = saved.storageKey;
+        newlyPublicSigUrl = saved.publicUrl;
+      } catch (procErr) {
+        if (newlyManagedImageKey) await cleanupOrphanFile(newlyManagedImageKey);
+        if (procErr instanceof ImageProcessingError) {
+          return {
+            success: false,
+            error: procErr.message,
+            fieldErrors: { signatureFile: procErr.message },
+          };
+        }
+        return {
+          success: false,
+          error:
+            "Failed to process uploaded signature. Please ensure it is a valid JPEG, PNG, or WebP image under 2 MiB.",
+        };
+      }
+    }
+
+    const normalized = normalizeAboutPayload(parsePayload(rawPayload));
+
+    if (newlyPublicImageUrl) {
+      normalized.imageUrl = newlyPublicImageUrl;
+      normalized.imageStorageKey = newlyManagedImageKey;
+    } else if (isImageRemoval) {
+      normalized.imageUrl = null;
+      normalized.imageStorageKey = null;
+    }
+
+    if (newlyPublicSigUrl) {
+      normalized.signatureImageUrl = newlyPublicSigUrl;
+      normalized.signatureStorageKey = newlyManagedSigKey;
+    } else if (isSignatureRemoval) {
+      normalized.signatureImageUrl = null;
+      normalized.signatureStorageKey = null;
+    }
+
+    const parsed = leadershipMemberUpdateSchema.safeParse(normalized);
+    if (!parsed.success) {
+      if (newlyManagedImageKey) await cleanupOrphanFile(newlyManagedImageKey);
+      if (newlyManagedSigKey) await cleanupOrphanFile(newlyManagedSigKey);
+      return {
+        success: false,
+        error: "Validation failed. Please check the leadership fields.",
+        fieldErrors: formatZodErrors(parsed.error),
+      };
+    }
+
+    const existingMember = await prisma.leadershipMember.findUnique({
+      where: { id: parsed.data.id },
+    });
+    if (!existingMember) {
+      if (newlyManagedImageKey) await cleanupOrphanFile(newlyManagedImageKey);
+      if (newlyManagedSigKey) await cleanupOrphanFile(newlyManagedSigKey);
+      return { success: false, error: "Leadership member not found." };
+    }
+
+    const canonicalSlug = leadershipSlugs[parsed.data.role];
+
+    const oldImageKeyToDelete =
+      (newlyManagedImageKey || isImageRemoval) && existingMember.imageStorageKey
+        ? existingMember.imageStorageKey
+        : null;
+
+    const oldSigKeyToDelete =
+      (newlyManagedSigKey || isSignatureRemoval) && existingMember.signatureStorageKey
+        ? existingMember.signatureStorageKey
+        : null;
+
+    const result = await prisma.$transaction(async (tx) => {
       const updated = await tx.leadershipMember.update({
         where: { id: parsed.data.id },
         data: {
@@ -999,11 +1267,11 @@ export async function updateLeadershipMemberAction(
       });
 
       const diff = computeAboutLeadershipDiff(
-        existing as unknown as Record<string, unknown>,
+        existingMember as unknown as Record<string, unknown>,
         updated as unknown as Record<string, unknown>
       );
 
-            await recordAuditEvent(
+      await recordAuditEvent(
         {
           userId: adminUser.id,
           action: "LEADERSHIP_MEMBER_UPDATED",
@@ -1017,10 +1285,19 @@ export async function updateLeadershipMemberAction(
       return updated;
     });
 
+    if (oldImageKeyToDelete) {
+      await deleteManagedPhotoIfUnreferenced(oldImageKeyToDelete);
+    }
+    if (oldSigKeyToDelete) {
+      await deleteManagedPhotoIfUnreferenced(oldSigKeyToDelete);
+    }
+
     revalidatePath("/admin/about-leadership");
     revalidatePath(`/${canonicalSlug}`);
     return { success: true, data: result };
   } catch (err: unknown) {
+    if (newlyManagedImageKey) await cleanupOrphanFile(newlyManagedImageKey);
+    if (newlyManagedSigKey) await cleanupOrphanFile(newlyManagedSigKey);
     console.error("updateLeadershipMemberAction error:", err);
     return { success: false, error: "Failed to update leadership member." };
   }

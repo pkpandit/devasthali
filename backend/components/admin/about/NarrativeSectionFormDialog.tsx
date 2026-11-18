@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, useTransition } from "react";
 import { Loader2, X, AlertCircle } from "lucide-react";
+import { AdminImageUploadField } from "@/components/admin/ui/AdminImageUploadField";
 import {
   createAboutNarrativeSectionAction,
   updateAboutNarrativeSectionAction,
@@ -80,6 +81,9 @@ function NarrativeSectionFormInner({
     isPublished: section?.isPublished ?? true,
   });
 
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [isImageRemoved, setIsImageRemoved] = useState(false);
+
   const [serverError, setServerError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
@@ -118,15 +122,31 @@ function NarrativeSectionFormInner({
     setFieldErrors({});
 
     startTransition(async () => {
-      let res;
+      const payload = new FormData();
       if (section) {
-        res = await updateAboutNarrativeSectionAction(null, {
-          id: section.id,
-          ...formData,
-        });
-      } else {
-        res = await createAboutNarrativeSectionAction(null, formData);
+        payload.append("id", section.id);
       }
+      if (formData.heading.trim()) {
+        payload.append("heading", formData.heading.trim());
+      }
+      payload.append("body", formData.body.trim());
+      if (formData.imageAlt.trim()) {
+        payload.append("imageAlt", formData.imageAlt.trim());
+      }
+      payload.append("displayOrder", String(formData.displayOrder));
+      payload.append("isPublished", String(formData.isPublished));
+
+      if (selectedFile) {
+        payload.append("imageFile", selectedFile);
+      } else if (isImageRemoved) {
+        payload.append("removeImage", "true");
+      } else if (formData.imageUrl) {
+        payload.append("imageUrl", formData.imageUrl);
+      }
+
+      const res = section
+        ? await updateAboutNarrativeSectionAction(null, payload)
+        : await createAboutNarrativeSectionAction(null, payload);
 
       if (!res.success) {
         setServerError(res.error || "Failed to save narrative section");
@@ -209,42 +229,32 @@ function NarrativeSectionFormInner({
             )}
           </div>
 
-          <div className="topper-form-grid">
-            <div className="topper-field">
-              <label htmlFor="narrative-imageUrl" className="topper-label">
-                Supporting Photo URL (Optional)
-              </label>
-              <input
-                id="narrative-imageUrl"
-                type="text"
-                name="imageUrl"
-                value={formData.imageUrl}
-                onChange={handleChange}
-                placeholder="e.g. /images/about/campus-history.jpg"
-                className={`topper-input ${fieldErrors.imageUrl ? "topper-input--error" : ""}`}
-              />
-              {fieldErrors.imageUrl && (
-                <p className="topper-field-error">{fieldErrors.imageUrl}</p>
-              )}
-            </div>
-
-            <div className="topper-field">
-              <label htmlFor="narrative-imageAlt" className="topper-label">
-                Photo Alt Text
-              </label>
-              <input
-                id="narrative-imageAlt"
-                type="text"
-                name="imageAlt"
-                value={formData.imageAlt}
-                onChange={handleChange}
-                placeholder="e.g. Archival photo of the school foundation stone"
-                className={`topper-input ${fieldErrors.imageAlt ? "topper-input--error" : ""}`}
-              />
-              {fieldErrors.imageAlt && (
-                <p className="topper-field-error">{fieldErrors.imageAlt}</p>
-              )}
-            </div>
+          <div className="topper-field">
+            <AdminImageUploadField
+              label="Supporting Photo (Optional)"
+              variant="landscape"
+              currentImageUrl={formData.imageUrl}
+              selectedFile={selectedFile}
+              isRemoved={isImageRemoved}
+              onFileSelect={(file) => {
+                setSelectedFile(file);
+                setIsImageRemoved(false);
+              }}
+              onRemove={() => {
+                setSelectedFile(null);
+                setIsImageRemoved(true);
+              }}
+              altText={formData.imageAlt}
+              onAltChange={(alt: string) =>
+                setFormData((prev) => ({ ...prev, imageAlt: alt }))
+              }
+              altLabel="Photo Alt Text"
+              altError={fieldErrors.imageAlt}
+              error={fieldErrors.imageFile || fieldErrors.imageUrl}
+              disabled={isPending}
+              isPending={isPending}
+              helperText="Supported formats: JPEG, PNG, WebP (max 2 MiB)."
+            />
           </div>
 
           <div className="topper-field">

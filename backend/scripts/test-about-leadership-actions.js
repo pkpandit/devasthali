@@ -276,17 +276,29 @@ async function runSuite() {
   assert("Fixed slug for MANAGER", leadershipSlugs.MANAGER === "managers-message");
   assert("Fixed slug for PRINCIPAL", leadershipSlugs.PRINCIPAL === "principals-message");
 
+  // FormData normalizer test
+  if (typeof FormData !== "undefined") {
+    const fd = new FormData();
+    fd.append("heading", "  Trimmed with FormData  ");
+    fd.append("emptyField", "   ");
+    const fdNorm = normalizeAboutPayload(fd);
+    assert("Normalizer handles FormData values", fdNorm.heading === "Trimmed with FormData");
+    assert("Normalizer handles FormData empty string to null", fdNorm.emptyField === null);
+  }
+
   // -------------------------------------------------------------
   // 3. Diff Utility Tests
   // -------------------------------------------------------------
   console.log("\n--- 3. Diff Utility Tests ---");
   const diff = computeAboutLeadershipDiff(
-    { heading: "Old Heading", isPublished: true, count: 5 },
-    { heading: "New Heading", isPublished: false, count: 5 }
+    { heading: "Old Heading", isPublished: true, count: 5, showcaseImageUrl: "/images/old.webp", signatureImageUrl: null },
+    { heading: "New Heading", isPublished: false, count: 5, showcaseImageUrl: "/images/new.webp", signatureImageUrl: "/images/sig.webp" }
   );
   assert("Diff detects modified heading", diff.heading.from === "Old Heading" && diff.heading.to === "New Heading");
   assert("Diff detects modified isPublished", diff.isPublished.from === true && diff.isPublished.to === false);
   assert("Diff ignores identical count", diff.count === undefined);
+  assert("Diff masks showcaseImageUrl update", diff.showcaseImageUrl.from === "[IMAGE]" && diff.showcaseImageUrl.to === "[IMAGE]");
+  assert("Diff masks signatureImageUrl addition", diff.signatureImageUrl.from === null && diff.signatureImageUrl.to === "[IMAGE]");
 
   // -------------------------------------------------------------
   // 4. Live Database Tests

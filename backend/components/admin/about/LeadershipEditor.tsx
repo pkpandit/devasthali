@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
+import { AdminImageUploadField } from "@/components/admin/ui/AdminImageUploadField";
 import {
   Save,
   Loader2,
@@ -87,6 +88,11 @@ export function LeadershipEditor({ members }: LeadershipEditorProps) {
     isPublished: currentMember?.isPublished ?? true,
   }));
 
+  const [selectedPhotoFile, setSelectedPhotoFile] = useState<File | null>(null);
+  const [isPhotoRemoved, setIsPhotoRemoved] = useState(false);
+  const [selectedSignatureFile, setSelectedSignatureFile] = useState<File | null>(null);
+  const [isSignatureRemoved, setIsSignatureRemoved] = useState(false);
+
   const [serverError, setServerError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [successBanner, setSuccessBanner] = useState(false);
@@ -120,6 +126,10 @@ export function LeadershipEditor({ members }: LeadershipEditorProps) {
         isPublished: m.isPublished ?? true,
       });
     }
+    setSelectedPhotoFile(null);
+    setIsPhotoRemoved(false);
+    setSelectedSignatureFile(null);
+    setIsSignatureRemoved(false);
     setServerError(null);
     setFieldErrors({});
     setSuccessBanner(false);
@@ -154,7 +164,59 @@ export function LeadershipEditor({ members }: LeadershipEditorProps) {
     setSuccessBanner(false);
 
     startTransition(async () => {
-      const res = await updateLeadershipMemberAction(null, formData);
+      const payload = new FormData();
+      payload.append("id", String(formData.id));
+      payload.append("role", String(formData.role));
+      payload.append("pageTitle", String(formData.pageTitle || "").trim());
+      payload.append("breadcrumb", String(formData.breadcrumb || "").trim());
+      payload.append("badgeText", String(formData.badgeText || "").trim());
+      payload.append("name", String(formData.name || "").trim());
+      payload.append("designation", String(formData.designation || "").trim());
+      if (formData.termOrAffiliation) {
+        payload.append("termOrAffiliation", String(formData.termOrAffiliation).trim());
+      }
+      if (formData.location) {
+        payload.append("location", String(formData.location).trim());
+      }
+      payload.append("shortIntro", String(formData.shortIntro || "").trim());
+      if (formData.quote) {
+        payload.append("quote", String(formData.quote).trim());
+      }
+      payload.append("messageBody", String(formData.messageBody || "").trim());
+      if (formData.imageAlt) {
+        payload.append("imageAlt", String(formData.imageAlt).trim());
+      }
+      if (formData.signatureAlt) {
+        payload.append("signatureAlt", String(formData.signatureAlt).trim());
+      }
+      if (formData.bio) {
+        payload.append("bio", String(formData.bio).trim());
+      }
+      if (formData.ctaLabel) {
+        payload.append("ctaLabel", String(formData.ctaLabel).trim());
+      }
+      if (formData.ctaHref) {
+        payload.append("ctaHref", String(formData.ctaHref).trim());
+      }
+      payload.append("isPublished", String(formData.isPublished));
+
+      if (selectedPhotoFile) {
+        payload.append("photoFile", selectedPhotoFile);
+      } else if (isPhotoRemoved) {
+        payload.append("removePhoto", "true");
+      } else if (formData.imageUrl) {
+        payload.append("imageUrl", String(formData.imageUrl));
+      }
+
+      if (selectedSignatureFile) {
+        payload.append("signatureFile", selectedSignatureFile);
+      } else if (isSignatureRemoved) {
+        payload.append("removeSignature", "true");
+      } else if (formData.signatureImageUrl) {
+        payload.append("signatureImageUrl", String(formData.signatureImageUrl));
+      }
+
+      const res = await updateLeadershipMemberAction(null, payload);
 
       if (!res.success) {
         setServerError(res.error || "Failed to update leadership message");
@@ -440,68 +502,64 @@ export function LeadershipEditor({ members }: LeadershipEditorProps) {
             />
           </div>
 
-          <div className="admin-form-grid-2">
-            <div className="admin-field">
-              <label htmlFor="lead-imageUrl" className="admin-label">
-                Leader Portrait Image URL
-              </label>
-              <input
-                id="lead-imageUrl"
-                type="text"
-                name="imageUrl"
-                value={String(formData.imageUrl || "")}
-                onChange={handleChange}
-                placeholder="e.g. /images/leadership/founder.webp"
-                className="admin-input"
-              />
-            </div>
-
-            <div className="admin-field">
-              <label htmlFor="lead-imageAlt" className="admin-label">
-                Image Alt Description
-              </label>
-              <input
-                id="lead-imageAlt"
-                type="text"
-                name="imageAlt"
-                value={String(formData.imageAlt || "")}
-                onChange={handleChange}
-                placeholder="e.g. Portrait of Chandra Shekhar"
-                className="admin-input"
-              />
-            </div>
+          <div className="admin-field">
+            <AdminImageUploadField
+              label="Leader Portrait"
+              variant="circular"
+              currentImageUrl={formData.imageUrl ? String(formData.imageUrl) : null}
+              selectedFile={selectedPhotoFile}
+              isRemoved={isPhotoRemoved}
+              onFileSelect={(file) => {
+                setSelectedPhotoFile(file);
+                setIsPhotoRemoved(false);
+              }}
+              onRemove={() => {
+                setSelectedPhotoFile(null);
+                setIsPhotoRemoved(true);
+              }}
+              altText={formData.imageAlt ? String(formData.imageAlt) : ""}
+              onAltChange={(alt: string) =>
+                setFormData((prev) => ({ ...prev, imageAlt: alt }))
+              }
+              altLabel="Portrait Alt Description"
+              altError={fieldErrors.imageAlt}
+              error={fieldErrors.photoFile || fieldErrors.imageFile || fieldErrors.imageUrl}
+              disabled={isPending}
+              isPending={isPending}
+              helperText="Supported formats: JPEG, PNG, WebP (max 2 MiB). High-resolution portrait is automatically formatted and converted to WebP."
+            />
           </div>
 
-          <div className="admin-form-grid-2">
-            <div className="admin-field">
-              <label htmlFor="lead-signatureImageUrl" className="admin-label">
-                Signature Image URL
-              </label>
-              <input
-                id="lead-signatureImageUrl"
-                type="text"
-                name="signatureImageUrl"
-                value={String(formData.signatureImageUrl || "")}
-                onChange={handleChange}
-                placeholder="e.g. /images/leadership/signature.png"
-                className="admin-input"
-              />
-            </div>
-
-            <div className="admin-field">
-              <label htmlFor="lead-signatureAlt" className="admin-label">
-                Signature Alt Description
-              </label>
-              <input
-                id="lead-signatureAlt"
-                type="text"
-                name="signatureAlt"
-                value={String(formData.signatureAlt || "")}
-                onChange={handleChange}
-                placeholder="e.g. Official Signature"
-                className="admin-input"
-              />
-            </div>
+          <div className="admin-field">
+            <AdminImageUploadField
+              label="Official Signature"
+              variant="signature"
+              currentImageUrl={
+                formData.signatureImageUrl
+                  ? String(formData.signatureImageUrl)
+                  : null
+              }
+              selectedFile={selectedSignatureFile}
+              isRemoved={isSignatureRemoved}
+              onFileSelect={(file) => {
+                setSelectedSignatureFile(file);
+                setIsSignatureRemoved(false);
+              }}
+              onRemove={() => {
+                setSelectedSignatureFile(null);
+                setIsSignatureRemoved(true);
+              }}
+              altText={formData.signatureAlt ? String(formData.signatureAlt) : ""}
+              onAltChange={(alt: string) =>
+                setFormData((prev) => ({ ...prev, signatureAlt: alt }))
+              }
+              altLabel="Signature Alt Description"
+              altError={fieldErrors.signatureAlt}
+              error={fieldErrors.signatureFile || fieldErrors.signatureImageUrl}
+              disabled={isPending}
+              isPending={isPending}
+              helperText="Supported formats: JPEG, PNG, WebP (max 2 MiB). Preserves transparency."
+            />
           </div>
 
           <div className="admin-form-grid-2">
