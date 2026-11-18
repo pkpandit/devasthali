@@ -179,7 +179,7 @@ export function HomeAnnouncement() {
               width={homeAnnouncement.image.width}
               height={homeAnnouncement.image.height}
               priority
-              quality={92}
+              quality={90}
               className="w-full h-auto object-contain rounded-xl"
             />
           </Link>
