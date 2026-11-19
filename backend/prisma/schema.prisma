@@ -624,3 +624,44 @@ model SchoolEvent {
   @@index([isoDate])
   @@map("school_events")
 }
+
+// ==========================================
+// 14. DOWNLOADS & PUBLIC RECORDS
+// ==========================================
+
+model DownloadCategory {
+  id           String             @id @default(cuid())
+  slug         String             @unique @db.VarChar(100)
+  title        String             @db.VarChar(150)
+  description  String?            @db.VarChar(500)
+  displayOrder Int                @default(0)
+  isPublished  Boolean            @default(true)
+  documents    DownloadDocument[]
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
+
+  @@index([isPublished, displayOrder])
+  @@map("download_categories")
+}
+
+model DownloadDocument {
+  id             String           @id @default(cuid())
+  categoryId     String
+  category       DownloadCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  title          String           @db.VarChar(200)
+  description    String?          @db.VarChar(500)
+  fileUrl        String?          @db.VarChar(500)
+  fileStorageKey String?          @db.VarChar(255)
+  fileSizeBytes  Int?
+  fileSize       String?          @db.VarChar(50)
+  fileType       String           @default("application/pdf") @db.VarChar(100)
+  displayOrder   Int              @default(0)
+  isPublished    Boolean          @default(true)
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+
+  @@index([categoryId, displayOrder])
+  @@index([categoryId, isPublished])
+  @@index([fileStorageKey])
+  @@map("download_documents")
+}
