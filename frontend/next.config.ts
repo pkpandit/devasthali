@@ -24,10 +24,18 @@ function getMediaRemotePatterns() {
     }
   };
 
+  const mediaPaths = [
+    "/api/public/media/toppers/**",
+    "/api/public/media/gallery/**",
+    "/api/public/media/events/**",
+  ];
+
   // Local development loopback patterns
   if (isDev) {
-    addPattern("http", "127.0.0.1", "3001", "/api/public/media/toppers/**");
-    addPattern("http", "localhost", "3001", "/api/public/media/toppers/**");
+    for (const pathname of mediaPaths) {
+      addPattern("http", "127.0.0.1", "3001", pathname);
+      addPattern("http", "localhost", "3001", pathname);
+    }
   }
 
   // Configured production media origin
@@ -40,7 +48,9 @@ function getMediaRemotePatterns() {
       const parsed = new URL(configuredOrigin);
       const protocol = parsed.protocol.replace(":", "") as "http" | "https";
       if ((protocol === "http" || protocol === "https") && parsed.hostname) {
-        addPattern(protocol, parsed.hostname, parsed.port || undefined, "/api/public/media/toppers/**");
+        for (const pathname of mediaPaths) {
+          addPattern(protocol, parsed.hostname, parsed.port || undefined, pathname);
+        }
       }
     } catch {
       // Ignore invalid URL

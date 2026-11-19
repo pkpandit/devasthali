@@ -18,17 +18,23 @@ export type { GalleryPhoto, GalleryAlbum };
 
 const CATEGORIES = ["All", "Campus", "Academics", "Sports", "Events", "Hostel", "Faculty", "Achievements"] as const;
 
-export default function GalleryClient() {
+interface GalleryClientProps {
+  initialAlbums?: GalleryAlbum[];
+}
+
+export default function GalleryClient({ initialAlbums }: GalleryClientProps = {}) {
   const [activeCategory, setActiveCategory] = useState<string>("All");
   const [selectedAlbum, setSelectedAlbum] = useState<GalleryAlbum | null>(null);
   const [activePhotoIdx, setActivePhotoIdx] = useState<number>(0);
   const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
   const modalRef = useRef<HTMLDivElement>(null);
 
+  const albums = initialAlbums ?? ALBUMS_DATA;
+
   // Filtered list
   const filteredAlbums = activeCategory === "All"
-    ? ALBUMS_DATA
-    : ALBUMS_DATA.filter((a) => a.category === activeCategory);
+    ? albums
+    : albums.filter((a) => a.category === activeCategory);
 
   // Open modal
   const handleOpenAlbum = (album: GalleryAlbum, startIdx = 0) => {
@@ -98,59 +104,57 @@ export default function GalleryClient() {
     document.body.style.overflow = "hidden";
 
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        if (document.fullscreenElement && document.exitFullscreen) {
-          document.exitFullscreen().catch(() => {});
-        } else {
-          handleClose();
-        }
-      } else if (e.key === "ArrowRight") {
-        handleNextPhoto();
-      } else if (e.key === "ArrowLeft") {
-        handlePrevPhoto();
-      } else if (e.key === "f" || e.key === "F") {
-        toggleFullscreen();
-      }
+      if (e.key === "Escape") handleClose();
+      if (e.key === "ArrowRight") handleNextPhoto();
+      if (e.key === "ArrowLeft") handlePrevPhoto();
     };
 
     window.addEventListener("keydown", handleKeyDown);
     return () => {
-      document.body.style.overflow = originalOverflow;
       window.removeEventListener("keydown", handleKeyDown);
+      document.body.style.overflow = originalOverflow;
     };
-  }, [selectedAlbum, handleClose, handleNextPhoto, handlePrevPhoto, toggleFullscreen]);
+  }, [selectedAlbum, handleClose, handleNextPhoto, handlePrevPhoto]);
 
   return (
-    <div className="w-full bg-[#F3F4F6] pb-16">
-      {/* Full-Width White Edunex Page Header Banner */}
-      <div className="w-full bg-white border-b border-gray-200/80 py-10 sm:py-14 mb-10">
+    <div className="w-full bg-[#F3F4F6] min-h-screen pb-24">
+      {/* 1. Page Header Banner */}
+      <div className="w-full bg-white border-b border-gray-200/80 py-12 sm:py-16 mb-8 sm:mb-12 shadow-2xs">
         <div className="site-container">
           <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-red-50 border border-red-100 text-[#B91C1C] text-sm font-heading font-bold uppercase tracking-wider mb-4">
-            <Layers className="w-3.5 h-3.5" />
-            <span>Life at School / Photo Gallery</span>
+            <Camera className="w-3.5 h-3.5 text-[#B91C1C]" aria-hidden="true" />
+            <span>Campus Gallery</span>
           </div>
           <h1 className="font-heading text-2xl sm:text-3xl lg:text-[40px] lg:leading-[50px] font-bold text-[#111827] tracking-tight">
-            Photo Gallery &amp; Student Life
+            Life at Devasthaly in Pictures
           </h1>
-          <p className="text-base text-gray-600 leading-[1.7] mt-3 max-w-3xl leading-relaxed font-sans">
-            Moments of academic rigor, athletic triumph, cultural joy, and student camaraderie captured on our 15-acre green estate in Chilkahar, Ballia.
+          <p className="text-base text-gray-600 leading-[1.7] mt-3 max-w-2xl font-sans">
+            Explore glimpses of our 15-acre lush green campus, state-of-the-art laboratories, co-curricular celebrations, and everyday learning moments.
           </p>
 
-          {/* Category Filter Tabs (UI/UX enhancement with 44px min touch target) */}
-          <div className="flex items-center gap-2 mt-6 overflow-x-auto pb-2 scrollbar-none">
+          {/* Category Filter Pills */}
+          <div className="flex flex-wrap gap-2 pt-6">
             {CATEGORIES.map((cat) => {
+              const count = cat === "All"
+                ? albums.length
+                : albums.filter((a) => a.category === cat).length;
+              if (cat !== "All" && count === 0) return null;
+
               const isActive = activeCategory === cat;
               return (
                 <button
                   key={cat}
                   onClick={() => setActiveCategory(cat)}
-                  className={`px-4 py-2.5 min-h-[44px] inline-flex items-center justify-center rounded-full text-sm font-heading font-bold transition-all whitespace-nowrap cursor-pointer focus-visible:outline-2 focus-visible:outline-[#B91C1C] ${
+                  className={`px-4 py-2 rounded-xl text-sm font-heading font-semibold transition-all ${
                     isActive
-                      ? "bg-[#B91C1C] text-white shadow-sm ring-2 ring-[#B91C1C]/30"
-                      : "bg-[#F3F4F6] text-gray-600 hover:text-[#111827] hover:bg-gray-200/80 border border-gray-200"
+                      ? "bg-[#B91C1C] text-white shadow-xs"
+                      : "bg-gray-100 text-gray-700 hover:bg-gray-200"
                   }`}
                 >
                   {cat}
+                  <span className={`ml-1.5 text-xs ${isActive ? "text-red-200" : "text-gray-600"}`}>
+                    ({count})
+                  </span>
                 </button>
               );
             })}
@@ -158,237 +162,210 @@ export default function GalleryClient() {
         </div>
       </div>
 
+      {/* 2. Albums Grid Section */}
       <div className="site-container">
-        {/* Photo Albums Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
-          {filteredAlbums.map((album) => (
-            <div
-              key={album.id}
-              onClick={() => handleOpenAlbum(album, 0)}
-              className="bg-white rounded-3xl overflow-hidden border border-gray-200/90 shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col group cursor-pointer hover:-translate-y-1"
-            >
-              <div className="relative aspect-[16/11] w-full overflow-hidden bg-gray-900">
-                <Image
-                  src={album.coverImage}
-                  alt={album.title}
-                  fill
-                  sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                  className="object-cover group-hover:scale-105 transition-transform duration-500 ease-out"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-transparent to-transparent pointer-events-none" />
+        {filteredAlbums.length === 0 ? (
+          <div className="py-20 text-center bg-white rounded-2xl border border-gray-200 shadow-2xs">
+            <Camera className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+            <h3 className="text-lg font-heading font-bold text-gray-700">No albums in this category</h3>
+            <p className="text-sm text-gray-500 mt-1">Please select another category above to view albums.</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-8 lg:gap-10">
+            {filteredAlbums.map((album) => (
+              <div
+                key={album.id}
+                className="bg-white rounded-2xl border border-gray-200 overflow-hidden shadow-2xs hover:shadow-md transition-all flex flex-col group"
+              >
+                {/* Album Cover with Click Action */}
+                <div
+                  className="relative h-64 sm:h-72 w-full overflow-hidden bg-gray-100 cursor-pointer"
+                  onClick={() => handleOpenAlbum(album, 0)}
+                >
+                  <Image
+                    src={album.coverImage}
+                    alt={album.title}
+                    fill
+                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 600px"
+                    className="object-cover group-hover:scale-105 transition-transform duration-500"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
 
-                {/* Badge Category */}
-                <div className="absolute top-4 left-4 z-10">
-                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#B91C1C] text-white font-heading font-bold text-xs uppercase tracking-wider shadow-sm">
-                    {album.category}
-                  </span>
-                </div>
+                  {/* Category Pill Tag */}
+                  <div className="absolute top-4 left-4 z-10">
+                    <span className="px-3 py-1 rounded-full text-xs font-heading font-bold uppercase tracking-wider bg-white/95 text-[#B91C1C] backdrop-blur-xs shadow-xs">
+                      {album.category}
+                    </span>
+                  </div>
 
-                {/* Photo Count Pill */}
-                <div className="absolute top-4 right-4 z-10">
-                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-black/60 backdrop-blur-md text-white font-heading font-semibold text-xs border border-white/20">
-                    <Camera className="w-3 h-3 text-[#F4CD13]" />
+                  {/* Photo Count Badge */}
+                  <div className="absolute top-4 right-4 z-10 flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-heading font-semibold bg-black/60 text-white backdrop-blur-xs">
+                    <Layers className="w-3.5 h-3.5 text-white/80" />
                     <span>{album.photos.length} Photos</span>
-                  </span>
+                  </div>
+
+                  {/* Title on Image Bottom */}
+                  <div className="absolute bottom-4 left-4 right-4 z-10 text-white">
+                    <h2 className="font-heading text-lg sm:text-xl font-bold leading-snug drop-shadow-xs">
+                      {album.title}
+                    </h2>
+                  </div>
                 </div>
 
-                {/* Title in Cover */}
-                <div className="absolute bottom-4 inset-x-4 z-10">
-                  <h2 className="font-heading font-bold text-lg text-white group-hover:text-[#F4CD13] transition-colors leading-snug drop-shadow-sm">
-                    {album.title}
-                  </h2>
+                {/* Thumbnail Strip preview (First 4 photos) */}
+                <div className="p-4 sm:p-5 flex-1 flex flex-col justify-between border-t border-gray-100">
+                  <div className="grid grid-cols-4 gap-2 mb-4">
+                    {album.photos.slice(0, 4).map((photo, pIdx) => (
+                      <div
+                        key={pIdx}
+                        className="relative h-16 sm:h-20 rounded-lg overflow-hidden bg-gray-100 cursor-pointer border border-transparent hover:border-[#B91C1C] transition-all"
+                        onClick={() => handleOpenAlbum(album, pIdx)}
+                      >
+                        <Image
+                          src={photo.src}
+                          alt={photo.caption || `${album.title} photo ${pIdx + 1}`}
+                          fill
+                          sizes="(max-width: 768px) 25vw, 150px"
+                          className="object-cover hover:scale-110 transition-transform duration-300"
+                        />
+                        {pIdx === 3 && album.photos.length > 4 && (
+                          <div className="absolute inset-0 bg-black/70 flex items-center justify-center text-white text-xs font-heading font-bold">
+                            +{album.photos.length - 3}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* View Album Button */}
+                  <button
+                    onClick={() => handleOpenAlbum(album, 0)}
+                    className="w-full inline-flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl bg-gray-50 hover:bg-red-50 text-gray-800 hover:text-[#B91C1C] text-sm font-heading font-bold transition-all border border-gray-200/80 hover:border-red-200"
+                  >
+                    <span>View Full Album ({album.photos.length} Photos)</span>
+                    <ChevronRight className="w-4 h-4 text-gray-600" />
+                  </button>
                 </div>
               </div>
-
-              <div className="p-5 flex-1 flex flex-col justify-between space-y-4">
-                <p className="text-sm text-gray-600 line-clamp-2 leading-relaxed font-sans">
-                  {album.description}
-                </p>
-
-                <div className="pt-2 border-t border-gray-100 flex items-center justify-between text-sm font-heading font-bold text-[#B91C1C]">
-                  <span>Explore Album</span>
-                  <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </div>
 
-      {/* =========================================================================
-          FULLSCREEN MODAL VIEWER / LIGHTBOX
-      ========================================================================= */}
+      {/* 3. Lightbox Modal */}
       {selectedAlbum && (
         <div
           ref={modalRef}
-          role="dialog"
-          aria-modal="true"
-          aria-label={`Photo Gallery: ${selectedAlbum.title}`}
-          className={`fixed inset-0 z-50 bg-black/95 backdrop-blur-md flex flex-col justify-between transition-all duration-200 ${
-            isFullscreen ? "p-2 sm:p-4" : "p-3 sm:p-6"
-          }`}
-          onClick={(e) => {
-            // Close when clicking directly on backdrop
-            if (e.target === e.currentTarget) {
-              handleClose();
-            }
-          }}
+          className="fixed inset-0 z-50 bg-black/95 flex flex-col backdrop-blur-xs select-none"
         >
-          {/* Top Bar / Header */}
-          <div
-            className={`flex items-center justify-between w-full mx-auto text-white pb-3 sm:pb-4 border-b border-white/10 transition-all duration-300 ${
-              isFullscreen ? "max-w-7xl px-2" : "max-w-5xl"
-            }`}
-          >
-            <div className="flex items-center gap-2 sm:gap-3 truncate">
-              <span className="text-xs sm:text-sm font-bold uppercase tracking-wider bg-[#B91C1C] text-white px-2.5 py-1 rounded-full shrink-0 shadow-sm">
+          {/* Top Bar Controls */}
+          <div className="flex items-center justify-between px-4 sm:px-6 py-4 bg-black/40 text-white border-b border-white/10 z-20">
+            <div>
+              <span className="text-xs uppercase font-heading font-bold tracking-wider text-red-400">
                 {selectedAlbum.category}
               </span>
-              <h2 className="font-heading font-bold text-sm sm:text-base text-white truncate">
+              <h2 className="text-sm sm:text-base font-heading font-bold line-clamp-1">
                 {selectedAlbum.title}
               </h2>
-              <span className="text-xs sm:text-sm text-gray-400 hidden sm:inline-block">
-                • Photo {activePhotoIdx + 1} of {selectedAlbum.photos.length}
-              </span>
             </div>
 
-            <div className="flex items-center gap-2 shrink-0">
-              {/* Fullscreen Toggle Button */}
+            <div className="flex items-center gap-2 sm:gap-3">
+              <span className="text-xs sm:text-sm text-gray-400 font-sans">
+                {activePhotoIdx + 1} of {selectedAlbum.photos.length}
+              </span>
+
+              {/* Fullscreen Toggle */}
               <button
-                type="button"
                 onClick={toggleFullscreen}
-                aria-label={isFullscreen ? "Exit Fullscreen View" : "Enter Fullscreen View"}
-                title={isFullscreen ? "Exit Fullscreen (F)" : "Full Screen View (F)"}
-                className="inline-flex items-center gap-1.5 px-3.5 py-2 min-h-[44px] rounded-full bg-white/10 hover:bg-white/20 text-white text-xs sm:text-sm font-semibold transition-all cursor-pointer border border-white/15 hover:scale-105 active:scale-95 focus-visible:outline-2 focus-visible:outline-white focus-visible:outline-offset-2"
+                className="p-2 rounded-lg bg-white/10 hover:bg-white/20 text-white transition-colors"
+                title={isFullscreen ? "Exit Fullscreen" : "Enter Fullscreen"}
               >
                 {isFullscreen ? (
-                  <>
-                    <Minimize2 className="w-3.5 h-3.5 text-[#F4CD13]" />
-                    <span className="hidden sm:inline">Exit Fullscreen</span>
-                  </>
+                  <Minimize2 className="w-5 h-5" />
                 ) : (
-                  <>
-                    <Maximize2 className="w-3.5 h-3.5 text-[#F4CD13]" />
-                    <span className="hidden sm:inline">Full Screen</span>
-                  </>
+                  <Maximize2 className="w-5 h-5" />
                 )}
               </button>
 
-              <span className="text-xs text-gray-400 hidden md:inline-block bg-white/5 border border-white/10 px-2 py-1 rounded">
-                Esc to close
-              </span>
-
-              {/* Close Button (Accessible 44x44 target) */}
+              {/* Close Button */}
               <button
-                type="button"
                 onClick={handleClose}
-                aria-label="Close photo gallery modal"
-                className="w-11 h-11 min-w-[44px] min-h-[44px] rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-all cursor-pointer border border-white/15 hover:scale-105 active:scale-95 focus-visible:outline-2 focus-visible:outline-white focus-visible:outline-offset-2"
+                className="p-2 rounded-lg bg-white/10 hover:bg-white/20 text-white transition-colors"
+                title="Close (Esc)"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
           </div>
 
-          {/* Main Visual Stage with Left/Right Arrows */}
-          <div
-            className={`relative w-full mx-auto flex items-center justify-center my-auto py-2 transition-all duration-300 ${
-              isFullscreen ? "max-w-7xl" : "max-w-5xl"
-            }`}
-          >
-            {/* Left Nav Button (Accessible 44x44 target) */}
-            <button
-              type="button"
-              onClick={handlePrevPhoto}
-              aria-label="Previous photograph"
-              className="absolute left-1 sm:left-3 z-20 w-11 h-11 sm:w-12 sm:h-12 min-w-[44px] min-h-[44px] rounded-full bg-black/55 hover:bg-black/85 backdrop-blur-md text-white flex items-center justify-center transition-all cursor-pointer border border-white/20 hover:scale-105 active:scale-95 shadow-lg focus-visible:outline-2 focus-visible:outline-white"
-            >
-              <ChevronLeft className="w-6 h-6" />
-            </button>
+          {/* Main Photo Viewing Area */}
+          <div className="relative flex-1 flex items-center justify-center p-4 sm:p-8">
+            {/* Previous Button */}
+            {selectedAlbum.photos.length > 1 && (
+              <button
+                onClick={handlePrevPhoto}
+                className="absolute left-2 sm:left-6 z-20 p-3 rounded-full bg-black/60 hover:bg-black/90 text-white border border-white/10 hover:border-white/30 transition-all hover:scale-110"
+                title="Previous Photo (Left Arrow)"
+              >
+                <ChevronLeft className="w-6 h-6" />
+              </button>
+            )}
 
-            {/* Current Active Photograph */}
-            <div
-              className={`relative w-full rounded-2xl overflow-hidden shadow-2xl bg-black/60 border border-white/10 flex items-center justify-center transition-all duration-300 ${
-                isFullscreen
-                  ? "h-[70vh] sm:h-[78vh] max-h-none"
-                  : "h-[50vh] sm:h-[60vh] max-h-[620px]"
-              }`}
-            >
+            {/* Current Active Photo */}
+            <div className="relative w-full h-full max-w-5xl max-h-[70vh] sm:max-h-[75vh] flex items-center justify-center">
               <Image
-                key={selectedAlbum.photos[activePhotoIdx].src}
                 src={selectedAlbum.photos[activePhotoIdx].src}
-                alt={selectedAlbum.photos[activePhotoIdx].caption}
+                alt={selectedAlbum.photos[activePhotoIdx].caption || selectedAlbum.title}
                 fill
-                sizes="(max-width: 1536px) 100vw, 1500px"
+                sizes="(max-width: 1200px) 100vw, 1200px"
                 className="object-contain"
                 priority
               />
-
-              {/* In-Canvas Fullscreen Quick Icon (Top-Right) */}
-              <button
-                type="button"
-                onClick={toggleFullscreen}
-                aria-label={isFullscreen ? "Exit Fullscreen" : "Full Screen View"}
-                title={isFullscreen ? "Exit Fullscreen (F)" : "Full Screen View (F)"}
-                className="absolute top-3 right-3 z-20 w-10 h-10 flex items-center justify-center rounded-full bg-black/60 hover:bg-black/90 text-white/90 hover:text-white transition-all cursor-pointer border border-white/15 backdrop-blur-xs shadow-md focus-visible:outline-2 focus-visible:outline-white"
-              >
-                {isFullscreen ? <Minimize2 className="w-4 h-4 text-[#F4CD13]" /> : <Maximize2 className="w-4 h-4 text-[#F4CD13]" />}
-              </button>
-
-              {/* Caption Overlay */}
-              <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/95 via-black/75 to-transparent p-4 sm:p-5 text-white z-10 flex items-center justify-between gap-4">
-                <p className="text-sm sm:text-base font-medium text-white/95 leading-relaxed">
-                  {selectedAlbum.photos[activePhotoIdx].caption}
-                </p>
-                <span className="text-xs sm:text-sm text-gray-300 font-semibold shrink-0 sm:hidden">
-                  {activePhotoIdx + 1}/{selectedAlbum.photos.length}
-                </span>
-              </div>
             </div>
 
-            {/* Right Nav Button (Accessible 44x44 target) */}
-            <button
-              type="button"
-              onClick={handleNextPhoto}
-              aria-label="Next photograph"
-              className="absolute right-1 sm:right-3 z-20 w-11 h-11 sm:w-12 sm:h-12 min-w-[44px] min-h-[44px] rounded-full bg-black/55 hover:bg-black/85 backdrop-blur-md text-white flex items-center justify-center transition-all cursor-pointer border border-white/20 hover:scale-105 active:scale-95 shadow-lg focus-visible:outline-2 focus-visible:outline-white"
-            >
-              <ChevronRight className="w-6 h-6" />
-            </button>
+            {/* Next Button */}
+            {selectedAlbum.photos.length > 1 && (
+              <button
+                onClick={handleNextPhoto}
+                className="absolute right-2 sm:right-6 z-20 p-3 rounded-full bg-black/60 hover:bg-black/90 text-white border border-white/10 hover:border-white/30 transition-all hover:scale-110"
+                title="Next Photo (Right Arrow)"
+              >
+                <ChevronRight className="w-6 h-6" />
+              </button>
+            )}
           </div>
 
-          {/* Bottom Thumbnail Strip */}
-          <div
-            className={`w-full mx-auto pt-3 border-t border-white/10 transition-all duration-300 ${
-              isFullscreen ? "max-w-7xl px-2" : "max-w-5xl"
-            }`}
-          >
-            <div className="flex items-center justify-center gap-2.5 sm:gap-3 overflow-x-auto py-1 scrollbar-none">
-              {selectedAlbum.photos.map((photo, pIdx) => {
-                const isActive = pIdx === activePhotoIdx;
-                return (
+          {/* Caption & Thumbnail Filmstrip Bottom Bar */}
+          <div className="bg-black/70 border-t border-white/10 px-4 py-3 sm:py-4 z-20">
+            {/* Caption Text */}
+            <p className="text-center text-xs sm:text-sm text-gray-300 max-w-3xl mx-auto mb-3 font-sans line-clamp-2">
+              {selectedAlbum.photos[activePhotoIdx].caption}
+            </p>
+
+            {/* Thumbnail Filmstrip */}
+            {selectedAlbum.photos.length > 1 && (
+              <div className="flex items-center justify-center gap-2 overflow-x-auto pb-1 max-w-3xl mx-auto scrollbar-none">
+                {selectedAlbum.photos.map((p, idx) => (
                   <button
-                    key={pIdx}
-                    type="button"
-                    onClick={() => setActivePhotoIdx(pIdx)}
-                    aria-label={`Jump to photo ${pIdx + 1}`}
-                    className={`relative w-16 h-12 sm:w-20 sm:h-14 rounded-lg overflow-hidden shrink-0 transition-all cursor-pointer border focus-visible:outline-2 focus-visible:outline-[#B91C1C] ${
-                      isActive
-                        ? "ring-2 ring-[#B91C1C] border-white scale-105 opacity-100 shadow-md"
-                        : "border-white/20 opacity-40 hover:opacity-80"
+                    key={idx}
+                    onClick={() => setActivePhotoIdx(idx)}
+                    className={`relative w-12 h-10 sm:w-16 sm:h-12 shrink-0 rounded-md overflow-hidden border-2 transition-all ${
+                      activePhotoIdx === idx
+                        ? "border-[#B91C1C] scale-105"
+                        : "border-transparent opacity-50 hover:opacity-100"
                     }`}
                   >
                     <Image
-                      src={photo.src}
-                      alt={`Thumbnail ${pIdx + 1}`}
+                      src={p.src}
+                      alt={`Thumbnail ${idx + 1}`}
                       fill
-                      sizes="80px"
+                      sizes="64px"
                       className="object-cover"
                     />
                   </button>
-                );
-              })}
-            </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       )}
