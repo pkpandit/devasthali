@@ -80,6 +80,7 @@ function getBackendOrigin(): string | null {
  * Fallback is activated strictly on network error, non-200 HTTP, or Zod validation failure.
  */
 export async function getPublicGallery(): Promise<PublicGalleryData> {
+  "use cache";
   const backendOrigin = getBackendOrigin();
   if (!backendOrigin) {
     return STATIC_FALLBACK_GALLERY;
