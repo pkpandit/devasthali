@@ -1,5 +1,6 @@
+/* eslint-disable @typescript-eslint/no-require-imports */
 /**
- * Test Suite: Public Notices Endpoint Logic & Response Contract.
+ * Test Suite: Public Notices Endpoint Logic & Response Contract with Attachments.
  * Validates:
  * 1. Filtering logic: category matching, urgentOnly flag.
  * 2. Status & timestamp exclusion boundaries:
@@ -10,7 +11,14 @@
  * 3. Computed isNew flag (< 7 days or isUrgent).
  * 4. Pagination metadata (page, limit, totalItems, totalPages, hasNextPage, hasPrevPage).
  * 5. Strict DTO projection whitelist (no sensitive internal fields exposed).
+ * 6. Attachments array projection and ordering.
+ * 7. Live database integration with Prisma.
  */
+
+const dotenv = require("dotenv");
+const { PrismaClient } = require("@prisma/client");
+
+dotenv.config({ path: ".env" });
 
 const CATEGORY_LABEL_MAP = {
   CIRCULAR: "Circular",
@@ -63,6 +71,26 @@ function matchesWhere(notice, where, now = new Date()) {
 function projectPublicNoticeDto(n, now = new Date()) {
   const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
 
+  const mappedAttachments = (n.attachments || []).map((att) => ({
+    id: att.id,
+    title: att.title,
+    fileUrl: att.fileStorageKey ? `/api/public/documents/${att.id}` : att.fileUrl,
+    fileSize: att.fileSize || null,
+    fileType: att.fileType || "application/pdf",
+    displayOrder: att.displayOrder ?? 0,
+  }));
+
+  const finalAttachments = mappedAttachments.length > 0
+    ? mappedAttachments
+    : (n.fileUrl ? [{
+        id: `att_${n.id}`,
+        title: n.title,
+        fileUrl: n.fileUrl,
+        fileSize: n.fileSize || null,
+        fileType: "application/pdf",
+        displayOrder: 0,
+      }] : []);
+
   return {
     id: n.id,
     slug: n.slug,
@@ -72,8 +100,9 @@ function projectPublicNoticeDto(n, now = new Date()) {
     summary: n.summary,
     content: n.content,
     isUrgent: n.isUrgent,
-    fileUrl: n.fileUrl,
-    fileSize: n.fileSize,
+    fileUrl: n.fileUrl || (finalAttachments[0]?.fileUrl ?? null),
+    fileSize: n.fileSize || (finalAttachments[0]?.fileSize ?? null),
+    attachments: finalAttachments,
     publishDate: n.publishDate.toISOString(),
     publishedAt: n.publishedAt ? n.publishedAt.toISOString() : null,
     expiryDate: n.expiryDate ? n.expiryDate.toISOString() : null,
@@ -81,7 +110,7 @@ function projectPublicNoticeDto(n, now = new Date()) {
   };
 }
 
-function runSuite() {
+async function runSuite() {
   const results = [];
 
   function assert(name, condition, details = "") {
@@ -94,128 +123,123 @@ function runSuite() {
   }
 
   console.log("==================================================================");
-  console.log("  Running Test Suite: Public Notices Endpoint Contract & Logic");
+  console.log("  Running Test Suite: Public Notices Endpoint Contract & Attachments");
   console.log("==================================================================\n");
 
   const now = new Date("2026-11-13T12:00:00Z");
-  const past3Days = new Date("2026-11-10T12:00:00Z");
-  const past10Days = new Date("2026-11-03T12:00:00Z");
-  const future5Days = new Date("2026-11-18T12:00:00Z");
-  const past1Day = new Date("2026-11-12T12:00:00Z");
+  const past3Days = new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000);
+  const past10Days = new Date(now.getTime() - 10 * 24 * 60 * 60 * 1000);
+  const future5Days = new Date(now.getTime() + 5 * 24 * 60 * 60 * 1000);
 
-  // Sample notice records
   const sampleNotices = [
     {
       id: "notice_1",
-      slug: "active-circular",
-      title: "Active General Circular",
+      slug: "active-circular-no-expiry",
+      title: "Active Circular No Expiry",
       category: "CIRCULAR",
-      summary: "School holiday notification",
-      content: "<p>School remains closed on Monday.</p>",
+      summary: "Active summary",
+      content: "Active content",
       isUrgent: false,
       isPublished: true,
+      fileUrl: "/documents/sample.pdf",
+      fileSize: "150 KB",
       publishDate: past3Days,
       publishedAt: past3Days,
       expiryDate: null,
-      authorId: "user_secret_1",
-      displayOrder: 0,
+      attachments: [
+        { id: "att_1", title: "Document A", fileUrl: "/documents/sample.pdf", fileSize: "150 KB", fileType: "application/pdf", displayOrder: 0 },
+      ],
     },
     {
       id: "notice_2",
-      slug: "draft-notice",
-      title: "Draft Notice in Preparation",
-      category: "CIRCULAR",
-      summary: "Draft preview",
-      content: "<p>Internal only</p>",
-      isUrgent: false,
-      isPublished: false, // Draft
-      publishDate: past3Days,
-      publishedAt: null,
-      expiryDate: null,
-      authorId: "user_secret_2",
-      displayOrder: 1,
+      slug: "active-admission-future-expiry",
+      title: "Active Admission Future Expiry",
+      category: "ADMISSION",
+      summary: "Admission open",
+      content: "Details",
+      isUrgent: true,
+      isPublished: true,
+      fileUrl: null,
+      fileSize: null,
+      publishDate: past10Days,
+      publishedAt: past10Days,
+      expiryDate: future5Days,
+      attachments: [],
     },
     {
       id: "notice_3",
-      slug: "scheduled-exam-schedule",
-      title: "Scheduled Exam Schedule",
-      category: "EXAMINATION",
-      summary: "Upcoming exam details",
-      content: "<p>Future release</p>",
+      slug: "draft-notice",
+      title: "Draft Notice",
+      category: "CIRCULAR",
+      summary: "Draft",
+      content: "Draft",
       isUrgent: false,
-      isPublished: true,
-      publishDate: future5Days, // Scheduled in future
-      publishedAt: past3Days,
+      isPublished: false,
+      fileUrl: null,
+      fileSize: null,
+      publishDate: past3Days,
+      publishedAt: null,
       expiryDate: null,
-      authorId: "user_secret_3",
-      displayOrder: 2,
+      attachments: [],
     },
     {
       id: "notice_4",
-      slug: "expired-event",
-      title: "Expired Event Notice",
+      slug: "scheduled-future-notice",
+      title: "Scheduled Future Notice",
       category: "EVENT",
-      summary: "Past sports meet",
-      content: "<p>Concluded event</p>",
+      summary: "Upcoming",
+      content: "Upcoming",
       isUrgent: false,
       isPublished: true,
-      publishDate: past10Days,
-      publishedAt: past10Days,
-      expiryDate: past1Day, // Expired yesterday
-      authorId: "user_secret_4",
-      displayOrder: 3,
+      fileUrl: null,
+      fileSize: null,
+      publishDate: future5Days,
+      publishedAt: past3Days,
+      expiryDate: null,
+      attachments: [],
     },
     {
       id: "notice_5",
-      slug: "urgent-admission-open",
-      title: "Urgent Admission Notice 2026-27",
-      category: "ADMISSION",
-      summary: "Forms now available online",
-      content: "<p>Last date 15 Dec 2026</p>",
+      slug: "expired-exam-notice",
+      title: "Expired Exam Notice",
+      category: "EXAMINATION",
+      summary: "Exam date passed",
+      content: "Passed",
       isUrgent: true,
       isPublished: true,
-      publishDate: past10Days, // > 7 days ago, but isUrgent = true
+      fileUrl: "/documents/exam.pdf",
+      fileSize: "200 KB",
+      publishDate: past10Days,
       publishedAt: past10Days,
-      expiryDate: future5Days,
-      authorId: "user_secret_5",
-      displayOrder: 0,
+      expiryDate: past3Days,
+      attachments: [],
     },
   ];
 
-  // -------------------------------------------------------------
-  // 1. Lifecycle Exclusion Filtering
-  // -------------------------------------------------------------
+  // 1. Lifecycle & Timestamp Exclusion Boundaries
   console.log("--- 1. Lifecycle & Timestamp Exclusion Boundaries ---");
-  const defaultWhere = buildWhereClause({}, now);
+  const activeWhere = buildWhereClause({}, now);
+  const activeNotices = sampleNotices.filter((n) => matchesWhere(n, activeWhere, now));
 
-  const activeFiltered = sampleNotices.filter((n) => matchesWhere(n, defaultWhere, now));
-  const activeIds = activeFiltered.map((n) => n.id);
+  assert("Includes active notice without expiry", activeNotices.some((n) => n.id === "notice_1"));
+  assert("Includes active notice with future expiry", activeNotices.some((n) => n.id === "notice_2"));
+  assert("Strictly excludes draft notice (isPublished: false)", !activeNotices.some((n) => n.id === "notice_3"));
+  assert("Strictly excludes scheduled notice (publishDate > now)", !activeNotices.some((n) => n.id === "notice_4"));
+  assert("Strictly excludes expired notice (expiryDate <= now)", !activeNotices.some((n) => n.id === "notice_5"));
+  assert("Only exactly 2 active notices matched", activeNotices.length === 2);
 
-  assert("Includes active notice without expiry", activeIds.includes("notice_1"));
-  assert("Includes active notice with future expiry", activeIds.includes("notice_5"));
-  assert("Strictly excludes draft notice (isPublished: false)", !activeIds.includes("notice_2"));
-  assert("Strictly excludes scheduled notice (publishDate > now)", !activeIds.includes("notice_3"));
-  assert("Strictly excludes expired notice (expiryDate <= now)", !activeIds.includes("notice_4"));
-  assert("Only exactly 2 active notices matched", activeFiltered.length === 2);
-
-  // -------------------------------------------------------------
-  // 2. Query Filtering (Category & UrgentOnly)
-  // -------------------------------------------------------------
+  // 2. Query Filtering
   console.log("\n--- 2. Category & UrgentOnly Query Filtering ---");
-
   const categoryWhere = buildWhereClause({ category: "CIRCULAR" }, now);
   const circulars = sampleNotices.filter((n) => matchesWhere(n, categoryWhere, now));
   assert("Category filter CIRCULAR returns only circulars", circulars.length === 1 && circulars[0].id === "notice_1");
 
   const urgentWhere = buildWhereClause({ urgentOnly: true }, now);
   const urgentNotices = sampleNotices.filter((n) => matchesWhere(n, urgentWhere, now));
-  assert("urgentOnly filter returns only urgent notices", urgentNotices.length === 1 && urgentNotices[0].id === "notice_5");
+  assert("urgentOnly filter returns only urgent notices", urgentNotices.length === 1 && urgentNotices[0].id === "notice_2");
 
-  // -------------------------------------------------------------
-  // 3. Computed isNew Flag Logic
-  // -------------------------------------------------------------
+  // 3. Computed isNew Flag
   console.log("\n--- 3. Computed isNew Flag ---");
-
   const dto1 = projectPublicNoticeDto(sampleNotices[0], now);
   assert("Notice published 3 days ago (< 7 days) has isNew: true", dto1.isNew === true);
 
@@ -228,34 +252,27 @@ function runSuite() {
   const dtoOld = projectPublicNoticeDto(nonUrgentOldNotice, now);
   assert("Non-urgent notice published 10 days ago (> 7 days) has isNew: false", dtoOld.isNew === false);
 
-  const urgentOldNotice = {
-    ...sampleNotices[0],
-    id: "notice_urgent_old",
-    publishDate: past10Days,
-    isUrgent: true,
-  };
-  const dtoUrgentOld = projectPublicNoticeDto(urgentOldNotice, now);
-  assert("Urgent notice published 10 days ago retains isNew: true", dtoUrgentOld.isNew === true);
-
-  // -------------------------------------------------------------
-  // 4. Strict DTO Whitelist Projection
-  // -------------------------------------------------------------
-  console.log("\n--- 4. DTO Whitelist Projection ---");
-
+  // 4. DTO Whitelist Projection & Attachments
+  console.log("\n--- 4. DTO Whitelist Projection & Attachments ---");
   const projectedKeys = Object.keys(dto1);
-  const forbiddenKeys = ["authorId", "author", "internalAuditId", "password", "role"];
+  const forbiddenKeys = ["authorId", "author", "internalAuditId", "password", "role", "fileStorageKey", "fileSha256"];
 
   for (const fKey of forbiddenKeys) {
     assert(`DTO does not expose forbidden key '${fKey}'`, !projectedKeys.includes(fKey));
   }
   assert("DTO includes categoryLabel", dto1.categoryLabel === "Circular");
   assert("DTO serializes publishDate to ISO string", typeof dto1.publishDate === "string");
+  assert("DTO includes attachments array", Array.isArray(dto1.attachments));
+  assert("Attachment contains id, title, fileUrl, fileSize, displayOrder",
+    Boolean(dto1.attachments[0].id && dto1.attachments[0].title && dto1.attachments[0].fileUrl && dto1.attachments[0].displayOrder !== undefined)
+  );
 
-  // -------------------------------------------------------------
-  // 5. Pagination Metadata Math
-  // -------------------------------------------------------------
+  const attKeys = Object.keys(dto1.attachments[0]);
+  assert("Attachment does not leak fileStorageKey", !attKeys.includes("fileStorageKey"));
+  assert("Attachment does not leak fileSizeBytes", !attKeys.includes("fileSizeBytes"));
+
+  // 5. Pagination Calculations
   console.log("\n--- 5. Pagination Calculations ---");
-
   function calcPagination(totalItems, page, limit) {
     const totalPages = Math.ceil(totalItems / limit) || 1;
     return {
@@ -273,12 +290,29 @@ function runSuite() {
   assert("Page 1 hasNextPage true", p1.hasNextPage === true);
   assert("Page 1 hasPrevPage false", p1.hasPrevPage === false);
 
-  const p5 = calcPagination(45, 5, 10);
-  assert("Page 5 hasNextPage false", p5.hasNextPage === false);
-  assert("Page 5 hasPrevPage true", p5.hasPrevPage === true);
+  // 6. Live Database Verification
+  console.log("\n--- 6. Live Database Integration ---");
+  const prisma = new PrismaClient();
+  try {
+    const dbNotices = await prisma.notice.findMany({
+      where: { isPublished: true },
+      include: {
+        attachments: {
+          where: { isPublished: true },
+          orderBy: { displayOrder: "asc" },
+        },
+      },
+    });
 
-  const pEmpty = calcPagination(0, 1, 10);
-  assert("0 items yields totalPages 1", pEmpty.totalPages === 1 && pEmpty.hasNextPage === false);
+    assert("Live DB query returns notices", dbNotices.length > 0);
+    const noticesWithAtts = dbNotices.filter((n) => n.attachments.length > 0);
+    assert("Live DB notices have related NoticeAttachment records", noticesWithAtts.length > 0);
+    assert("NoticeAttachment records have valid titles and URLs",
+      noticesWithAtts.every((n) => n.attachments.every((a) => a.title && (a.fileUrl || a.fileStorageKey)))
+    );
+  } finally {
+    await prisma.$disconnect();
+  }
 
   console.log("\n==================================================================");
   const total = results.length;

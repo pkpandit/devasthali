@@ -13,6 +13,15 @@ const CATEGORY_LABEL_MAP: Record<NoticeCategory, string> = {
   EVENT: "Event",
 };
 
+export interface PublicNoticeAttachmentDto {
+  id: string;
+  title: string;
+  fileUrl: string | null;
+  fileSize: string | null;
+  fileType: string;
+  displayOrder: number;
+}
+
 export interface PublicNoticeDto {
   id: string;
   slug: string;
@@ -24,6 +33,7 @@ export interface PublicNoticeDto {
   isUrgent: boolean;
   fileUrl: string | null;
   fileSize: string | null;
+  attachments: PublicNoticeAttachmentDto[];
   publishDate: string;
   publishedAt: string | null;
   expiryDate: string | null;
@@ -58,6 +68,7 @@ function formatByteSize(bytes: number): string {
  * 3. Scope: Strictly active published notices (publishDate <= now, expiryDate null or > now)
  * 4. Whitelist projection: Omits internal identifiers (authorId, fileStorageKey, fileSha256)
  * 5. Document resolution: Managed attachments route via controlled public document endpoint
+ * 6. Attachment ordering: Orders attachments by displayOrder ascending
  */
 export async function GET(request: NextRequest) {
   try {
@@ -118,6 +129,20 @@ export async function GET(request: NextRequest) {
           publishDate: true,
           publishedAt: true,
           expiryDate: true,
+          attachments: {
+            where: { isPublished: true },
+            orderBy: { displayOrder: "asc" },
+            select: {
+              id: true,
+              title: true,
+              fileUrl: true,
+              fileStorageKey: true,
+              fileSizeBytes: true,
+              fileSize: true,
+              fileType: true,
+              displayOrder: true,
+            },
+          },
         },
         orderBy: [
           { isUrgent: "desc" },
@@ -136,7 +161,6 @@ export async function GET(request: NextRequest) {
     // 5. Strict DTO Whitelist Projection
     // Never expose raw storage keys, SHA-256 hashes, original filenames, or author IDs
     const data: PublicNoticeDto[] = notices.map((n) => {
-      // If notice has a managed attachment, route through controlled public document endpoint
       const resolvedFileUrl = n.fileStorageKey
         ? `${mediaOrigin}/api/public/documents/${n.slug}`
         : n.fileUrl;
@@ -147,6 +171,41 @@ export async function GET(request: NextRequest) {
         ? formatByteSize(n.fileSizeBytes)
         : null;
 
+      const mappedAttachments: PublicNoticeAttachmentDto[] = n.attachments.map((att) => {
+        const attUrl = att.fileStorageKey
+          ? `${mediaOrigin}/api/public/documents/${att.id}`
+          : att.fileUrl;
+        const attSize = att.fileSize
+          ? att.fileSize
+          : att.fileSizeBytes
+          ? formatByteSize(att.fileSizeBytes)
+          : null;
+        return {
+          id: att.id,
+          title: att.title,
+          fileUrl: attUrl,
+          fileSize: attSize,
+          fileType: att.fileType,
+          displayOrder: att.displayOrder,
+        };
+      });
+
+      // Maintain backward compatibility: if attachments list has elements, use it;
+      // if empty but notice has legacy root doc, synthesize 1 attachment entry.
+      const finalAttachments = mappedAttachments.length > 0
+        ? mappedAttachments
+        : (resolvedFileUrl ? [{
+            id: `att_${n.id}`,
+            title: n.title,
+            fileUrl: resolvedFileUrl,
+            fileSize: resolvedFileSize,
+            fileType: "application/pdf",
+            displayOrder: 0,
+          }] : []);
+
+      const finalRootFileUrl = resolvedFileUrl || (finalAttachments[0]?.fileUrl ?? null);
+      const finalRootFileSize = resolvedFileSize || (finalAttachments[0]?.fileSize ?? null);
+
       return {
         id: n.id,
         slug: n.slug,
@@ -156,8 +215,9 @@ export async function GET(request: NextRequest) {
         summary: n.summary,
         content: n.content,
         isUrgent: n.isUrgent,
-        fileUrl: resolvedFileUrl,
-        fileSize: resolvedFileSize,
+        fileUrl: finalRootFileUrl,
+        fileSize: finalRootFileSize,
+        attachments: finalAttachments,
         publishDate: n.publishDate.toISOString(),
         publishedAt: n.publishedAt ? n.publishedAt.toISOString() : null,
         expiryDate: n.expiryDate ? n.expiryDate.toISOString() : null,

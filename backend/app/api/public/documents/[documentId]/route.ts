@@ -17,7 +17,7 @@ interface RouteParams {
  * Public Controlled Document Download Endpoint.
  * 
  * Invariants:
- * 1. Identifier: Uses stable public document identifier (Notice ID or Slug).
+ * 1. Identifier: Uses stable public document identifier (Notice ID, Slug, or Attachment ID).
  *    Never exposes raw storage keys, internal paths, or SHA-256 hashes.
  * 2. Strict Lifecycle Guard:
  *    Only serves documents for ACTIVE, PUBLISHED notices:
@@ -44,61 +44,99 @@ export async function GET(
   const now = new Date();
 
   try {
-    // 1. Query Notice by ID or Slug with active published lifecycle constraints
-    const notice = await prisma.notice.findFirst({
+    let storageKeyToServe: string | null = null;
+    let safeDownloadFilename = "document.pdf";
+
+    // 1. First check if documentId matches an active, published NoticeAttachment
+    const attachment = await prisma.noticeAttachment.findFirst({
       where: {
-        OR: [{ id: cleanId }, { slug: cleanId }],
+        id: cleanId,
         isPublished: true,
-        publishDate: { lte: now },
-        AND: [
-          {
-            OR: [{ expiryDate: null }, { expiryDate: { gt: now } }],
-          },
-        ],
+        notice: {
+          isPublished: true,
+          publishDate: { lte: now },
+          OR: [{ expiryDate: null }, { expiryDate: { gt: now } }],
+        },
       },
       select: {
         id: true,
-        slug: true,
         title: true,
         fileStorageKey: true,
         fileSizeBytes: true,
+        notice: {
+          select: {
+            id: true,
+            slug: true,
+            title: true,
+          },
+        },
       },
     });
 
-    if (!notice || !notice.fileStorageKey) {
+    if (attachment && attachment.fileStorageKey) {
+      storageKeyToServe = attachment.fileStorageKey;
+      const safeNoticeSlug = (attachment.notice.slug || "notice").replace(/[^a-zA-Z0-9_-]/g, "_");
+      const safeAttachmentTitle = attachment.title.replace(/[^a-zA-Z0-9_-]/g, "_").slice(0, 50);
+      safeDownloadFilename = `${safeNoticeSlug}_${safeAttachmentTitle}.pdf`;
+    } else {
+      // 2. Query Notice by ID or Slug with active published lifecycle constraints
+      const notice = await prisma.notice.findFirst({
+        where: {
+          OR: [{ id: cleanId }, { slug: cleanId }],
+          isPublished: true,
+          publishDate: { lte: now },
+          AND: [
+            {
+              OR: [{ expiryDate: null }, { expiryDate: { gt: now } }],
+            },
+          ],
+        },
+        select: {
+          id: true,
+          slug: true,
+          title: true,
+          fileStorageKey: true,
+          fileSizeBytes: true,
+        },
+      });
+
+      if (notice && notice.fileStorageKey) {
+        storageKeyToServe = notice.fileStorageKey;
+        const safeBase = (notice.slug || "notice-document").replace(/[^a-zA-Z0-9_-]/g, "_");
+        safeDownloadFilename = `${safeBase}.pdf`;
+      }
+    }
+
+    if (!storageKeyToServe) {
       return new NextResponse("Document not found or inaccessible.", {
         status: 404,
         headers: { "Content-Type": "text/plain" },
       });
     }
 
-    // 2. Validate managed storage key format and containment
-    if (!isValidManagedDocumentKey(notice.fileStorageKey)) {
+    // 3. Validate managed storage key format and containment
+    if (!isValidManagedDocumentKey(storageKeyToServe)) {
       console.error(
-        `[public-download] Notice "${notice.id}" has invalid storage key: "${notice.fileStorageKey}"`
+        `[public-download] Document "${cleanId}" has invalid storage key: "${storageKeyToServe}"`
       );
       return new NextResponse("Document not found.", { status: 404 });
     }
 
-    const filePath = resolveSafePath(notice.fileStorageKey, "managed");
+    const filePath = resolveSafePath(storageKeyToServe, "managed");
 
-    // 3. Verify file exists on disk and is a regular file (not symlink)
+    // 4. Verify file exists on disk and is a regular file (not symlink)
     const lstat = await fs.promises.lstat(filePath);
     if (lstat.isSymbolicLink() || !lstat.isFile()) {
       return new NextResponse("Document not found.", { status: 404 });
     }
 
-    const fileBuffer = await getManagedDocumentBuffer(notice.fileStorageKey);
-
-    // 4. Generate safe download filename from server-side slug
-    const safeBase = (notice.slug || "notice-document").replace(/[^a-zA-Z0-9_-]/g, "_");
-    const downloadFilename = `${safeBase}.pdf`;
+    const fileBuffer = await getManagedDocumentBuffer(storageKeyToServe);
 
     return new NextResponse(new Uint8Array(fileBuffer), {
       status: 200,
       headers: {
         "Content-Type": "application/pdf",
-        "Content-Disposition": `attachment; filename="${downloadFilename}"`,
+        "Content-Disposition": `attachment; filename="${safeDownloadFilename}"`,
         "Cache-Control": "public, max-age=300, must-revalidate",
         "X-Content-Type-Options": "nosniff",
         "Content-Security-Policy": "default-src 'none'; sandbox",

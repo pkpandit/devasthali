@@ -19,7 +19,7 @@ interface RouteParams {
  * 
  * Invariants:
  * 1. Authorization: Restricted strictly to SUPER_ADMIN role.
- * 2. Scope: Supports Draft, Scheduled, Published, and Expired notices.
+ * 2. Scope: Supports Draft, Scheduled, Published, and Expired notices & attachments.
  * 3. Content-Disposition: Strictly 'attachment' (no inline PDF rendering).
  * 4. Cache-Control: Strictly private and uncacheable ('private, no-cache, no-store, must-revalidate').
  * 5. Filename Sanitization: Server-derived safe filename (${notice.slug}.pdf).
@@ -48,7 +48,10 @@ export async function GET(
   const cleanNoticeId = noticeId.trim();
 
   try {
-    // 2. Query Notice by ID (supports drafts and scheduled notices)
+    // 2. Query Notice by ID or NoticeAttachment by ID (supports drafts and scheduled notices)
+    let storageKeyToServe: string | null = null;
+    let safeSlug = "notice-document";
+
     const notice = await prisma.notice.findUnique({
       where: { id: cleanNoticeId },
       select: {
@@ -61,7 +64,28 @@ export async function GET(
       },
     });
 
-    if (!notice || !notice.fileStorageKey) {
+    if (notice && notice.fileStorageKey) {
+      storageKeyToServe = notice.fileStorageKey;
+      safeSlug = notice.slug || "notice-document";
+    } else {
+      const attachment = await prisma.noticeAttachment.findUnique({
+        where: { id: cleanNoticeId },
+        select: {
+          id: true,
+          title: true,
+          fileStorageKey: true,
+          fileSizeBytes: true,
+          notice: { select: { slug: true } },
+        },
+      });
+
+      if (attachment && attachment.fileStorageKey) {
+        storageKeyToServe = attachment.fileStorageKey;
+        safeSlug = `${attachment.notice.slug || "notice"}_${attachment.title}`;
+      }
+    }
+
+    if (!storageKeyToServe) {
       return new NextResponse("Notice document attachment not found.", {
         status: 404,
         headers: { "Content-Type": "text/plain" },
@@ -69,14 +93,14 @@ export async function GET(
     }
 
     // 3. Validate managed storage key format and containment
-    if (!isValidManagedDocumentKey(notice.fileStorageKey)) {
+    if (!isValidManagedDocumentKey(storageKeyToServe)) {
       console.error(
-        `[admin-preview] Notice "${notice.id}" has invalid storage key: "${notice.fileStorageKey}"`
+        `[admin-preview] Document "${cleanNoticeId}" has invalid storage key: "${storageKeyToServe}"`
       );
       return new NextResponse("Document attachment not found.", { status: 404 });
     }
 
-    const filePath = resolveSafePath(notice.fileStorageKey, "managed");
+    const filePath = resolveSafePath(storageKeyToServe, "managed");
 
     // 4. Verify file exists on disk and is a regular file (not symlink)
     const lstat = await fs.promises.lstat(filePath);
@@ -84,10 +108,10 @@ export async function GET(
       return new NextResponse("Document attachment not found on disk.", { status: 404 });
     }
 
-    const fileBuffer = await getManagedDocumentBuffer(notice.fileStorageKey);
+    const fileBuffer = await getManagedDocumentBuffer(storageKeyToServe);
 
     // 5. Generate safe download filename from server-side slug
-    const safeBase = (notice.slug || "notice-document").replace(/[^a-zA-Z0-9_-]/g, "_");
+    const safeBase = safeSlug.replace(/[^a-zA-Z0-9_-]/g, "_");
     const downloadFilename = `${safeBase}.pdf`;
 
     return new NextResponse(new Uint8Array(fileBuffer), {
