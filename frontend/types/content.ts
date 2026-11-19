@@ -266,14 +266,19 @@ export interface MandatoryInfraDetail {
 }
 
 export interface DocumentDownloadItem {
+  id?: string;
   title: string;
   size: string;
   file: string;
   category?: string;
+  description?: string | null;
 }
 
 export interface DownloadCategoryGroup {
+  id?: string;
+  slug?: string;
   category: string;
+  description?: string | null;
   docs: DocumentDownloadItem[];
 }
 
