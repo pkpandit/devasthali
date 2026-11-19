@@ -67,8 +67,10 @@ export default async function AdminWorkspacePage({
 
     const toppers = await prisma.boardResultTopper.findMany({
       orderBy: [
-        { academicYear: "desc" },
         { displayOrder: "asc" },
+        { academicYear: "desc" },
+        { scorePercent: "desc" },
+        { id: "asc" },
       ],
     });
 

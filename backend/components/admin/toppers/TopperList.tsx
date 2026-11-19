@@ -1,15 +1,27 @@
 "use client";
 
-import { GraduationCap, Pencil, Plus, Trash2 } from "lucide-react";
+import {
+  GraduationCap,
+  Pencil,
+  Plus,
+  Trash2,
+  ArrowUp,
+  ArrowDown,
+  Eye,
+  EyeOff,
+} from "lucide-react";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { Badge } from "@/components/ui/Badge";
 import type { SerializedTopper } from "./TopperFormDialog";
 
 interface TopperListProps {
   toppers: SerializedTopper[];
+  isPending?: boolean;
   onAdd?: () => void;
   onEdit?: (topper: SerializedTopper) => void;
   onDelete?: (topper: SerializedTopper) => void;
+  onToggleStatus?: (topper: SerializedTopper) => void;
+  onMove?: (currentIndex: number, direction: "UP" | "DOWN") => void;
 }
 
 function getInitials(name: string): string {
@@ -23,12 +35,16 @@ function getInitials(name: string): string {
  * Table-first record listing for Board Examination Toppers and Merit Records.
  * Implements accessible semantic markup (table, thead, tbody, th scope="col", sr-only caption)
  * and responsive horizontal-scrolling table container.
+ * Zero Tailwind CSS - 100% native CSS classes and semantic markup.
  */
 export function TopperList({
   toppers,
+  isPending = false,
   onAdd,
   onEdit,
   onDelete,
+  onToggleStatus,
+  onMove,
 }: TopperListProps) {
   if (!toppers || toppers.length === 0) {
     return (
@@ -38,11 +54,12 @@ export function TopperList({
         icon={GraduationCap}
       >
         {onAdd && (
-          <div className="pt-4">
+          <div style={{ paddingTop: "16px" }}>
             <button
               type="button"
               onClick={onAdd}
-              className="topper-button topper-button--primary inline-flex items-center gap-1.5"
+              className="topper-button topper-button--primary"
+              style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}
             >
               <Plus size={16} aria-hidden="true" />
               <span>Add First Topper</span>
@@ -69,14 +86,16 @@ export function TopperList({
             <th scope="col" className="admin-table__session-col">Session</th>
             <th scope="col" className="admin-table__citation-col">Achievement / Merit Citation</th>
             <th scope="col" className="admin-table__order-col">Order</th>
+            <th scope="col" className="admin-table__status-col">Status</th>
             <th scope="col" className="admin-table__featured-col">Featured</th>
             <th scope="col" className="admin-table__actions-col">Actions</th>
           </tr>
         </thead>
         <tbody>
-          {toppers.map((topper) => {
+          {toppers.map((topper, index) => {
             const hasPhoto = Boolean(topper.photoUrl && topper.photoUrl.trim() !== "");
             const scoreDisplay = `${Number(topper.scorePercent).toFixed(2)}%`;
+            const isPublished = topper.isPublished ?? true;
 
             return (
               <tr key={topper.id}>
@@ -85,7 +104,7 @@ export function TopperList({
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
                       src={topper.photoUrl!}
-                      alt={`Photo of ${topper.studentName}`}
+                      alt={topper.photoAlt || `Photo of ${topper.studentName}`}
                       className="topper-table-photo"
                     />
                   ) : (
@@ -120,7 +139,70 @@ export function TopperList({
                   <span className="admin-table__citation-text">{topper.achievement}</span>
                 </td>
                 <td className="admin-table__order-col">
-                  <span className="admin-table__order-text">{topper.displayOrder}</span>
+                  <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                    <span className="admin-table__order-text">{topper.displayOrder}</span>
+                    {onMove && (
+                      <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
+                        <button
+                          type="button"
+                          className="admin-icon-button"
+                          style={{
+                            width: "22px",
+                            height: "22px",
+                            minWidth: "22px",
+                            minHeight: "22px",
+                            padding: 0,
+                          }}
+                          onClick={() => onMove(index, "UP")}
+                          disabled={isPending || index === 0}
+                          aria-label={`Move ${topper.studentName} up`}
+                          title="Move up"
+                        >
+                          <ArrowUp size={12} />
+                        </button>
+                        <button
+                          type="button"
+                          className="admin-icon-button"
+                          style={{
+                            width: "22px",
+                            height: "22px",
+                            minWidth: "22px",
+                            minHeight: "22px",
+                            padding: 0,
+                          }}
+                          onClick={() => onMove(index, "DOWN")}
+                          disabled={isPending || index === toppers.length - 1}
+                          aria-label={`Move ${topper.studentName} down`}
+                          title="Move down"
+                        >
+                          <ArrowDown size={12} />
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </td>
+                <td className="admin-table__status-col">
+                  {onToggleStatus ? (
+                    <button
+                      type="button"
+                      disabled={isPending}
+                      onClick={() => onToggleStatus(topper)}
+                      className={`admin-pill ${isPublished ? "admin-pill--published" : "admin-pill--draft"}`}
+                      style={{
+                        cursor: "pointer",
+                        border: isPublished ? "1px solid #bbf7d0" : "1px solid #e2e8f0",
+                      }}
+                      title={isPublished ? "Click to set Draft" : "Click to Publish"}
+                    >
+                      {isPublished ? "Published" : "Draft"}
+                    </button>
+                  ) : (
+                    <span
+                      className={`admin-pill ${isPublished ? "admin-pill--published" : "admin-pill--draft"}`}
+                    >
+                      {isPublished ? "Published" : "Draft"}
+                    </span>
+                  )}
                 </td>
                 <td className="admin-table__featured-col">
                   {topper.isFeatured ? (
@@ -131,6 +213,26 @@ export function TopperList({
                 </td>
                 <td className="admin-table__actions-col">
                   <div className="topper-card-actions">
+                    {onToggleStatus && (
+                      <button
+                        type="button"
+                        disabled={isPending}
+                        onClick={() => onToggleStatus(topper)}
+                        className="topper-icon-button"
+                        aria-label={
+                          isPublished
+                            ? `Unpublish topper: ${topper.studentName}`
+                            : `Publish topper: ${topper.studentName}`
+                        }
+                        title={isPublished ? "Unpublish to draft" : "Publish now"}
+                      >
+                        {isPublished ? (
+                          <EyeOff size={15} style={{ color: "#64748b" }} />
+                        ) : (
+                          <Eye size={15} style={{ color: "#059669" }} />
+                        )}
+                      </button>
+                    )}
                     {onEdit && (
                       <button
                         type="button"
