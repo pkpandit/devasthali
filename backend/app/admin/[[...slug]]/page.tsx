@@ -10,6 +10,7 @@ import { AboutLeadershipWorkspace } from "@/components/admin/about/AboutLeadersh
 import { FacultyWorkspace } from "@/components/admin/faculty/FacultyWorkspace";
 import { GalleryWorkspace } from "@/components/admin/gallery/GalleryWorkspace";
 import { EventsWorkspace } from "@/components/admin/events/EventsWorkspace";
+import { DownloadWorkspace } from "@/components/admin/downloads/DownloadWorkspace";
 import { Breadcrumbs } from "@/components/ui/Breadcrumbs";
 import { Badge } from "@/components/ui/Badge";
 import { Card } from "@/components/ui/Card";
@@ -218,6 +219,65 @@ export default async function AdminWorkspacePage({
 
         <div className="workspace-content">
           <NoticeWorkspace notices={serializedNotices} />
+        </div>
+      </Card>
+    );
+  }
+
+  // Specialization: /admin/students-parents/downloads renders interactive DownloadWorkspace
+  if (href === "/admin/students-parents/downloads") {
+    await requireRole(["SUPER_ADMIN"], href);
+
+    const categories = await prisma.downloadCategory.findMany({
+      orderBy: [
+        { displayOrder: "asc" },
+        { createdAt: "asc" },
+      ],
+      include: {
+        documents: {
+          orderBy: [
+            { displayOrder: "asc" },
+            { createdAt: "asc" },
+          ],
+        },
+      },
+    });
+
+    const serializedCategories = categories.map((cat) => ({
+      ...cat,
+      createdAt: cat.createdAt.toISOString(),
+      updatedAt: cat.updatedAt.toISOString(),
+      documents: cat.documents.map((doc) => ({
+        ...doc,
+        createdAt: doc.createdAt.toISOString(),
+        updatedAt: doc.updatedAt.toISOString(),
+      })),
+    }));
+
+    return (
+      <Card as="section" aria-labelledby="admin-workspace-title">
+        <Breadcrumbs items={workspace.breadcrumbs} />
+
+        <div className="workspace-header">
+          <h1 className="workspace-title" id="admin-workspace-title" tabIndex={-1}>
+            {workspace.title}
+          </h1>
+          {workspace.badge && <Badge>{workspace.badge}</Badge>}
+        </div>
+
+        {workspace.description && (
+          <p className="workspace-description">{workspace.description}</p>
+        )}
+
+        <div className="workspace-meta-bar">
+          <PublicReferenceLink
+            publicHref={workspace.publicHref}
+            title={workspace.title}
+          />
+        </div>
+
+        <div className="workspace-content">
+          <DownloadWorkspace categories={serializedCategories} />
         </div>
       </Card>
     );
