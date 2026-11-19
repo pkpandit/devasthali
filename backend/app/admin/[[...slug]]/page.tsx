@@ -8,6 +8,8 @@ import { NavigationWorkspace } from "@/components/admin/navigation/NavigationWor
 import { HomepageWorkspace } from "@/components/admin/homepage/HomepageWorkspace";
 import { AboutLeadershipWorkspace } from "@/components/admin/about/AboutLeadershipWorkspace";
 import { FacultyWorkspace } from "@/components/admin/faculty/FacultyWorkspace";
+import { GalleryWorkspace } from "@/components/admin/gallery/GalleryWorkspace";
+import { EventsWorkspace } from "@/components/admin/events/EventsWorkspace";
 import { Breadcrumbs } from "@/components/ui/Breadcrumbs";
 import { Badge } from "@/components/ui/Badge";
 import { Card } from "@/components/ui/Card";
@@ -530,6 +532,105 @@ export default async function AdminWorkspacePage({
             coreValues={serializedCoreValues}
             leadershipMembers={serializedLeadership}
           />
+        </div>
+      </Card>
+    );
+  }
+
+  // Specialization: /admin/life-at-school/gallery renders interactive GalleryWorkspace
+  if (href === "/admin/life-at-school/gallery") {
+    await requireRole(["SUPER_ADMIN"], href);
+
+    const albums = await prisma.galleryAlbum.findMany({
+      orderBy: [{ displayOrder: "asc" }, { createdAt: "asc" }],
+      include: {
+        images: {
+          orderBy: [{ displayOrder: "asc" }, { createdAt: "asc" }],
+        },
+      },
+    });
+
+    const serializedAlbums = albums.map((album) => ({
+      ...album,
+      createdAt: album.createdAt.toISOString(),
+      updatedAt: album.updatedAt.toISOString(),
+      images: album.images.map((img) => ({
+        ...img,
+        createdAt: img.createdAt.toISOString(),
+        updatedAt: img.updatedAt.toISOString(),
+      })),
+    }));
+
+    return (
+      <Card as="section" aria-labelledby="admin-workspace-title">
+        <Breadcrumbs items={workspace.breadcrumbs} />
+
+        <div className="workspace-header">
+          <h1 className="workspace-title" id="admin-workspace-title" tabIndex={-1}>
+            {workspace.title}
+          </h1>
+          {workspace.badge && <Badge>{workspace.badge}</Badge>}
+        </div>
+
+        {workspace.description && (
+          <p className="workspace-description">{workspace.description}</p>
+        )}
+
+        <div className="workspace-meta-bar">
+          <PublicReferenceLink
+            publicHref={workspace.publicHref}
+            title={workspace.title}
+          />
+        </div>
+
+        <div className="workspace-content">
+          <GalleryWorkspace albums={serializedAlbums} />
+        </div>
+      </Card>
+    );
+  }
+
+  // Specialization: /admin/academics/events renders interactive EventsWorkspace
+  if (href === "/admin/academics/events") {
+    await requireRole(["SUPER_ADMIN"], href);
+
+    const events = await prisma.schoolEvent.findMany({
+      orderBy: [{ displayOrder: "asc" }, { isoDate: "asc" }, { createdAt: "asc" }],
+    });
+
+    const serializedEvents = events.map((event) => ({
+      ...event,
+      category: event.category || "School Event",
+      coverImageAlt: event.coverImageAlt || "",
+      isoDate: event.isoDate ? event.isoDate.toISOString().split("T")[0] : "",
+      createdAt: event.createdAt.toISOString(),
+      updatedAt: event.updatedAt.toISOString(),
+    }));
+
+    return (
+      <Card as="section" aria-labelledby="admin-workspace-title">
+        <Breadcrumbs items={workspace.breadcrumbs} />
+
+        <div className="workspace-header">
+          <h1 className="workspace-title" id="admin-workspace-title" tabIndex={-1}>
+            {workspace.title}
+          </h1>
+          {workspace.badge && <Badge>{workspace.badge}</Badge>}
+        </div>
+
+        {workspace.description && (
+          <p className="workspace-description">{workspace.description}</p>
+        )}
+
+        <div className="workspace-meta-bar">
+          <PublicReferenceLink
+            publicHref={workspace.publicHref}
+            title={workspace.title}
+          />
+        </div>
+
+        <div className="workspace-content">
+          <EventsWorkspace events={serializedEvents} />
         </div>
       </Card>
     );
