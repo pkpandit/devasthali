@@ -135,6 +135,42 @@ export const documentLinkSchema = z
 export const MANAGED_STORAGE_KEY_REGEX =
   /^documents\/notices\/doc_[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}\.pdf$/;
 
+
+export const noticeAttachmentSchema = z.object({
+  id: z.string().optional(),
+  title: z
+    .string()
+    .trim()
+    .min(1, "Attachment label is required")
+    .max(200, "Attachment label must not exceed 200 characters"),
+  fileUrl: documentLinkSchema,
+  fileStorageKey: z
+    .string()
+    .trim()
+    .regex(MANAGED_STORAGE_KEY_REGEX, "Invalid managed storage key format")
+    .nullable()
+    .optional(),
+  fileSizeBytes: z
+    .coerce
+    .number()
+    .int()
+    .positive()
+    .max(10 * 1024 * 1024, "File size exceeds 10 MiB limit")
+    .nullable()
+    .optional(),
+  fileSize: z
+    .string()
+    .trim()
+    .max(30, "File size description must not exceed 30 characters")
+    .nullable()
+    .optional(),
+  fileType: z.string().trim().default("application/pdf"),
+  displayOrder: z.coerce.number().int().min(0).max(9999).default(0),
+  isPublished: z.boolean().default(true),
+});
+
+export type NoticeAttachmentInput = z.infer<typeof noticeAttachmentSchema>;
+
 export const createNoticeSchema = z
   .object({
     title: z
@@ -167,6 +203,7 @@ export const createNoticeSchema = z
     publishDate: z.coerce.date().default(() => new Date()),
     expiryDate: z.coerce.date().nullable().optional(),
     displayOrder: z.coerce.number().int().min(0).max(9999).default(0),
+    attachments: z.array(noticeAttachmentSchema).default([]),
 
     // Managed attachment metadata (Phase 2)
     fileStorageKey: z
@@ -228,3 +265,33 @@ export const toggleNoticeStatusSchema = z.object({
   id: z.string().min(1, "Notice ID is required"),
   isPublished: z.boolean(),
 });
+
+export const reorderNoticesSchema = z.object({
+  orderedIds: z
+    .array(z.string().min(1, "Notice ID is required"))
+    .min(1, "At least one notice ID is required"),
+});
+
+export type ReorderNoticesInput = z.infer<typeof reorderNoticesSchema>;
+
+export const reorderNoticeAttachmentsSchema = z.object({
+  noticeId: z.string().min(1, "Notice ID is required"),
+  orderedIds: z
+    .array(z.string().min(1, "Attachment ID is required"))
+    .min(1, "At least one attachment ID is required"),
+});
+
+export type ReorderNoticeAttachmentsInput = z.infer<typeof reorderNoticeAttachmentsSchema>;
+
+export const deleteNoticeAttachmentSchema = z.object({
+  id: z.string().min(1, "Attachment ID is required"),
+});
+
+export type DeleteNoticeAttachmentInput = z.infer<typeof deleteNoticeAttachmentSchema>;
+
+export const toggleNoticeAttachmentStatusSchema = z.object({
+  id: z.string().min(1, "Attachment ID is required"),
+  isPublished: z.boolean(),
+});
+
+export type ToggleNoticeAttachmentStatusInput = z.infer<typeof toggleNoticeAttachmentStatusSchema>;

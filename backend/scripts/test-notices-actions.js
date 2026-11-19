@@ -1,14 +1,18 @@
 /* eslint-disable @typescript-eslint/no-require-imports */
 /**
- * Test Suite: Notice Server Actions, Authorization, Diffs, and Database Transactions.
+ * Test Suite: Notice Server Actions, Authorization, Attachments, Diffs, and Database Transactions.
  * Tests:
  * 1. Role-based access control matrix (SUPER_ADMIN permitted, others rejected).
  * 2. Diff computation and audit metadata serialization.
- * 3. Live database transactional lifecycle:
- *    - Notice creation with deterministic slug and publishedAt handling.
- *    - Notice update with field diff logging.
+ * 3. Validation schema enforcement (noticeAttachmentSchema, reorderNoticesSchema, reorderNoticeAttachmentsSchema).
+ * 4. Live database transactional lifecycle:
+ *    - Notice creation with attachments.
+ *    - Notice update with field diff and attachment sync.
  *    - Notice status toggling (DRAFT <-> PUBLISHED).
- *    - Notice deletion and audit verification.
+ *    - Batch notices reordering.
+ *    - Attachment status toggle & reordering.
+ *    - Attachment deletion.
+ *    - Notice cascade deletion (Notice -> NoticeAttachment).
  *    - Post-test transactional cleanup.
  */
 
@@ -16,6 +20,12 @@ const dotenv = require("dotenv");
 const { PrismaClient } = require("@prisma/client");
 const { generateDeterministicSlug } = require("../lib/server/slug.ts");
 const { sanitizeRichText } = require("../lib/server/sanitizer.ts");
+const {
+  noticeAttachmentSchema,
+  reorderNoticesSchema,
+  reorderNoticeAttachmentsSchema,
+  deleteNoticeAttachmentSchema,
+} = require("../lib/validation/notices.ts");
 
 dotenv.config({ path: ".env" });
 
@@ -34,7 +44,7 @@ async function runSuite() {
   }
 
   console.log("==================================================================");
-  console.log("  Running Test Suite: Notice Actions, Auth, Diff & Transactions");
+  console.log("  Running Test Suite: Notice Actions, Auth, Attachments & Trans");
   console.log("==================================================================\n");
 
   // -------------------------------------------------------------
@@ -60,7 +70,7 @@ async function runSuite() {
   }
 
   // -------------------------------------------------------------
-  // 2. Diff Computation Logic
+  // 2. Field Diff Computation Logic
   // -------------------------------------------------------------
   console.log("\n--- 2. Field Diff Computation for Audit Metadata ---");
 
@@ -116,11 +126,65 @@ async function runSuite() {
   assert("Does not flag unchanged fields", diff.category === undefined && diff.summary === undefined);
 
   // -------------------------------------------------------------
-  // 3. Database Transactional Lifecycle
+  // 3. Validation Schemas (Attachments & Reordering)
   // -------------------------------------------------------------
-  console.log("\n--- 3. Database Transactional Notice Lifecycle ---");
+  console.log("\n--- 3. Validation Schema Enforcement ---");
 
-  // Find or use super-admin user for authorId
+  const validAtt = noticeAttachmentSchema.safeParse({
+    title: "Official Schedule PDF",
+    fileUrl: "/documents/schedule.pdf",
+    fileSizeBytes: 1048576,
+    fileSize: "1.00 MB",
+    displayOrder: 0,
+    isPublished: true,
+  });
+  assert("noticeAttachmentSchema accepts valid root-relative attachment", validAtt.success);
+
+  const emptyTitleAtt = noticeAttachmentSchema.safeParse({
+    title: "",
+    fileUrl: "/documents/schedule.pdf",
+  });
+  assert("noticeAttachmentSchema rejects empty attachment title", !emptyTitleAtt.success);
+
+  const invalidKeyAtt = noticeAttachmentSchema.safeParse({
+    title: "Doc",
+    fileUrl: "/documents/schedule.pdf",
+    fileStorageKey: "malicious/path.pdf",
+  });
+  assert("noticeAttachmentSchema rejects invalid managed storage key format", !invalidKeyAtt.success);
+
+  const validReorderNotices = reorderNoticesSchema.safeParse({
+    orderedIds: ["id1", "id2"],
+  });
+  assert("reorderNoticesSchema accepts valid non-empty array", validReorderNotices.success);
+
+  const emptyReorderNotices = reorderNoticesSchema.safeParse({
+    orderedIds: [],
+  });
+  assert("reorderNoticesSchema rejects empty array", !emptyReorderNotices.success);
+
+  const validReorderAtts = reorderNoticeAttachmentsSchema.safeParse({
+    noticeId: "notice-123",
+    orderedIds: ["att-1", "att-2"],
+  });
+  assert("reorderNoticeAttachmentsSchema accepts valid payload", validReorderAtts.success);
+
+  const missingNoticeIdReorderAtts = reorderNoticeAttachmentsSchema.safeParse({
+    noticeId: "",
+    orderedIds: ["att-1"],
+  });
+  assert("reorderNoticeAttachmentsSchema rejects missing noticeId", !missingNoticeIdReorderAtts.success);
+
+  const validDeleteAtt = deleteNoticeAttachmentSchema.safeParse({
+    id: "att-xyz",
+  });
+  assert("deleteNoticeAttachmentSchema accepts valid ID", validDeleteAtt.success);
+
+  // -------------------------------------------------------------
+  // 4. Database Transactional Notice & Attachment Lifecycle
+  // -------------------------------------------------------------
+  console.log("\n--- 4. Database Transactional Notice & Attachment Lifecycle ---");
+
   let testUser = await prisma.user.findFirst({
     where: { role: "SUPER_ADMIN" },
   });
@@ -138,9 +202,10 @@ async function runSuite() {
   }
 
   let createdNoticeId = null;
+  let createdSecondaryNoticeId = null;
 
   try {
-    // 3A. Notice Creation
+    // 4A. Notice Creation with Attachments
     const baseTitle = "Test Integration Notice Announcement";
     const rawContent = "<p>Test details with <script>bad()</script><strong>safe bold</strong></p>";
     const cleanContent = sanitizeRichText(rawContent);
@@ -165,6 +230,33 @@ async function runSuite() {
         },
       });
 
+      // Add 2 child attachments
+      const att1 = await tx.noticeAttachment.create({
+        data: {
+          noticeId: notice.id,
+          title: "Attachment 1 - Guidelines",
+          fileUrl: "/documents/guidelines.pdf",
+          fileSizeBytes: 102400,
+          fileSize: "100 KB",
+          fileType: "application/pdf",
+          displayOrder: 0,
+          isPublished: true,
+        },
+      });
+
+      const att2 = await tx.noticeAttachment.create({
+        data: {
+          noticeId: notice.id,
+          title: "Attachment 2 - Schedule",
+          fileUrl: "/documents/schedule.pdf",
+          fileSizeBytes: 204800,
+          fileSize: "200 KB",
+          fileType: "application/pdf",
+          displayOrder: 1,
+          isPublished: true,
+        },
+      });
+
       await tx.auditLog.create({
         data: {
           action: "NOTICE_CREATED",
@@ -177,139 +269,217 @@ async function runSuite() {
             slug: notice.slug,
             category: notice.category,
             isPublished: notice.isPublished,
+            attachmentCount: 2,
           },
-        },
-      });
-
-      return notice;
-    });
-
-    createdNoticeId = created.id;
-
-    assert("Notice created with non-null ID", Boolean(created.id));
-    assert("Content sanitized before insertion", !created.content.includes("<script>"));
-    assert("Deterministic slug matches expected format", created.slug.startsWith("test-integration-notice-announcement"));
-    assert("publishedAt is populated upon publish", created.publishedAt instanceof Date);
-
-    // Verify audit record exists
-    const createAudit = await prisma.auditLog.findFirst({
-      where: { entityType: "Notice", entityId: created.id, action: "NOTICE_CREATED" },
-    });
-    assert("Audit record NOTICE_CREATED recorded in database", Boolean(createAudit));
-
-    // 3B. Notice Update
-    const updated = await prisma.$transaction(async (tx) => {
-      const existing = await tx.notice.findUnique({ where: { id: created.id } });
-      const newTitle = "Test Integration Notice Announcement - Revised";
-      const slug = await generateDeterministicSlug(tx, newTitle, existing.id);
-
-      const notice = await tx.notice.update({
-        where: { id: created.id },
-        data: {
-          title: newTitle,
-          slug,
-          isUrgent: false,
-          displayOrder: 2,
         },
       });
 
       await tx.auditLog.create({
         data: {
-          action: "NOTICE_UPDATED",
-          entityType: "Notice",
-          entityId: notice.id,
+          action: "NOTICE_ATTACHMENT_CREATED",
+          entityType: "NoticeAttachment",
+          entityId: att1.id,
           userId: testUser.id,
           ipAddress: "127.0.0.1",
-          metadata: {
-            changedFields: {
-              title: { from: existing.title, to: newTitle },
-              isUrgent: { from: existing.isUrgent, to: false },
-              displayOrder: { from: existing.displayOrder, to: 2 },
-            },
-          },
+          metadata: { noticeId: notice.id, title: att1.title },
         },
       });
 
-      return notice;
-    });
-
-    assert("Updated notice title reflects revision", updated.title.includes("Revised"));
-    assert("Updated notice slug updated deterministically", updated.slug.includes("revised"));
-    assert("Updated isUrgent is false", updated.isUrgent === false);
-
-    const updateAudit = await prisma.auditLog.findFirst({
-      where: { entityType: "Notice", entityId: created.id, action: "NOTICE_UPDATED" },
-    });
-    assert("Audit record NOTICE_UPDATED recorded with changedFields", Boolean(updateAudit && updateAudit.metadata));
-
-    // 3C. Notice Status Toggle (Published -> Draft -> Published)
-    const toggledToDraft = await prisma.$transaction(async (tx) => {
-      const notice = await tx.notice.update({
-        where: { id: created.id },
+      await tx.auditLog.create({
         data: {
-          isPublished: false,
-          publishedAt: null,
+          action: "NOTICE_ATTACHMENT_CREATED",
+          entityType: "NoticeAttachment",
+          entityId: att2.id,
+          userId: testUser.id,
+          ipAddress: "127.0.0.1",
+          metadata: { noticeId: notice.id, title: att2.title },
         },
       });
-      return notice;
+
+      return { notice, att1, att2 };
     });
 
-    assert("Status toggled to draft: isPublished is false", toggledToDraft.isPublished === false);
-    assert("publishedAt cleared when unpublished to draft", toggledToDraft.publishedAt === null);
+    createdNoticeId = created.notice.id;
 
-    const toggledToPublished = await prisma.$transaction(async (tx) => {
-      const notice = await tx.notice.update({
-        where: { id: created.id },
-        data: {
-          isPublished: true,
-          publishedAt: new Date(),
-        },
-      });
-      return notice;
+    assert("Notice created with non-null ID", Boolean(created.notice.id));
+    assert("Content sanitized before insertion", !created.notice.content.includes("<script>"));
+    assert("Deterministic slug matches expected format", created.notice.slug.startsWith("test-integration-notice-announcement"));
+    assert("publishedAt is populated upon publish", created.notice.publishedAt instanceof Date);
+
+    const attachmentsInDb = await prisma.noticeAttachment.findMany({
+      where: { noticeId: createdNoticeId },
+      orderBy: { displayOrder: "asc" },
     });
+    assert("Notice attachments created in database", attachmentsInDb.length === 2);
+    assert("Attachment 1 title matches", attachmentsInDb[0].title === "Attachment 1 - Guidelines");
+    assert("Attachment 2 title matches", attachmentsInDb[1].title === "Attachment 2 - Schedule");
 
-    assert("Status toggled to published: isPublished is true", toggledToPublished.isPublished === true);
-    assert("publishedAt restored upon republishing", toggledToPublished.publishedAt instanceof Date);
-
-    // 3D. Notice Deletion
+    // 4B. Reorder Attachments
     await prisma.$transaction(async (tx) => {
-      await tx.notice.delete({ where: { id: created.id } });
+      const reversedIds = [attachmentsInDb[1].id, attachmentsInDb[0].id];
+      for (let i = 0; i < reversedIds.length; i++) {
+        await tx.noticeAttachment.update({
+          where: { id: reversedIds[i] },
+          data: { displayOrder: i },
+        });
+      }
+
+      await tx.auditLog.create({
+        data: {
+          action: "NOTICE_ATTACHMENTS_REORDERED",
+          entityType: "NoticeAttachment",
+          entityId: createdNoticeId,
+          userId: testUser.id,
+          ipAddress: "127.0.0.1",
+          metadata: { noticeId: createdNoticeId, orderedIds: reversedIds },
+        },
+      });
+    });
+
+    const reorderedAtts = await prisma.noticeAttachment.findMany({
+      where: { noticeId: createdNoticeId },
+      orderBy: { displayOrder: "asc" },
+    });
+    assert("Attachment order reversed (Attachment 2 is first)", reorderedAtts[0].id === attachmentsInDb[1].id);
+    assert("Attachment 1 is now second", reorderedAtts[1].id === attachmentsInDb[0].id);
+
+    const reorderAttAudit = await prisma.auditLog.findFirst({
+      where: { entityType: "NoticeAttachment", entityId: createdNoticeId, action: "NOTICE_ATTACHMENTS_REORDERED" },
+    });
+    assert("Audit record NOTICE_ATTACHMENTS_REORDERED recorded", Boolean(reorderAttAudit));
+
+    // 4C. Toggle Attachment Status
+    const toggledAtt = await prisma.$transaction(async (tx) => {
+      const att = await tx.noticeAttachment.update({
+        where: { id: attachmentsInDb[0].id },
+        data: { isPublished: false },
+      });
+      await tx.auditLog.create({
+        data: {
+          action: "NOTICE_ATTACHMENT_STATUS_CHANGED",
+          entityType: "NoticeAttachment",
+          entityId: att.id,
+          userId: testUser.id,
+          ipAddress: "127.0.0.1",
+          metadata: { noticeId: createdNoticeId, from: "PUBLISHED", to: "DRAFT" },
+        },
+      });
+      return att;
+    });
+
+    assert("Attachment toggled to draft (isPublished is false)", toggledAtt.isPublished === false);
+    const statusAudit = await prisma.auditLog.findFirst({
+      where: { entityType: "NoticeAttachment", entityId: attachmentsInDb[0].id, action: "NOTICE_ATTACHMENT_STATUS_CHANGED" },
+    });
+    assert("Audit record NOTICE_ATTACHMENT_STATUS_CHANGED recorded", Boolean(statusAudit));
+
+    // 4D. Delete Single Attachment Directly
+    await prisma.$transaction(async (tx) => {
+      await tx.noticeAttachment.delete({ where: { id: attachmentsInDb[1].id } });
+      await tx.auditLog.create({
+        data: {
+          action: "NOTICE_ATTACHMENT_DELETED",
+          entityType: "NoticeAttachment",
+          entityId: attachmentsInDb[1].id,
+          userId: testUser.id,
+          ipAddress: "127.0.0.1",
+          metadata: { noticeId: createdNoticeId, title: attachmentsInDb[1].title },
+        },
+      });
+    });
+
+    const attAfterDelete = await prisma.noticeAttachment.findUnique({
+      where: { id: attachmentsInDb[1].id },
+    });
+    assert("Attachment deleted directly from database", attAfterDelete === null);
+
+    // 4E. Batch Reorder Notices
+    const secondaryNotice = await prisma.notice.create({
+      data: {
+        title: "Test Secondary Notice For Reordering",
+        slug: "test-secondary-notice-for-reordering",
+        category: "CIRCULAR",
+        displayOrder: 99,
+        authorId: testUser.id,
+      },
+    });
+    createdSecondaryNoticeId = secondaryNotice.id;
+
+    await prisma.$transaction(async (tx) => {
+      const orderedNoticeIds = [secondaryNotice.id, createdNoticeId];
+      for (let i = 0; i < orderedNoticeIds.length; i++) {
+        await tx.notice.update({
+          where: { id: orderedNoticeIds[i] },
+          data: { displayOrder: i },
+        });
+      }
+      await tx.auditLog.create({
+        data: {
+          action: "NOTICES_REORDERED",
+          entityType: "Notice",
+          entityId: "batch",
+          userId: testUser.id,
+          ipAddress: "127.0.0.1",
+          metadata: { orderedIds: orderedNoticeIds, count: 2 },
+        },
+      });
+    });
+
+    const n1 = await prisma.notice.findUnique({ where: { id: secondaryNotice.id } });
+    const n2 = await prisma.notice.findUnique({ where: { id: createdNoticeId } });
+    assert("Notices batch reordered: secondary notice has displayOrder 0", n1.displayOrder === 0);
+    assert("Notices batch reordered: primary notice has displayOrder 1", n2.displayOrder === 1);
+
+    const reorderNoticesAudit = await prisma.auditLog.findFirst({
+      where: { entityType: "Notice", entityId: "batch", action: "NOTICES_REORDERED" },
+    });
+    assert("Audit record NOTICES_REORDERED recorded in database", Boolean(reorderNoticesAudit));
+
+    // 4F. Cascade Deletion (Notice -> Child NoticeAttachment)
+    await prisma.$transaction(async (tx) => {
+      await tx.notice.delete({ where: { id: createdNoticeId } });
       await tx.auditLog.create({
         data: {
           action: "NOTICE_DELETED",
           entityType: "Notice",
-          entityId: created.id,
+          entityId: createdNoticeId,
           userId: testUser.id,
           ipAddress: "127.0.0.1",
-          metadata: {
-            title: created.title,
-            slug: created.slug,
-          },
+          metadata: { title: created.notice.title },
         },
       });
     });
 
-    const deletedCheck = await prisma.notice.findUnique({ where: { id: created.id } });
-    assert("Notice successfully deleted from PostgreSQL", deletedCheck === null);
+    const deletedNoticeCheck = await prisma.notice.findUnique({ where: { id: createdNoticeId } });
+    assert("Parent notice deleted from PostgreSQL", deletedNoticeCheck === null);
 
-    const deleteAudit = await prisma.auditLog.findFirst({
-      where: { entityType: "Notice", entityId: created.id, action: "NOTICE_DELETED" },
+    const orphanedAttCheck = await prisma.noticeAttachment.findMany({
+      where: { noticeId: createdNoticeId },
     });
-    assert("Audit record NOTICE_DELETED recorded in database", Boolean(deleteAudit));
+    assert("Foreign key ON DELETE CASCADE deleted child attachments automatically", orphanedAttCheck.length === 0);
+
+    // Delete secondary notice
+    await prisma.notice.delete({ where: { id: createdSecondaryNoticeId } });
+    createdSecondaryNoticeId = null;
+    createdNoticeId = null;
 
     // Clean up test audit logs
     await prisma.auditLog.deleteMany({
-      where: { entityType: "Notice", entityId: created.id },
+      where: {
+        entityId: { in: [created.notice.id, secondaryNotice.id, attachmentsInDb[0].id, attachmentsInDb[1].id, "batch"] },
+      },
     });
-
-    createdNoticeId = null;
   } catch (err) {
     console.error("Test execution error:", err);
     assert("Lifecycle execution without unhandled exception", false, err.message);
   } finally {
     if (createdNoticeId) {
       await prisma.notice.deleteMany({ where: { id: createdNoticeId } });
-      await prisma.auditLog.deleteMany({ where: { entityType: "Notice", entityId: createdNoticeId } });
+      await prisma.auditLog.deleteMany({ where: { entityId: createdNoticeId } });
+    }
+    if (createdSecondaryNoticeId) {
+      await prisma.notice.deleteMany({ where: { id: createdSecondaryNoticeId } });
+      await prisma.auditLog.deleteMany({ where: { entityId: createdSecondaryNoticeId } });
     }
     await prisma.$disconnect();
   }

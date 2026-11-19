@@ -11,6 +11,10 @@ import {
   updateNoticeSchema,
   deleteNoticeSchema,
   toggleNoticeStatusSchema,
+  reorderNoticesSchema,
+  reorderNoticeAttachmentsSchema,
+  deleteNoticeAttachmentSchema,
+  toggleNoticeAttachmentStatusSchema,
   type CreateNoticeInput,
   type UpdateNoticeInput,
 } from "@/lib/validation/notices";
@@ -31,6 +35,12 @@ export interface NoticeActionResponse<T = unknown> {
   error?: string;
   fieldErrors?: Record<string, string[]>;
   noOp?: boolean;
+}
+
+function revalidateNoticeRoutes() {
+  revalidatePath("/admin/students-parents/notices");
+  revalidatePath("/notices");
+  revalidatePath("/");
 }
 
 // In-memory sliding rate limiter for upload actions (15 uploads / minute / admin)
@@ -248,12 +258,10 @@ export async function uploadNoticeDocumentAction(
         );
       });
 
-      // Post-commit cleanup: unlink old replaced file only after transaction commits successfully
       if (oldStorageKeyToDelete && oldStorageKeyToDelete !== permanentKey) {
         await deleteManagedDocument(oldStorageKeyToDelete);
       }
     } else {
-      // Staged upload for new notice creation
       await recordAuditEvent({
         action: "DOCUMENT_UPLOADED",
         entityType: "Notice",
@@ -269,8 +277,7 @@ export async function uploadNoticeDocumentAction(
       });
     }
 
-    revalidatePath("/admin/students-parents/notices");
-    revalidatePath("/notices");
+    revalidateNoticeRoutes();
 
     return {
       success: true,
@@ -283,7 +290,6 @@ export async function uploadNoticeDocumentAction(
       },
     };
   } catch (err: unknown) {
-    // Error Rollback: Clean up promoted file if database update failed
     if (permanentKey) {
       await deleteManagedDocument(permanentKey);
     } else {
@@ -304,7 +310,6 @@ export async function createNoticeAction(
   _prevState: unknown,
   payload: unknown
 ): Promise<NoticeActionResponse> {
-  // 1. Authorization check
   let user;
   try {
     user = await requireRole(["SUPER_ADMIN"]);
@@ -315,7 +320,6 @@ export async function createNoticeAction(
     return { success: false, error: "Unauthorized access" };
   }
 
-  // 2. Canonical schema validation
   const parseResult = createNoticeSchema.safeParse(payload);
   if (!parseResult.success) {
     return {
@@ -328,11 +332,9 @@ export async function createNoticeAction(
   const data: CreateNoticeInput = parseResult.data;
   const ipAddress = await getClientIp();
 
-  // 3. Rich-text sanitization
   const cleanSummary = data.summary ? sanitizeRichText(data.summary) : null;
   const cleanContent = data.content ? sanitizeRichText(data.content) : null;
 
-  // 4. Transactional creation & audit log
   try {
     const createdNotice = await prisma.$transaction(async (tx) => {
       const slug = await generateDeterministicSlug(tx, data.title);
@@ -354,7 +356,7 @@ export async function createNoticeAction(
           expiryDate: data.expiryDate || null,
           displayOrder: data.displayOrder,
 
-          // Managed attachment fields
+          // Managed attachment fields (root compatibility)
           fileStorageKey: data.fileStorageKey || null,
           fileSizeBytes: data.fileSizeBytes || null,
           fileSha256: data.fileSha256 || null,
@@ -364,6 +366,74 @@ export async function createNoticeAction(
           authorId: user.id,
         },
       });
+
+      // Create attachments if provided
+      if (data.attachments && data.attachments.length > 0) {
+        for (let i = 0; i < data.attachments.length; i++) {
+          const att = data.attachments[i];
+          const createdAtt = await tx.noticeAttachment.create({
+            data: {
+              noticeId: notice.id,
+              title: att.title,
+              fileUrl: att.fileUrl || null,
+              fileStorageKey: att.fileStorageKey || null,
+              fileSizeBytes: att.fileSizeBytes || null,
+              fileSize: att.fileSize || null,
+              fileType: att.fileType || "application/pdf",
+              displayOrder: att.displayOrder ?? i,
+              isPublished: att.isPublished ?? true,
+            },
+          });
+
+          await recordAuditEvent(
+            {
+              action: "NOTICE_ATTACHMENT_CREATED",
+              entityType: "NoticeAttachment",
+              entityId: createdAtt.id,
+              userId: user.id,
+              ipAddress,
+              metadata: {
+                noticeId: notice.id,
+                title: createdAtt.title,
+                fileStorageKey: createdAtt.fileStorageKey,
+              },
+            },
+            tx
+          );
+        }
+      } else if (data.fileUrl || data.fileStorageKey) {
+        // Auto-create default attachment from root document for consistency
+        const defaultTitle = data.fileOriginalName || `${data.title} Document`;
+        const createdAtt = await tx.noticeAttachment.create({
+          data: {
+            noticeId: notice.id,
+            title: defaultTitle,
+            fileUrl: data.fileUrl || null,
+            fileStorageKey: data.fileStorageKey || null,
+            fileSizeBytes: data.fileSizeBytes || null,
+            fileSize: data.fileSize || null,
+            fileType: "application/pdf",
+            displayOrder: 0,
+            isPublished: true,
+          },
+        });
+
+        await recordAuditEvent(
+          {
+            action: "NOTICE_ATTACHMENT_CREATED",
+            entityType: "NoticeAttachment",
+            entityId: createdAtt.id,
+            userId: user.id,
+            ipAddress,
+            metadata: {
+              noticeId: notice.id,
+              title: createdAtt.title,
+              fileStorageKey: createdAtt.fileStorageKey,
+            },
+          },
+          tx
+        );
+      }
 
       await recordAuditEvent(
         {
@@ -379,6 +449,7 @@ export async function createNoticeAction(
             isPublished: notice.isPublished,
             isUrgent: notice.isUrgent,
             hasManagedAttachment: Boolean(notice.fileStorageKey),
+            attachmentCount: data.attachments?.length || (data.fileUrl || data.fileStorageKey ? 1 : 0),
           },
         },
         tx
@@ -387,9 +458,7 @@ export async function createNoticeAction(
       return notice;
     });
 
-    revalidatePath("/admin/students-parents/notices");
-    revalidatePath("/notices");
-    revalidatePath("/");
+    revalidateNoticeRoutes();
 
     return { success: true, data: createdNotice };
   } catch (err) {
@@ -406,7 +475,6 @@ export async function updateNoticeAction(
   _prevState: unknown,
   payload: unknown
 ): Promise<NoticeActionResponse> {
-  // 1. Authorization check
   let user;
   try {
     user = await requireRole(["SUPER_ADMIN"]);
@@ -417,7 +485,6 @@ export async function updateNoticeAction(
     return { success: false, error: "Unauthorized access" };
   }
 
-  // 2. Canonical schema validation
   const parseResult = updateNoticeSchema.safeParse(payload);
   if (!parseResult.success) {
     return {
@@ -430,13 +497,12 @@ export async function updateNoticeAction(
   const data: UpdateNoticeInput = parseResult.data;
   const ipAddress = await getClientIp();
 
-  // 3. Rich-text sanitization
   const cleanSummary = data.summary ? sanitizeRichText(data.summary) : null;
   const cleanContent = data.content ? sanitizeRichText(data.content) : null;
 
   let oldStorageKeyToDelete: string | null = null;
+  const attachmentStorageKeysToDelete: string[] = [];
 
-  // 4. Transactional update & audit log
   try {
     const updatedNotice = await prisma.$transaction(async (tx) => {
       const existing = await tx.notice.findUnique({
@@ -447,18 +513,15 @@ export async function updateNoticeAction(
         throw new Error("Notice not found");
       }
 
-      // If attachment is being replaced or removed, track old key for post-commit deletion
       if (existing.fileStorageKey && data.fileStorageKey !== existing.fileStorageKey) {
         oldStorageKeyToDelete = existing.fileStorageKey;
       }
 
-      // If title changed, recompute deterministic slug
       let slug = existing.slug;
       if (data.title !== existing.title) {
         slug = await generateDeterministicSlug(tx, data.title, existing.id);
       }
 
-      // Handle publishedAt timestamp
       let publishedAt = existing.publishedAt;
       if (data.isPublished && !existing.isPublished) {
         publishedAt = new Date();
@@ -466,7 +529,6 @@ export async function updateNoticeAction(
         publishedAt = null;
       }
 
-      // Detect changed fields for audit diff
       const changedFields: Record<string, { from: unknown; to: unknown }> = {};
       if (existing.title !== data.title) changedFields.title = { from: existing.title, to: data.title };
       if (existing.category !== data.category) changedFields.category = { from: existing.category, to: data.category };
@@ -504,6 +566,111 @@ export async function updateNoticeAction(
         },
       });
 
+      // Synchronize attachments if array provided
+      if (Array.isArray(data.attachments)) {
+        const existingAtts = await tx.noticeAttachment.findMany({
+          where: { noticeId: data.id },
+        });
+        const incomingIds = new Set(data.attachments.map((a) => a.id).filter(Boolean));
+
+        // Delete removed attachments
+        for (const existingAtt of existingAtts) {
+          if (!incomingIds.has(existingAtt.id)) {
+            if (existingAtt.fileStorageKey) {
+              attachmentStorageKeysToDelete.push(existingAtt.fileStorageKey);
+            }
+            await tx.noticeAttachment.delete({
+              where: { id: existingAtt.id },
+            });
+            await recordAuditEvent(
+              {
+                action: "NOTICE_ATTACHMENT_DELETED",
+                entityType: "NoticeAttachment",
+                entityId: existingAtt.id,
+                userId: user.id,
+                ipAddress,
+                metadata: {
+                  noticeId: data.id,
+                  title: existingAtt.title,
+                  fileStorageKey: existingAtt.fileStorageKey,
+                },
+              },
+              tx
+            );
+          }
+        }
+
+        // Upsert incoming attachments
+        for (let i = 0; i < data.attachments.length; i++) {
+          const att = data.attachments[i];
+          const displayOrder = att.displayOrder ?? i;
+
+          if (att.id && existingAtts.some((ea) => ea.id === att.id)) {
+            const prev = existingAtts.find((ea) => ea.id === att.id)!;
+            if (prev.fileStorageKey && att.fileStorageKey && prev.fileStorageKey !== att.fileStorageKey) {
+              attachmentStorageKeysToDelete.push(prev.fileStorageKey);
+            }
+            await tx.noticeAttachment.update({
+              where: { id: att.id },
+              data: {
+                title: att.title,
+                fileUrl: att.fileUrl || null,
+                fileStorageKey: att.fileStorageKey || null,
+                fileSizeBytes: att.fileSizeBytes || null,
+                fileSize: att.fileSize || null,
+                fileType: att.fileType || "application/pdf",
+                displayOrder,
+                isPublished: att.isPublished ?? true,
+              },
+            });
+            await recordAuditEvent(
+              {
+                action: "NOTICE_ATTACHMENT_UPDATED",
+                entityType: "NoticeAttachment",
+                entityId: att.id,
+                userId: user.id,
+                ipAddress,
+                metadata: {
+                  noticeId: data.id,
+                  title: att.title,
+                  fileStorageKey: att.fileStorageKey,
+                },
+              },
+              tx
+            );
+          } else {
+            const createdAtt = await tx.noticeAttachment.create({
+              data: {
+                noticeId: data.id,
+                title: att.title,
+                fileUrl: att.fileUrl || null,
+                fileStorageKey: att.fileStorageKey || null,
+                fileSizeBytes: att.fileSizeBytes || null,
+                fileSize: att.fileSize || null,
+                fileType: att.fileType || "application/pdf",
+                displayOrder,
+                isPublished: att.isPublished ?? true,
+              },
+            });
+            await recordAuditEvent(
+              {
+                action: "NOTICE_ATTACHMENT_CREATED",
+                entityType: "NoticeAttachment",
+                entityId: createdAtt.id,
+                userId: user.id,
+                ipAddress,
+                metadata: {
+                  noticeId: data.id,
+                  title: createdAtt.title,
+                  fileStorageKey: createdAtt.fileStorageKey,
+                },
+              },
+              tx
+            );
+          }
+        }
+      }
+
       if (Object.keys(changedFields).length > 0) {
         await recordAuditEvent(
           {
@@ -523,7 +690,6 @@ export async function updateNoticeAction(
       return notice;
     });
 
-    // 5. Post-commit cleanup: unlink replaced attachment only after transaction committed
     if (oldStorageKeyToDelete) {
       await deleteManagedDocument(oldStorageKeyToDelete);
       await recordAuditEvent({
@@ -538,9 +704,21 @@ export async function updateNoticeAction(
       });
     }
 
-    revalidatePath("/admin/students-parents/notices");
-    revalidatePath("/notices");
-    revalidatePath("/");
+    for (const key of attachmentStorageKeysToDelete) {
+      await deleteManagedDocument(key);
+      await recordAuditEvent({
+        action: "DOCUMENT_REMOVED",
+        entityType: "NoticeAttachment",
+        entityId: data.id,
+        userId: user.id,
+        ipAddress,
+        metadata: {
+          removedStorageKey: key,
+        },
+      });
+    }
+
+    revalidateNoticeRoutes();
 
     return { success: true, data: updatedNotice };
   } catch (err: unknown) {
@@ -551,14 +729,13 @@ export async function updateNoticeAction(
 }
 
 /**
- * Deletes a Notice.
+ * Deletes a Notice and cascades to its attachments and managed files.
  * Restricted strictly to SUPER_ADMIN.
  */
 export async function deleteNoticeAction(
   _prevState: unknown,
   payload: unknown
 ): Promise<NoticeActionResponse> {
-  // 1. Authorization check
   let user;
   try {
     user = await requireRole(["SUPER_ADMIN"]);
@@ -569,7 +746,6 @@ export async function deleteNoticeAction(
     return { success: false, error: "Unauthorized access" };
   }
 
-  // 2. Validation
   const parseResult = deleteNoticeSchema.safeParse(payload);
   if (!parseResult.success) {
     return { success: false, error: "Invalid notice ID." };
@@ -578,20 +754,27 @@ export async function deleteNoticeAction(
   const { id } = parseResult.data;
   const ipAddress = await getClientIp();
 
-  let storageKeyToDelete: string | null = null;
+  const storageKeysToDelete: string[] = [];
 
-  // 3. Transactional deletion & audit log
   try {
     await prisma.$transaction(async (tx) => {
       const existing = await tx.notice.findUnique({
         where: { id },
+        include: { attachments: true },
       });
 
       if (!existing) {
         throw new Error("Notice not found");
       }
 
-      storageKeyToDelete = existing.fileStorageKey;
+      if (existing.fileStorageKey) {
+        storageKeysToDelete.push(existing.fileStorageKey);
+      }
+      for (const att of existing.attachments) {
+        if (att.fileStorageKey) {
+          storageKeysToDelete.push(att.fileStorageKey);
+        }
+      }
 
       await tx.notice.delete({
         where: { id },
@@ -609,15 +792,15 @@ export async function deleteNoticeAction(
             slug: existing.slug,
             category: existing.category,
             hadAttachment: Boolean(existing.fileStorageKey),
+            attachmentCount: existing.attachments.length,
           },
         },
         tx
       );
     });
 
-    // 4. Post-commit cleanup: Delete managed document only after transaction committed
-    if (storageKeyToDelete) {
-      await deleteManagedDocument(storageKeyToDelete);
+    for (const storageKey of storageKeysToDelete) {
+      await deleteManagedDocument(storageKey);
       await recordAuditEvent({
         action: "DOCUMENT_DELETED",
         entityType: "Notice",
@@ -625,14 +808,12 @@ export async function deleteNoticeAction(
         userId: user.id,
         ipAddress,
         metadata: {
-          deletedStorageKey: storageKeyToDelete,
+          deletedStorageKey: storageKey,
         },
       });
     }
 
-    revalidatePath("/admin/students-parents/notices");
-    revalidatePath("/notices");
-    revalidatePath("/");
+    revalidateNoticeRoutes();
 
     return { success: true };
   } catch (err: unknown) {
@@ -700,12 +881,270 @@ export async function toggleNoticeStatusAction(
       return notice;
     });
 
-    revalidatePath("/admin/students-parents/notices");
-    revalidatePath("/notices");
-    revalidatePath("/");
+    revalidateNoticeRoutes();
 
     return { success: true, data: updated };
   } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : "Status toggle failed";
+    return { success: false, error: msg };
+  }
+}
+
+/**
+ * Reorders Notices in batch.
+ * Restricted strictly to SUPER_ADMIN.
+ */
+export async function reorderNoticesAction(
+  payload: unknown
+): Promise<NoticeActionResponse<{ count: number }>> {
+  let user;
+  try {
+    user = await requireRole(["SUPER_ADMIN"]);
+  } catch (err) {
+    if (err instanceof AuthorizationError) {
+      return { success: false, error: err.message };
+    }
+    return { success: false, error: "Unauthorized access" };
+  }
+
+  const parseResult = reorderNoticesSchema.safeParse(payload);
+  if (!parseResult.success) {
+    return { success: false, error: "Invalid ordering payload." };
+  }
+
+  const { orderedIds } = parseResult.data;
+  const ipAddress = await getClientIp();
+
+  try {
+    await prisma.$transaction(async (tx) => {
+      for (let i = 0; i < orderedIds.length; i++) {
+        await tx.notice.update({
+          where: { id: orderedIds[i] },
+          data: { displayOrder: i },
+        });
+      }
+
+      await recordAuditEvent(
+        {
+          userId: user.id,
+          action: "NOTICES_REORDERED",
+          entityType: "Notice",
+          entityId: "batch",
+          ipAddress,
+          metadata: {
+            orderedIds,
+            count: orderedIds.length,
+          },
+        },
+        tx
+      );
+    });
+
+    revalidateNoticeRoutes();
+    return { success: true, data: { count: orderedIds.length } };
+  } catch (err) {
+    console.error("[reorderNoticesAction] Error:", err);
+    return { success: false, error: "Failed to reorder notices." };
+  }
+}
+
+/**
+ * Reorders Notice Attachments for a specific notice.
+ * Restricted strictly to SUPER_ADMIN.
+ */
+export async function reorderNoticeAttachmentsAction(
+  payload: unknown
+): Promise<NoticeActionResponse<{ count: number }>> {
+  let user;
+  try {
+    user = await requireRole(["SUPER_ADMIN"]);
+  } catch (err) {
+    if (err instanceof AuthorizationError) {
+      return { success: false, error: err.message };
+    }
+    return { success: false, error: "Unauthorized access" };
+  }
+
+  const parseResult = reorderNoticeAttachmentsSchema.safeParse(payload);
+  if (!parseResult.success) {
+    return { success: false, error: "Invalid attachment ordering payload." };
+  }
+
+  const { noticeId, orderedIds } = parseResult.data;
+  const ipAddress = await getClientIp();
+
+  try {
+    await prisma.$transaction(async (tx) => {
+      for (let i = 0; i < orderedIds.length; i++) {
+        await tx.noticeAttachment.updateMany({
+          where: { id: orderedIds[i], noticeId },
+          data: { displayOrder: i },
+        });
+      }
+
+      await recordAuditEvent(
+        {
+          userId: user.id,
+          action: "NOTICE_ATTACHMENTS_REORDERED",
+          entityType: "NoticeAttachment",
+          entityId: noticeId,
+          ipAddress,
+          metadata: {
+            noticeId,
+            orderedIds,
+            count: orderedIds.length,
+          },
+        },
+        tx
+      );
+    });
+
+    revalidateNoticeRoutes();
+    return { success: true, data: { count: orderedIds.length } };
+  } catch (err) {
+    console.error("[reorderNoticeAttachmentsAction] Error:", err);
+    return { success: false, error: "Failed to reorder notice attachments." };
+  }
+}
+
+/**
+ * Deletes a single Notice Attachment and cleans up its storage key.
+ * Restricted strictly to SUPER_ADMIN.
+ */
+export async function deleteNoticeAttachmentAction(
+  payload: unknown
+): Promise<NoticeActionResponse> {
+  let user;
+  try {
+    user = await requireRole(["SUPER_ADMIN"]);
+  } catch (err) {
+    if (err instanceof AuthorizationError) {
+      return { success: false, error: err.message };
+    }
+    return { success: false, error: "Unauthorized access" };
+  }
+
+  const parseResult = deleteNoticeAttachmentSchema.safeParse(payload);
+  if (!parseResult.success) {
+    return { success: false, error: "Invalid attachment ID." };
+  }
+
+  const { id } = parseResult.data;
+  const ipAddress = await getClientIp();
+  let storageKeyToDelete: string | null = null;
+
+  try {
+    await prisma.$transaction(async (tx) => {
+      const existing = await tx.noticeAttachment.findUnique({
+        where: { id },
+      });
+      if (!existing) {
+        throw new Error("Notice attachment not found.");
+      }
+
+      storageKeyToDelete = existing.fileStorageKey;
+
+      await tx.noticeAttachment.delete({
+        where: { id },
+      });
+
+      await recordAuditEvent(
+        {
+          action: "NOTICE_ATTACHMENT_DELETED",
+          entityType: "NoticeAttachment",
+          entityId: id,
+          userId: user.id,
+          ipAddress,
+          metadata: {
+            noticeId: existing.noticeId,
+            title: existing.title,
+            fileStorageKey: existing.fileStorageKey,
+          },
+        },
+        tx
+      );
+    });
+
+    if (storageKeyToDelete) {
+      await deleteManagedDocument(storageKeyToDelete);
+      await recordAuditEvent({
+        action: "DOCUMENT_DELETED",
+        entityType: "NoticeAttachment",
+        entityId: id,
+        userId: user.id,
+        ipAddress,
+        metadata: {
+          deletedStorageKey: storageKeyToDelete,
+        },
+      });
+    }
+
+    revalidateNoticeRoutes();
+    return { success: true };
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : "Failed to delete attachment.";
+    console.error("[deleteNoticeAttachmentAction] Error:", err);
+    return { success: false, error: msg };
+  }
+}
+
+/**
+ * Toggles published status of a Notice Attachment.
+ * Restricted strictly to SUPER_ADMIN.
+ */
+export async function toggleNoticeAttachmentStatusAction(
+  payload: unknown
+): Promise<NoticeActionResponse> {
+  let user;
+  try {
+    user = await requireRole(["SUPER_ADMIN"]);
+  } catch (err) {
+    if (err instanceof AuthorizationError) {
+      return { success: false, error: err.message };
+    }
+    return { success: false, error: "Unauthorized access" };
+  }
+
+  const parseResult = toggleNoticeAttachmentStatusSchema.safeParse(payload);
+  if (!parseResult.success) {
+    return { success: false, error: "Invalid status toggle payload." };
+  }
+
+  const { id, isPublished } = parseResult.data;
+  const ipAddress = await getClientIp();
+
+  try {
+    const updated = await prisma.$transaction(async (tx) => {
+      const existing = await tx.noticeAttachment.findUnique({ where: { id } });
+      if (!existing) throw new Error("Attachment not found");
+
+      const attachment = await tx.noticeAttachment.update({
+        where: { id },
+        data: { isPublished },
+      });
+
+      await recordAuditEvent(
+        {
+          action: "NOTICE_ATTACHMENT_STATUS_CHANGED",
+          entityType: "NoticeAttachment",
+          entityId: attachment.id,
+          userId: user.id,
+          ipAddress,
+          metadata: {
+            noticeId: existing.noticeId,
+            from: existing.isPublished ? "PUBLISHED" : "DRAFT",
+            to: isPublished ? "PUBLISHED" : "DRAFT",
+          },
+        },
+        tx
+      );
+
+      return attachment;
+    });
+
+    revalidateNoticeRoutes();
+    return { success: true, data: updated };
+  } catch (err) {
     const msg = err instanceof Error ? err.message : "Status toggle failed";
     return { success: false, error: msg };
   }
