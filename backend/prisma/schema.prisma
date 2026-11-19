@@ -527,3 +527,74 @@ model FacultyMember {
   @@index([department])
   @@map("faculty_members")
 }
+
+
+// ==========================================
+// 12. CAMPUS GALLERY (ALBUMS & IMAGES)
+// ==========================================
+
+model GalleryAlbum {
+  id                   String         @id @default(cuid())
+  title                String         @db.VarChar(150)
+  description          String?        @db.Text
+  category             String         @db.VarChar(60)
+  coverImageUrl        String         @db.VarChar(500)
+  coverImageStorageKey String?        @db.VarChar(255)
+  coverImageAlt        String         @default("") @db.VarChar(255)
+  displayOrder         Int            @default(0)
+  isPublished          Boolean        @default(true)
+  createdAt            DateTime       @default(now())
+  updatedAt            DateTime       @updatedAt
+
+  images               GalleryImage[] @relation("AlbumImages")
+
+  @@index([isPublished, displayOrder])
+  @@index([category])
+  @@map("gallery_albums")
+}
+
+model GalleryImage {
+  id              String       @id @default(cuid())
+  albumId         String
+  album           GalleryAlbum @relation("AlbumImages", fields: [albumId], references: [id], onDelete: Cascade)
+  imageUrl        String       @db.VarChar(500)
+  imageStorageKey String?      @db.VarChar(255)
+  imageAlt        String       @db.VarChar(255)
+  caption         String?      @db.Text
+  displayOrder    Int          @default(0)
+  isPublished     Boolean      @default(true)
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  @@index([albumId, displayOrder])
+  @@index([isPublished, displayOrder])
+  @@map("gallery_images")
+}
+
+// ==========================================
+// 13. ACADEMIC & SCHOOL EVENTS
+// ==========================================
+
+model SchoolEvent {
+  id                   String    @id @default(cuid())
+  title                String    @db.VarChar(150)
+  description          String    @db.Text
+  eventDate            String    @db.VarChar(100)
+  isoDate              DateTime?
+  time                 String?   @db.VarChar(100)
+  location             String?   @db.VarChar(200)
+  category             String?   @db.VarChar(60)
+  linkHref             String?   @db.VarChar(500)
+  linkLabel            String?   @db.VarChar(100)
+  coverImageUrl        String?   @db.VarChar(500)
+  coverImageStorageKey String?   @db.VarChar(255)
+  coverImageAlt        String?   @db.VarChar(255)
+  displayOrder         Int       @default(0)
+  isPublished          Boolean   @default(true)
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+
+  @@index([isPublished, displayOrder])
+  @@index([isoDate])
+  @@map("school_events")
+}

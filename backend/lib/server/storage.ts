@@ -4,17 +4,16 @@ import path from "node:path";
 import crypto from "node:crypto";
 import { prisma } from "@/lib/server/prisma";
 
+export type ManagedMediaFolder = "toppers" | "gallery" | "events";
+
 export const MANAGED_KEY_REGEX =
-  /^toppers\/top_[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}\.webp$/;
+  /^(toppers\/top|gallery\/gal|events\/eve)_[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}\.webp$/;
 
-const DEFAULT_UPLOAD_ROOT = path.resolve(process.cwd(), "storage", "uploads", "toppers");
-
-export function getUploadRoot(): string {
-  // Allow overriding via environment for isolated unit testing
+export function getUploadRoot(folder: ManagedMediaFolder = "toppers"): string {
   if (process.env.TEST_UPLOAD_ROOT) {
-    return path.resolve(process.env.TEST_UPLOAD_ROOT);
+    return path.resolve(process.env.TEST_UPLOAD_ROOT, folder);
   }
-  return DEFAULT_UPLOAD_ROOT;
+  return path.resolve(process.cwd(), "storage", "uploads", folder);
 }
 
 export function getPublicMediaOrigin(): string {
@@ -50,9 +49,10 @@ export function isValidManagedKey(key: string | null | undefined): key is string
 /**
  * Generates a server-authoritative managed storage key.
  */
-export function generateManagedKey(): string {
+export function generateManagedKey(folder: ManagedMediaFolder = "toppers"): string {
   const uuid = crypto.randomUUID();
-  return `toppers/top_${uuid}.webp`;
+  const prefix = folder === "gallery" ? "gal" : folder === "events" ? "eve" : "top";
+  return `${folder}/${prefix}_${uuid}.webp`;
 }
 
 /**
@@ -63,8 +63,8 @@ export function resolveSafePath(storageKey: string): string {
     throw new Error(`Invalid managed storage key format: "${storageKey}"`);
   }
 
-  const root = getUploadRoot();
-  const filename = path.basename(storageKey);
+  const [folder, filename] = storageKey.split("/");
+  const root = getUploadRoot(folder as ManagedMediaFolder);
   const resolved = path.resolve(root, filename);
 
   // Path containment assert
@@ -80,12 +80,13 @@ export function resolveSafePath(storageKey: string): string {
  * Writes a processed WebP image buffer to managed local storage.
  */
 export async function saveManagedPhoto(
-  buffer: Buffer
+  buffer: Buffer,
+  folder: ManagedMediaFolder = "toppers"
 ): Promise<{ storageKey: string; publicUrl: string }> {
   assertLocalStoragePermitted();
 
-  const storageKey = generateManagedKey();
-  const root = getUploadRoot();
+  const storageKey = generateManagedKey(folder);
+  const root = getUploadRoot(folder);
 
   // Ensure upload directory exists
   await fs.promises.mkdir(root, { recursive: true });
@@ -125,6 +126,9 @@ export async function deleteManagedPhotoIfUnreferenced(
     leadershipImageCount,
     leadershipSignatureCount,
     facultyCount,
+    galleryAlbumCount,
+    galleryImageCount,
+    eventCount,
   ] = await Promise.all([
     prisma.boardResultTopper.count({ where: { photoStorageKey: storageKey } }),
     prisma.homepageHero.count({ where: { backgroundImageStorageKey: storageKey } }),
@@ -136,6 +140,9 @@ export async function deleteManagedPhotoIfUnreferenced(
     prisma.leadershipMember.count({ where: { imageStorageKey: storageKey } }),
     prisma.leadershipMember.count({ where: { signatureStorageKey: storageKey } }),
     prisma.facultyMember.count({ where: { imageStorageKey: storageKey } }),
+    prisma.galleryAlbum.count({ where: { coverImageStorageKey: storageKey } }),
+    prisma.galleryImage.count({ where: { imageStorageKey: storageKey } }),
+    prisma.schoolEvent.count({ where: { coverImageStorageKey: storageKey } }),
   ]);
 
   const refCount =
@@ -148,7 +155,10 @@ export async function deleteManagedPhotoIfUnreferenced(
     narrativeCount +
     leadershipImageCount +
     leadershipSignatureCount +
-    facultyCount;
+    facultyCount +
+    galleryAlbumCount +
+    galleryImageCount +
+    eventCount;
 
   if (refCount > 0) {
     console.warn(

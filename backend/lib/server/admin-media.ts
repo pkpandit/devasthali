@@ -5,6 +5,7 @@ import {
   saveManagedPhoto,
   resolveSafePath,
   deleteManagedPhotoIfUnreferenced,
+  type ManagedMediaFolder,
 } from "@/lib/server/storage";
 
 /**
@@ -65,12 +66,13 @@ export function isRemovalRequested(
  * Processes an uploaded image file with Sharp and writes it to managed storage.
  */
 export async function processAndSaveUploadedImage(
-  file: File
+  file: File,
+  folder: ManagedMediaFolder = "toppers"
 ): Promise<{ storageKey: string; publicUrl: string }> {
   const arrayBuffer = await file.arrayBuffer();
   const inputBuffer = Buffer.from(arrayBuffer);
   const processed = await processTopperPhoto(inputBuffer);
-  return await saveManagedPhoto(processed.buffer);
+  return await saveManagedPhoto(processed.buffer, folder);
 }
 
 /**
@@ -88,4 +90,4 @@ export async function cleanupOrphanFile(
   }
 }
 
-export { ImageProcessingError, deleteManagedPhotoIfUnreferenced };
+export { ImageProcessingError, deleteManagedPhotoIfUnreferenced, type ManagedMediaFolder };
