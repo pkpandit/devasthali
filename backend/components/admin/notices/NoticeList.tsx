@@ -9,6 +9,8 @@ import {
   Eye,
   EyeOff,
   AlertCircle,
+  ArrowUp,
+  ArrowDown,
 } from "lucide-react";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { Badge } from "@/components/ui/Badge";
@@ -21,6 +23,8 @@ interface NoticeListProps {
   onEdit?: (notice: SerializedNotice) => void;
   onDelete?: (notice: SerializedNotice) => void;
   onToggleStatus?: (notice: SerializedNotice) => void;
+  onMove?: (index: number, direction: "UP" | "DOWN") => void;
+  isReorderDisabled?: boolean;
 }
 
 function formatDate(isoString: string | null | undefined): string {
@@ -77,6 +81,8 @@ export function NoticeList({
   onEdit,
   onDelete,
   onToggleStatus,
+  onMove,
+  isReorderDisabled = false,
 }: NoticeListProps) {
   if (!notices || notices.length === 0) {
     return (
@@ -114,23 +120,17 @@ export function NoticeList({
             <th scope="col" className="notice-table__title-col">Title &amp; Summary</th>
             <th scope="col" className="notice-table__date-col">Publish Date</th>
             <th scope="col" className="notice-table__date-col">Expiry Date</th>
-            <th scope="col" className="notice-table__doc-col">Document</th>
+            <th scope="col" className="notice-table__doc-col">Attachments</th>
             <th scope="col" className="notice-table__order-col">Order</th>
             <th scope="col" className="notice-table__actions-col">Actions</th>
           </tr>
         </thead>
         <tbody>
-          {notices.map((notice) => {
+          {notices.map((notice, index) => {
             const status = getNoticeStatus(notice);
-            const hasDocument = Boolean(notice.fileStorageKey || notice.fileUrl);
-            const docHref = notice.fileStorageKey
-              ? `/api/admin/notices/${notice.id}/document`
-              : notice.fileUrl;
-            const docLabel = notice.fileSize
-              ? notice.fileSize
-              : notice.fileSizeBytes
-              ? `${Math.round(notice.fileSizeBytes / 1024)} KB`
-              : "Attachment";
+            const attachments = notice.attachments || [];
+            const hasAttachments = attachments.length > 0;
+            const hasLegacyDoc = Boolean(notice.fileStorageKey || notice.fileUrl);
 
             return (
               <tr key={notice.id}>
@@ -174,17 +174,62 @@ export function NoticeList({
                   </span>
                 </td>
                 <td className="notice-table__doc-col">
-                  {hasDocument && docHref ? (
+                  {hasAttachments ? (
+                    <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                        <Badge variant="doc">
+                          {attachments.length} {attachments.length === 1 ? "file" : "files"}
+                        </Badge>
+                      </div>
+                      {attachments.slice(0, 2).map((att) => {
+                        const href = att.fileStorageKey
+                          ? `/api/admin/notices/${att.id}/document`
+                          : att.fileUrl;
+                        return href ? (
+                          <a
+                            key={att.id}
+                            href={href}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="notice-table__doc-link"
+                            title={att.title}
+                          >
+                            <ExternalLink size={12} className="shrink-0" aria-hidden="true" />
+                            <span
+                              className="notice-table__doc-text"
+                              style={{
+                                maxWidth: "150px",
+                                overflow: "hidden",
+                                textOverflow: "ellipsis",
+                                whiteSpace: "nowrap",
+                              }}
+                            >
+                              {att.title}
+                            </span>
+                          </a>
+                        ) : null;
+                      })}
+                      {attachments.length > 2 && (
+                        <span style={{ fontSize: "11px", color: "var(--color-text-secondary, #6b7280)" }}>
+                          +{attachments.length - 2} more
+                        </span>
+                      )}
+                    </div>
+                  ) : hasLegacyDoc ? (
                     <a
-                      href={docHref}
+                      href={
+                        notice.fileStorageKey
+                          ? `/api/admin/notices/${notice.id}/document`
+                          : (notice.fileUrl || "#")
+                      }
                       target="_blank"
                       rel="noopener noreferrer"
                       className="notice-table__doc-link"
-                      title={notice.fileOriginalName || docHref}
+                      title={notice.fileOriginalName || notice.fileUrl || "Document"}
                     >
                       <ExternalLink size={13} className="shrink-0" aria-hidden="true" />
                       <span className="notice-table__doc-text">
-                        {docLabel}
+                        {notice.fileSize || "Document"}
                       </span>
                     </a>
                   ) : (
@@ -192,9 +237,35 @@ export function NoticeList({
                   )}
                 </td>
                 <td className="notice-table__order-col">
-                  <span className="admin-table__order-text">
-                    {notice.displayOrder}
-                  </span>
+                  <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                    <span className="admin-table__order-text">
+                      {notice.displayOrder}
+                    </span>
+                    {onMove && (
+                      <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
+                        <button
+                          type="button"
+                          className="admin-icon-btn"
+                          onClick={() => onMove(index, "UP")}
+                          disabled={index === 0 || isReorderDisabled}
+                          aria-label={`Move notice up: ${notice.title}`}
+                          title={isReorderDisabled ? "Reset search/filters to reorder" : "Move up"}
+                        >
+                          <ArrowUp size={12} />
+                        </button>
+                        <button
+                          type="button"
+                          className="admin-icon-btn"
+                          onClick={() => onMove(index, "DOWN")}
+                          disabled={index === notices.length - 1 || isReorderDisabled}
+                          aria-label={`Move notice down: ${notice.title}`}
+                          title={isReorderDisabled ? "Reset search/filters to reorder" : "Move down"}
+                        >
+                          <ArrowDown size={12} />
+                        </button>
+                      </div>
+                    )}
+                  </div>
                 </td>
                 <td className="notice-table__actions-col">
                   <div className="topper-card-actions justify-end">

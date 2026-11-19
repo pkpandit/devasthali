@@ -6,7 +6,7 @@ import { Plus, Search, ChevronDown, RotateCcw } from "lucide-react";
 import { NoticeList } from "./NoticeList";
 import { NoticeFormDialog, type SerializedNotice } from "./NoticeFormDialog";
 import { DeleteNoticeDialog } from "./DeleteNoticeDialog";
-import { toggleNoticeStatusAction } from "@/lib/server/notice-actions";
+import { toggleNoticeStatusAction, reorderNoticesAction } from "@/lib/server/notice-actions";
 import { getNoticeStatus, type NoticeComputedStatus } from "@/lib/validation/notices";
 
 interface NoticeWorkspaceProps {
@@ -50,6 +50,35 @@ export function NoticeWorkspace({ notices }: NoticeWorkspaceProps) {
       } catch (err) {
         console.error("Toggle error:", err);
         alert("Unexpected error updating notice status.");
+      }
+    });
+  };
+
+  const isReorderDisabled =
+    statusFilter !== "ALL" || categoryFilter !== "ALL" || Boolean(searchQuery.trim());
+
+  const handleMoveNotice = (currentIndex: number, direction: "UP" | "DOWN") => {
+    if (isPending || isReorderDisabled) return;
+    const targetIndex = direction === "UP" ? currentIndex - 1 : currentIndex + 1;
+    if (targetIndex < 0 || targetIndex >= notices.length) return;
+
+    const reordered = [...notices];
+    const [moved] = reordered.splice(currentIndex, 1);
+    reordered.splice(targetIndex, 0, moved);
+
+    const orderedIds = reordered.map((item) => item.id);
+
+    startTransition(async () => {
+      try {
+        const res = await reorderNoticesAction({ orderedIds });
+        if (res.success) {
+          handleSuccess();
+        } else {
+          alert(res.error || "Failed to reorder notices.");
+        }
+      } catch (err) {
+        console.error("Reorder error:", err);
+        alert("Unexpected error reordering notices.");
       }
     });
   };
@@ -207,6 +236,8 @@ export function NoticeWorkspace({ notices }: NoticeWorkspaceProps) {
         onEdit={(notice) => setEditingNotice(notice)}
         onDelete={(notice) => setDeletingNotice(notice)}
         onToggleStatus={handleToggleStatus}
+        onMove={handleMoveNotice}
+        isReorderDisabled={isReorderDisabled}
       />
 
       {/* Create / Edit Form Modal */}

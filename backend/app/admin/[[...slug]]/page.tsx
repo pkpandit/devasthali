@@ -166,6 +166,11 @@ export default async function AdminWorkspacePage({
     await requireRole(["SUPER_ADMIN"], href);
 
     const notices = await prisma.notice.findMany({
+      include: {
+        attachments: {
+          orderBy: { displayOrder: "asc" },
+        },
+      },
       orderBy: [
         { displayOrder: "asc" },
         { publishDate: "desc" },
@@ -174,6 +179,11 @@ export default async function AdminWorkspacePage({
 
     const serializedNotices = notices.map((notice) => ({
       ...notice,
+      attachments: notice.attachments.map((att) => ({
+        ...att,
+        createdAt: att.createdAt.toISOString(),
+        updatedAt: att.updatedAt.toISOString(),
+      })),
       fileUploadedAt: notice.fileUploadedAt ? notice.fileUploadedAt.toISOString() : null,
       publishDate: notice.publishDate.toISOString(),
       publishedAt: notice.publishedAt ? notice.publishedAt.toISOString() : null,
