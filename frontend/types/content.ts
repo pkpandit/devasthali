@@ -130,6 +130,15 @@ export interface SchoolInfo {
 // Academic & Campus Interfaces
 // ==========================================
 
+export interface NoticeAttachmentItem {
+  id: string;
+  title: string;
+  fileUrl?: string;
+  fileSize?: string;
+  fileType?: string;
+  displayOrder?: number;
+}
+
 export interface NoticeItem {
   id: string;
   title: string;
@@ -140,6 +149,7 @@ export interface NoticeItem {
   fileSize?: string;
   summary?: string;
   content?: string;
+  attachments?: NoticeAttachmentItem[];
 }
 
 export interface BoardTopper {

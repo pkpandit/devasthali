@@ -1,7 +1,6 @@
 import React, { Suspense } from "react";
 import type { Metadata } from "next";
 import Link from "next/link";
-import { NOTICES_DATA } from "@/lib/school-data";
 import { getPublicNotices } from "@/lib/api/notices";
 import { FileText, Download, Calendar, Sparkles } from "lucide-react";
 
@@ -48,11 +47,23 @@ function NoticesListFallback() {
  */
 async function NoticesListSection() {
   const { notices } = await getPublicNotices();
-  const displayNotices = notices && notices.length > 0 ? notices : NOTICES_DATA;
+
+  if (!notices || notices.length === 0) {
+    return (
+      <div className="py-20 text-center bg-white rounded-2xl sm:rounded-3xl border border-gray-200/90 shadow-2xs px-4">
+        <h3 className="text-lg font-heading font-bold text-gray-700">No Official Notices Scheduled</h3>
+        <p className="text-sm text-gray-500 mt-1 max-w-md mx-auto">
+          No official notices or circulars are scheduled at this time. Please check back later for school announcements.
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4">
-      {displayNotices.map((notice) => {
+      {notices.map((notice) => {
+        const attachments = notice.attachments || [];
+        const hasAttachments = attachments.length > 0;
         const hasDirectFile = Boolean(notice.fileUrl);
 
         return (
@@ -60,11 +71,11 @@ async function NoticesListSection() {
             key={notice.id}
             className="bg-white p-5 sm:p-6 rounded-2xl sm:rounded-3xl border border-gray-200/90 hover:border-red-300 shadow-xs hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 group"
           >
-            <div className="flex items-start gap-4">
+            <div className="flex items-start gap-4 flex-1">
               <div className="p-3.5 rounded-2xl bg-red-50 text-[#B91C1C] shrink-0 border border-red-100/60 shadow-2xs group-hover:bg-[#B91C1C] group-hover:text-white transition-colors duration-300">
                 <FileText className="w-6 h-6" />
               </div>
-              <div>
+              <div className="flex-1">
                 <div className="flex items-center gap-2 flex-wrap mb-1.5">
                   <span className="text-sm font-bold uppercase tracking-wider bg-gray-100 text-gray-700 px-2.5 py-0.5 rounded-full border border-gray-200">
                     {notice.category}
@@ -87,7 +98,7 @@ async function NoticesListSection() {
                     {notice.summary}
                   </p>
                 )}
-                {notice.fileSize && (
+                {notice.fileSize && !hasAttachments && (
                   <p className="text-sm text-gray-400 font-sans mt-0.5">
                     Attachment size: {notice.fileSize}
                   </p>
@@ -95,7 +106,26 @@ async function NoticesListSection() {
               </div>
             </div>
 
-            {hasDirectFile ? (
+            {hasAttachments ? (
+              <div className="shrink-0 flex flex-col sm:flex-row sm:items-center gap-2 flex-wrap">
+                {attachments.map((att) => (
+                  <a
+                    key={att.id}
+                    href={att.fileUrl || notice.fileUrl || "/downloads"}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-[#B91C1C] hover:bg-[#991B1B] text-white text-sm font-bold transition-all shadow-xs hover:shadow-md border border-[#991B1B] hover:-translate-y-0.5 focus-visible:outline-2 focus-visible:outline-[#B91C1C] focus-visible:outline-offset-2"
+                    aria-label={`Download document for ${att.title || notice.title}`}
+                  >
+                    <Download className="w-4 h-4 text-white" />
+                    <span>{attachments.length > 1 ? att.title : "Download PDF"}</span>
+                    {att.fileSize && (
+                      <span className="text-xs opacity-85 font-normal">({att.fileSize})</span>
+                    )}
+                  </a>
+                ))}
+              </div>
+            ) : hasDirectFile ? (
               <a
                 href={notice.fileUrl!}
                 target="_blank"

@@ -1,6 +1,5 @@
 import React from "react";
 import { Bell } from "lucide-react";
-import { NOTICES_DATA } from "@/lib/school-data";
 import { getPublicNotices } from "@/lib/api/notices";
 import { NoticeTickerClient } from "./NoticeTickerClient";
 
@@ -47,7 +46,7 @@ export function NoticeTickerFallback() {
  */
 export async function NoticeTicker() {
   const { notices } = await getPublicNotices({ limit: 5 });
-  const activeNotices = notices && notices.length > 0 ? notices.slice(0, 4) : NOTICES_DATA.slice(0, 4);
+  const activeNotices = notices ? notices.slice(0, 4) : [];
 
   return <NoticeTickerClient notices={activeNotices} />;
 }

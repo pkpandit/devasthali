@@ -34,24 +34,30 @@ export function NoticeTickerClient({ notices }: NoticeTickerClientProps) {
               isPaused ? "" : "hover:pause"
             }`}
           >
-            {notices.map((notice, idx) => (
-              <Link
-                key={notice.id}
-                href="/notices"
-                className="inline-flex items-center gap-2 hover:underline hover:text-[#B91C1C] transition-colors text-sm"
-              >
-                {notice.isNew && (
-                  <span className="bg-[#B91C1C] text-white text-xs font-extrabold px-1.5 py-0.5 rounded uppercase tracking-wider">
-                    New
-                  </span>
-                )}
-                <span className="text-[#111827] font-heading font-semibold text-xs sm:text-sm">{notice.title}</span>
-                <span className="text-gray-500 text-xs sm:text-sm">({notice.date})</span>
-                {idx < notices.length - 1 && (
-                  <span className="text-gray-300 ml-4 font-bold">•</span>
-                )}
-              </Link>
-            ))}
+            {notices.length === 0 ? (
+              <span className="text-gray-500 text-xs sm:text-sm font-sans">
+                No active announcements at this time.
+              </span>
+            ) : (
+              notices.map((notice, idx) => (
+                <Link
+                  key={notice.id}
+                  href="/notices"
+                  className="inline-flex items-center gap-2 hover:underline hover:text-[#B91C1C] transition-colors text-sm"
+                >
+                  {notice.isNew && (
+                    <span className="bg-[#B91C1C] text-white text-xs font-extrabold px-1.5 py-0.5 rounded uppercase tracking-wider">
+                      New
+                    </span>
+                  )}
+                  <span className="text-[#111827] font-heading font-semibold text-xs sm:text-sm">{notice.title}</span>
+                  <span className="text-gray-500 text-xs sm:text-sm">({notice.date})</span>
+                  {idx < notices.length - 1 && (
+                    <span className="text-gray-300 ml-4 font-bold">•</span>
+                  )}
+                </Link>
+              ))
+            )}
           </div>
         </div>
 

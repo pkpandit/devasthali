@@ -2,6 +2,15 @@ import { z } from "zod";
 import type { NoticeItem, NoticeCategory } from "@/types/content";
 import { NOTICES_DATA } from "@/lib/content/notices";
 
+export const publicNoticeAttachmentSchema = z.object({
+  id: z.string().min(1),
+  title: z.string().min(1),
+  fileUrl: z.string().nullable().optional(),
+  fileSize: z.string().nullable().optional(),
+  fileType: z.string().default("application/pdf"),
+  displayOrder: z.number().default(0),
+});
+
 export const publicNoticeSchema = z.object({
   id: z.string().min(1),
   slug: z.string().min(1),
@@ -17,6 +26,7 @@ export const publicNoticeSchema = z.object({
   publishedAt: z.string().nullable().optional(),
   expiryDate: z.string().nullable().optional(),
   isNew: z.boolean(),
+  attachments: z.array(publicNoticeAttachmentSchema).default([]),
 });
 
 export const publicNoticesResponseSchema = z.object({
@@ -31,6 +41,7 @@ export const publicNoticesResponseSchema = z.object({
   }),
 });
 
+export type PublicNoticeAttachmentDto = z.infer<typeof publicNoticeAttachmentSchema>;
 export type PublicNoticeDto = z.infer<typeof publicNoticeSchema>;
 
 export interface GetPublicNoticesOptions {
@@ -53,7 +64,7 @@ export interface GetPublicNoticesResult {
  * - In production: requires an explicit BACKEND_INTERNAL_URL and will not fall back to loopback.
  */
 export function getBackendOrigin(): string | null {
-  const envUrl = process.env.BACKEND_INTERNAL_URL;
+  const envUrl = process.env.BACKEND_INTERNAL_URL || process.env.NEXT_PUBLIC_BACKEND_URL;
   if (envUrl && envUrl.trim() !== "") {
     return envUrl.trim().replace(/\/+$/, "");
   }
@@ -87,10 +98,10 @@ export function formatNoticeDate(isoString: string): string {
  */
 export function toNoticeCategory(cat: string): NoticeCategory {
   const upper = cat.toUpperCase();
-  if (upper === "CIRCULAR") return "Circular";
-  if (upper === "EXAMINATION") return "Examination";
-  if (upper === "ADMISSION") return "Admission";
-  if (upper === "EVENT") return "Event";
+  if (upper === "CIRCULAR" || upper.includes("CIRCULAR")) return "Circular";
+  if (upper === "EXAMINATION" || upper.includes("EXAM")) return "Examination";
+  if (upper === "ADMISSION" || upper.includes("ADMISSION")) return "Admission";
+  if (upper === "EVENT" || upper.includes("EVENT")) return "Event";
   return "Circular";
 }
 
@@ -101,13 +112,21 @@ export function mapNoticeDtoToItem(dto: PublicNoticeDto): NoticeItem {
   return {
     id: dto.id,
     title: dto.title,
-    category: toNoticeCategory(dto.categoryLabel || dto.category),
+    category: toNoticeCategory(dto.category || dto.categoryLabel),
     date: formatNoticeDate(dto.publishDate),
     isNew: dto.isNew,
     fileUrl: dto.fileUrl || undefined,
     fileSize: dto.fileSize || undefined,
     summary: dto.summary || undefined,
     content: dto.content || undefined,
+    attachments: (dto.attachments || []).map((att) => ({
+      id: att.id,
+      title: att.title,
+      fileUrl: att.fileUrl || undefined,
+      fileSize: att.fileSize || undefined,
+      fileType: att.fileType,
+      displayOrder: att.displayOrder,
+    })),
   };
 }
 
@@ -115,10 +134,18 @@ export function mapNoticeDtoToItem(dto: PublicNoticeDto): NoticeItem {
  * Fetches published notices from the backend service with bounded timeout,
  * strict schema validation, and resilient static fallback.
  * Executed strictly server-side in Server Components.
+ *
+ * CRITICAL CACHE & EMPTY-ARRAY INTEGRITY:
+ * - Prerenderable via Next.js "use cache" directive.
+ * - In development: cache: "no-store"
+ * - In production: next: { revalidate: 60, tags: ["notices"] }
+ * - An intentionally empty published collection returns [] and renders empty.
+ * - Fallback is activated strictly on network error, non-200 HTTP, or Zod validation failure.
  */
 export async function getPublicNotices(
   options: GetPublicNoticesOptions = {}
 ): Promise<GetPublicNoticesResult> {
+  "use cache";
   const backendOrigin = getBackendOrigin();
 
   // If backend is unconfigured in production, seamlessly return static fallback
@@ -141,9 +168,12 @@ export async function getPublicNotices(
   const endpoint = `${backendOrigin}/api/public/notices${queryString ? `?${queryString}` : ""}`;
 
   try {
+    const isDev = process.env.NODE_ENV === "development";
     const res = await fetch(endpoint, {
       method: "GET",
-      cache: "no-store",
+      ...(isDev
+        ? { cache: "no-store" as const }
+        : { next: { revalidate: 60, tags: ["notices"] } }),
       headers: {
         Accept: "application/json",
       },
@@ -164,7 +194,10 @@ export async function getPublicNotices(
     const parseResult = publicNoticesResponseSchema.safeParse(json);
 
     if (!parseResult.success) {
-      console.warn("[notices-api] Received unexpected payload schema. Falling back to static data.");
+      console.warn(
+        "[notices-api] Received unexpected payload schema. Falling back to static data.",
+        parseResult.error.issues
+      );
       return {
         success: false,
         notices: NOTICES_DATA,
@@ -175,13 +208,15 @@ export async function getPublicNotices(
 
     const dynamicNotices = parseResult.data.data.map(mapNoticeDtoToItem);
 
-    // If backend returned zero published notices, preserve static notices as fallback
+    // CRITICAL EMPTY-ARRAY INTEGRITY:
+    // If backend legitimately returned zero published notices, return authoritative empty result.
+    // Do NOT fall back to static notices on a successful empty collection.
     if (dynamicNotices.length === 0) {
       return {
         success: true,
-        notices: NOTICES_DATA,
-        total: NOTICES_DATA.length,
-        isFallback: true,
+        notices: [],
+        total: 0,
+        isFallback: false,
       };
     }
 
