@@ -93,6 +93,25 @@ export type FacultyAuditAction =
   | "FACULTY_MEMBER_STATUS_CHANGED"
   | "FACULTY_MEMBERS_REORDERED";
 
+export type GalleryAuditAction =
+  | "GALLERY_ALBUM_CREATED"
+  | "GALLERY_ALBUM_UPDATED"
+  | "GALLERY_ALBUM_DELETED"
+  | "GALLERY_ALBUM_STATUS_CHANGED"
+  | "GALLERY_ALBUMS_REORDERED"
+  | "GALLERY_IMAGE_CREATED"
+  | "GALLERY_IMAGE_UPDATED"
+  | "GALLERY_IMAGE_DELETED"
+  | "GALLERY_IMAGE_STATUS_CHANGED"
+  | "GALLERY_IMAGES_REORDERED";
+
+export type EventAuditAction =
+  | "SCHOOL_EVENT_CREATED"
+  | "SCHOOL_EVENT_UPDATED"
+  | "SCHOOL_EVENT_DELETED"
+  | "SCHOOL_EVENT_STATUS_CHANGED"
+  | "SCHOOL_EVENTS_REORDERED";
+
 export type AuditAction =
   | AuthAuditAction
   | TopperAuditAction
@@ -101,7 +120,9 @@ export type AuditAction =
   | NavigationAuditAction
   | HomepageAuditAction
   | AboutLeadershipAuditAction
-  | FacultyAuditAction;
+  | FacultyAuditAction
+  | GalleryAuditAction
+  | EventAuditAction;
 
 export interface CreateAuditLogParams {
   userId?: string | null;
@@ -127,7 +148,10 @@ export interface CreateAuditLogParams {
     | "VisionMissionSetting"
     | "InstitutionalCoreValue"
     | "LeadershipMember"
-    | "FacultyMember";
+    | "FacultyMember"
+    | "GalleryAlbum"
+    | "GalleryImage"
+    | "SchoolEvent";
   entityId: string;
   metadata?: Record<string, unknown> | null;
   ipAddress?: string | null;
