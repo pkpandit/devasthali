@@ -6,6 +6,9 @@ import crypto from "node:crypto";
 export const MANAGED_DOCUMENT_KEY_REGEX =
   /^documents\/notices\/doc_[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}\.pdf$/;
 
+export const MANAGED_DOWNLOAD_DOCUMENT_KEY_REGEX =
+  /^documents\/downloads\/doc_[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}\.pdf$/;
+
 export const STAGING_DOCUMENT_KEY_REGEX =
   /^documents\/staging\/tmp_[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}\.tmp$/;
 
@@ -40,11 +43,27 @@ function assertLocalStoragePermitted() {
 }
 
 /**
- * Validates that a permanent document key matches the strict authoritative format.
+ * Validates that a permanent notice document key matches the strict authoritative format.
  */
 export function isValidManagedDocumentKey(key: string | null | undefined): key is string {
   if (!key) return false;
   return MANAGED_DOCUMENT_KEY_REGEX.test(key);
+}
+
+/**
+ * Validates that a permanent download document key matches the strict authoritative format.
+ */
+export function isValidManagedDownloadDocumentKey(key: string | null | undefined): key is string {
+  if (!key) return false;
+  return MANAGED_DOWNLOAD_DOCUMENT_KEY_REGEX.test(key);
+}
+
+/**
+ * Validates that a permanent document key matches either notice or download format.
+ */
+export function isValidAnyManagedDocumentKey(key: string | null | undefined): key is string {
+  if (!key) return false;
+  return MANAGED_DOCUMENT_KEY_REGEX.test(key) || MANAGED_DOWNLOAD_DOCUMENT_KEY_REGEX.test(key);
 }
 
 /**
@@ -56,11 +75,19 @@ export function isValidStagingDocumentKey(key: string | null | undefined): key i
 }
 
 /**
- * Generates an unpredictable, UUID-based permanent storage key.
+ * Generates an unpredictable, UUID-based permanent storage key for notices.
  */
 export function generateManagedDocumentKey(): string {
   const uuid = crypto.randomUUID();
   return `documents/notices/doc_${uuid}.pdf`;
+}
+
+/**
+ * Generates an unpredictable, UUID-based permanent storage key for downloads.
+ */
+export function generateManagedDownloadDocumentKey(): string {
+  const uuid = crypto.randomUUID();
+  return `documents/downloads/doc_${uuid}.pdf`;
 }
 
 /**
@@ -79,7 +106,7 @@ export function resolveSafePath(
   storageKey: string,
   allowedType: "managed" | "staging" | "any" = "any"
 ): string {
-  const isManaged = isValidManagedDocumentKey(storageKey);
+  const isManaged = isValidAnyManagedDocumentKey(storageKey);
   const isStaging = isValidStagingDocumentKey(storageKey);
 
   if (allowedType === "managed" && !isManaged) {
@@ -98,7 +125,7 @@ export function resolveSafePath(
   }
 
   const root = getDocumentStorageRoot();
-  // Split key into relative segments ("documents/notices/doc_..." or "documents/staging/tmp_...")
+  // Split key into relative segments ("documents/notices/doc_...", "documents/downloads/doc_...", or "documents/staging/tmp_...")
   // We strip the leading "documents/" to resolve under root
   const subPath = storageKey.replace(/^documents[/\\]/, "");
   const resolved = path.resolve(root, subPath);
@@ -166,7 +193,8 @@ export async function cleanupStagedDocument(stagingKey: string): Promise<boolean
  * Atomically promotes a staged file to its permanent, non-guessable document key.
  */
 export async function promoteStagedDocument(
-  stagingKey: string
+  stagingKey: string,
+  targetFolder: "notices" | "downloads" = "notices"
 ): Promise<{ permanentKey: string; permanentPath: string }> {
   assertLocalStoragePermitted();
 
@@ -185,7 +213,10 @@ export async function promoteStagedDocument(
     throw new Error(`Staged source is not a regular file: "${sourcePath}"`);
   }
 
-  const permanentKey = generateManagedDocumentKey();
+  const permanentKey =
+    targetFolder === "downloads"
+      ? generateManagedDownloadDocumentKey()
+      : generateManagedDocumentKey();
   const permanentPath = resolveSafePath(permanentKey, "managed");
   const targetDir = path.dirname(permanentPath);
 
@@ -217,7 +248,7 @@ export async function promoteStagedDocument(
 export async function deleteManagedDocument(
   storageKey: string | null | undefined
 ): Promise<boolean> {
-  if (!storageKey || !isValidManagedDocumentKey(storageKey)) {
+  if (!storageKey || !isValidAnyManagedDocumentKey(storageKey)) {
     return false;
   }
 
@@ -331,17 +362,19 @@ export async function cleanupStaleStagedDocuments(
 }
 
 /**
- * Reconciles managed notices documents on disk against the set of referenced keys in the database.
+ * Reconciles managed documents on disk against the set of referenced keys in the database.
+ * Supports "notices" or "downloads" folders.
  * Identifies and optionally deletes unreferenced / orphaned files.
  */
 export async function reconcileOrphanedDocuments(
   referencedKeys: Set<string>,
-  autoDelete = false
+  autoDelete = false,
+  folder: "notices" | "downloads" = "notices"
 ): Promise<{ orphanedKeys: string[]; deletedCount: number; errors: string[] }> {
   assertLocalStoragePermitted();
 
   const root = getDocumentStorageRoot();
-  const noticesDir = path.resolve(root, "notices");
+  const targetDir = path.resolve(root, folder);
 
   const result = {
     orphanedKeys: [] as string[],
@@ -350,13 +383,13 @@ export async function reconcileOrphanedDocuments(
   };
 
   try {
-    const entries = await fs.promises.readdir(noticesDir, { withFileTypes: true });
+    const entries = await fs.promises.readdir(targetDir, { withFileTypes: true });
 
     for (const entry of entries) {
       if (!entry.isFile()) continue;
 
-      const storageKey = `documents/notices/${entry.name}`;
-      if (!isValidManagedDocumentKey(storageKey)) {
+      const storageKey = `documents/${folder}/${entry.name}`;
+      if (!isValidAnyManagedDocumentKey(storageKey)) {
         continue;
       }
 
