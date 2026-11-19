@@ -81,7 +81,7 @@ export function TopperCard({ topper }: TopperCardProps) {
           {hasValidPhoto && topper.photoUrl ? (
             <Image
               src={topper.photoUrl}
-              alt={`${topper.studentName} - ${topper.grade} CBSE Topper`}
+              alt={topper.photoAlt || `${topper.studentName} - ${topper.grade} CBSE Topper`}
               fill
               sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
               className="object-cover object-top group-hover:scale-105 transition-transform duration-500"

@@ -1,5 +1,7 @@
 /* eslint-disable @typescript-eslint/no-require-imports */
 const assert = require("node:assert");
+const fs = require("node:fs");
+const path = require("node:path");
 const { z } = require("zod");
 
 console.log("===============================================================");
@@ -8,6 +10,7 @@ console.log("===============================================================");
 
 // Replicate Zod schema from frontend/lib/api/toppers.ts
 const publicTopperSchema = z.object({
+  id: z.string().optional(),
   studentName: z.string().min(1),
   scorePercent: z.number().min(0).max(100),
   grade: z.string().min(1),
@@ -15,6 +18,8 @@ const publicTopperSchema = z.object({
   academicYear: z.string().min(1),
   achievement: z.string().min(1),
   photoUrl: z.string().nullable().optional(),
+  photoAlt: z.string().default(""),
+  displayOrder: z.number().default(0),
   isFeatured: z.boolean(),
 });
 
@@ -75,10 +80,15 @@ function getInitials(name) {
   return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
 }
 
-// 1. Valid Response Parsing
+function resolveCardAltText(topper) {
+  return topper.photoAlt || `${topper.studentName} - ${topper.grade} CBSE Topper`;
+}
+
+// 1. Valid Response Parsing with id, photoAlt, and displayOrder
 {
   const rawPayload = [
     {
+      id: "topper-1",
       studentName: "Ananya Sharma",
       scorePercent: 98.4,
       grade: "Class X",
@@ -86,6 +96,8 @@ function getInitials(name) {
       academicYear: "2024-25",
       achievement: "State Rank 1",
       photoUrl: "/images/academics/toppers/ananya.jpg",
+      photoAlt: "Portrait of Ananya Sharma, Class X State Topper",
+      displayOrder: 0,
       isFeatured: true,
     },
     {
@@ -96,6 +108,7 @@ function getInitials(name) {
       academicYear: "2024-25",
       achievement: "District Rank 2",
       photoUrl: "http://127.0.0.1:3001/api/public/media/toppers/top_12345678-1234-1234-1234-123456789abc.webp",
+      // photoAlt and displayOrder omitted to verify defaults
       isFeatured: false,
     },
   ];
@@ -103,7 +116,12 @@ function getInitials(name) {
   const parsed = publicToppersArraySchema.safeParse(rawPayload);
   assert.strictEqual(parsed.success, true);
   assert.strictEqual(parsed.data.length, 2);
-  console.log("  [PASS] Valid public toppers array with managed media URLs parsed successfully");
+  assert.strictEqual(parsed.data[0].id, "topper-1");
+  assert.strictEqual(parsed.data[0].photoAlt, "Portrait of Ananya Sharma, Class X State Topper");
+  assert.strictEqual(parsed.data[0].displayOrder, 0);
+  assert.strictEqual(parsed.data[1].photoAlt, "");
+  assert.strictEqual(parsed.data[1].displayOrder, 0);
+  console.log("  [PASS] Valid public toppers array with managed media URLs and defaults parsed successfully");
 }
 
 // 2. Schema Guard: Rejects Malformed or Sensitive Injections
@@ -169,7 +187,26 @@ function getInitials(name) {
   console.log("  [PASS] Managed media URL validation and initials generation verified");
 }
 
-// 6. Production Origin Media Acceptance & Untrusted Host Rejection
+// 6. Accessible Alt Text Resolution
+{
+  const withCustomAlt = {
+    studentName: "Priya Singh",
+    grade: "Class XII",
+    photoAlt: "Priya Singh District First Ranker",
+  };
+  assert.strictEqual(resolveCardAltText(withCustomAlt), "Priya Singh District First Ranker");
+
+  const withEmptyAlt = {
+    studentName: "Rohan Upadhyay",
+    grade: "Class XII",
+    photoAlt: "",
+  };
+  assert.strictEqual(resolveCardAltText(withEmptyAlt), "Rohan Upadhyay - Class XII CBSE Topper");
+
+  console.log("  [PASS] Alt text resolution prioritizes photoAlt with fallback to name + grade");
+}
+
+// 7. Production Origin Media Acceptance & Untrusted Host Rejection
 {
   const prevOrigin = process.env.NEXT_PUBLIC_MEDIA_ORIGIN;
   try {
@@ -204,13 +241,34 @@ function getInitials(name) {
   console.log("  [PASS] Production media origin dynamically accepted while preserving strict host/path boundaries");
 }
 
-// 7. Empty Array Behavior
+// 8. Empty Array vs Fallback Behavior
 {
   const empty = [];
   const parsed = publicToppersArraySchema.safeParse(empty);
   assert.strictEqual(parsed.success, true);
   assert.strictEqual(parsed.data.length, 0);
-  console.log("  [PASS] Empty response array parsed cleanly for empty-state handling");
+  console.log("  [PASS] Empty response array parsed cleanly for authoritative empty-state handling");
+}
+
+// 9. Static Source Verification: "use cache" & revalidate 60
+{
+  const toppersApiSource = fs.readFileSync(
+    path.join(__dirname, "../lib/api/toppers.ts"),
+    "utf8"
+  );
+  assert.ok(
+    toppersApiSource.includes('"use cache";') || toppersApiSource.includes("'use cache';"),
+    "getPublicToppers must include 'use cache' directive"
+  );
+  assert.ok(
+    toppersApiSource.includes('tags: ["toppers"]') || toppersApiSource.includes("tags: ['toppers']"),
+    "Production caching must tag 'toppers'"
+  );
+  assert.ok(
+    toppersApiSource.includes("revalidate: 60"),
+    "Production caching must set revalidate: 60"
+  );
+  console.log("  [PASS] 'use cache' directive and 60s/toppers cache tag verified in api/toppers.ts");
 }
 
 console.log("===============================================================");

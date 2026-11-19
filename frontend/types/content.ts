@@ -160,6 +160,8 @@ export interface BoardTopper {
   year: string;
   achievement: string;
   photoUrl?: string;
+  photoAlt?: string;
+  displayOrder?: number;
 }
 
 export interface FacilityItem {

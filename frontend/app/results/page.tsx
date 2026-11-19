@@ -1,6 +1,6 @@
 import React, { Suspense } from "react";
 import type { Metadata } from "next";
-import { Sparkles, AlertCircle, Award } from "lucide-react";
+import { Sparkles, Award } from "lucide-react";
 import { getPublicToppers } from "@/lib/api/toppers";
 import { TopperCard } from "@/components/features/toppers/TopperCard";
 
@@ -12,22 +12,6 @@ export const metadata: Metadata = {
 
 async function ToppersGridSection() {
   const result = await getPublicToppers();
-
-  if (result.isError) {
-    return (
-      <div className="bg-white rounded-2xl border border-gray-200 p-8 sm:p-12 text-center max-w-2xl mx-auto shadow-xs">
-        <div className="w-12 h-12 rounded-full bg-amber-50 text-amber-700 flex items-center justify-center mx-auto mb-4">
-          <AlertCircle className="w-6 h-6" />
-        </div>
-        <h2 className="font-heading font-bold text-lg text-gray-900 mb-2">
-          Examination Results Notice
-        </h2>
-        <p className="text-sm text-gray-600 font-sans leading-relaxed">
-          The merit toppers showcase is temporarily unavailable while records are being updated. Please check back shortly or contact the academic office.
-        </p>
-      </div>
-    );
-  }
 
   if (result.toppers.length === 0) {
     return (
