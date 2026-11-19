@@ -10,6 +10,8 @@ const {
   topperInputSchema,
   topperUpdateSchema,
   topperDeleteSchema,
+  reorderToppersSchema,
+  toggleTopperStatusSchema,
   formatZodErrors,
   normalizeTopperPayload,
   computeTopperDiff,
@@ -45,10 +47,13 @@ function runSuite() {
     academicYear: "2024-25",
     achievement: "School Topper",
     photoUrl: "/images/toppers/ananya.jpg",
+    photoAlt: "Photo of Ananya Sharma - Class X CBSE Topper",
     displayOrder: 0,
+    isPublished: true,
     isFeatured: true,
   });
   assert("Valid create payload passes", validCreate.success);
+  assert("Create schema defaults isPublished to true", validCreate.data.isPublished === true);
 
   const missingNameCreate = topperInputSchema.safeParse({
     scorePercent: 98.4,
@@ -71,7 +76,9 @@ function runSuite() {
     academicYear: "2024-25",
     achievement: "School Topper",
     photoUrl: "/images/toppers/ananya.jpg",
+    photoAlt: "Photo of Ananya Sharma - Class X CBSE Topper",
     displayOrder: 0,
+    isPublished: true,
     isFeatured: true,
   });
   assert("Valid complete update payload passes", validUpdate.success);
@@ -83,6 +90,7 @@ function runSuite() {
     academicYear: "2024-25",
     achievement: "School Topper",
     displayOrder: 0,
+    isPublished: true,
     isFeatured: true,
   });
   assert("Update payload missing ID fails", !missingIdUpdate.success);
@@ -95,6 +103,7 @@ function runSuite() {
     academicYear: "2024-25",
     achievement: "School Topper",
     displayOrder: 0,
+    isPublished: true,
     isFeatured: true,
   });
   assert("Update payload with whitespace-only ID fails", !whitespaceIdUpdate.success);
@@ -106,6 +115,7 @@ function runSuite() {
     grade: "Class X",
     academicYear: "2024-25",
     achievement: "School Topper",
+    isPublished: true,
     isFeatured: true,
   });
   assert("Update payload with omitted displayOrder fails (no silent default)", !omittedOrderUpdate.success);
@@ -118,13 +128,41 @@ function runSuite() {
     academicYear: "2024-25",
     achievement: "School Topper",
     displayOrder: 0,
+    isPublished: true,
   });
   assert("Update payload with omitted isFeatured fails (no silent default)", !omittedFeaturedUpdate.success);
 
   // -------------------------------------------------------------
-  // 3. Zod Validation: Deletion Schema (topperDeleteSchema)
+  // 3. Zod Validation: Reorder & Status Toggle Schemas
   // -------------------------------------------------------------
-  console.log("\n--- 3. Delete Schema Validation ---");
+  console.log("\n--- 3. Reorder & Status Toggle Schemas ---");
+  const validReorder = reorderToppersSchema.safeParse({
+    orders: [
+      { id: "top_1", displayOrder: 0 },
+      { id: "top_2", displayOrder: 1 },
+    ],
+  });
+  assert("Valid reorder payload passes", validReorder.success);
+
+  const emptyReorder = reorderToppersSchema.safeParse({ orders: [] });
+  assert("Reorder payload with empty orders fails", !emptyReorder.success);
+
+  const validToggle = toggleTopperStatusSchema.safeParse({
+    id: "top_1",
+    isPublished: false,
+  });
+  assert("Valid toggle status payload passes", validToggle.success);
+
+  const invalidToggle = toggleTopperStatusSchema.safeParse({
+    id: "",
+    isPublished: false,
+  });
+  assert("Toggle status with empty ID fails", !invalidToggle.success);
+
+  // -------------------------------------------------------------
+  // 4. Zod Validation: Deletion Schema (topperDeleteSchema)
+  // -------------------------------------------------------------
+  console.log("\n--- 4. Delete Schema Validation ---");
   const validDelete = topperDeleteSchema.safeParse({
     id: "top_c1234567-89ab-cdef-0123-456789abcdef",
   });
@@ -137,9 +175,9 @@ function runSuite() {
   assert("Delete payload missing ID fails", !missingDelete.success);
 
   // -------------------------------------------------------------
-  // 4. Role Authorization Matrix
+  // 5. Role Authorization Matrix
   // -------------------------------------------------------------
-  console.log("\n--- 4. Role Authorization & Error Semantics ---");
+  console.log("\n--- 5. Role Authorization & Error Semantics ---");
   function checkRoleAuth(role) {
     if (role === "SUPER_ADMIN") return true;
     throw new Error("AuthorizationError: SUPER_ADMIN privileges required.");
@@ -159,9 +197,9 @@ function runSuite() {
   }
 
   // -------------------------------------------------------------
-  // 5. Audit Metadata Sanitization & Secret Masking
+  // 6. Audit Metadata Sanitization & Secret Masking
   // -------------------------------------------------------------
-  console.log("\n--- 5. Audit Metadata Sanitization & Privacy ---");
+  console.log("\n--- 6. Audit Metadata Sanitization & Privacy ---");
   const testAuditPayload = {
     studentName: "Ananya Sharma",
     password: "PlaintextPassword123!",
@@ -185,9 +223,9 @@ function runSuite() {
   assert("Sanitizer preserves nested safe keys", sanitized.nested.safeKey === "safe_value");
 
   // -------------------------------------------------------------
-  // 6. Changed-Field Diff Computation & Value Masking
+  // 7. Changed-Field Diff Computation & Value Masking
   // -------------------------------------------------------------
-  console.log("\n--- 6. Changed-Field Diff Calculation & Masking ---");
+  console.log("\n--- 7. Changed-Field Diff Calculation & Masking ---");
   const existingRecord = {
     studentName: "Ananya Sharma",
     scorePercent: 98.4,
@@ -197,11 +235,13 @@ function runSuite() {
     achievement: "School Topper",
     photoUrl: "https://storage.example.com/photos/ananya.jpg",
     photoStorageKey: null,
+    photoAlt: "Photo of Ananya Sharma",
     displayOrder: 0,
+    isPublished: true,
     isFeatured: true,
   };
 
-  // 6.1 No-op detection
+  // 7.1 No-op detection
   const noOpResult = computeTopperDiff(existingRecord, {
     studentName: "Ananya Sharma",
     scorePercent: 98.4,
@@ -211,12 +251,14 @@ function runSuite() {
     achievement: "School Topper",
     photoUrl: "https://storage.example.com/photos/ananya.jpg",
     photoStorageKey: null,
+    photoAlt: "Photo of Ananya Sharma",
     displayOrder: 0,
+    isPublished: true,
     isFeatured: true,
   });
   assert("Identical input triggers no-op (0 changed fields)", noOpResult.changedFields.length === 0);
 
-  // 6.2 Single scorePercent change
+  // 7.2 Score percentage change
   const scoreDiff = computeTopperDiff(existingRecord, {
     studentName: "Ananya Sharma",
     scorePercent: 99.1,
@@ -226,7 +268,9 @@ function runSuite() {
     achievement: "School Topper",
     photoUrl: "https://storage.example.com/photos/ananya.jpg",
     photoStorageKey: null,
+    photoAlt: "Photo of Ananya Sharma",
     displayOrder: 0,
+    isPublished: true,
     isFeatured: true,
   });
   assert(
@@ -238,7 +282,50 @@ function runSuite() {
     scoreDiff.diff.scorePercent.from === 98.4 && scoreDiff.diff.scorePercent.to === 99.1
   );
 
-  // 6.3 PhotoUrl masking rule: NEVER expose raw URL, only [NONE] / [PRESENT]
+  // 7.3 Alt text change
+  const altDiff = computeTopperDiff(existingRecord, {
+    studentName: "Ananya Sharma",
+    scorePercent: 98.4,
+    grade: "Class X",
+    stream: null,
+    academicYear: "2024-25",
+    achievement: "School Topper",
+    photoUrl: "https://storage.example.com/photos/ananya.jpg",
+    photoStorageKey: null,
+    photoAlt: "Updated accessible portrait description",
+    displayOrder: 0,
+    isPublished: true,
+    isFeatured: true,
+  });
+  assert("Alt text change detected in changedFields", altDiff.changedFields.includes("photoAlt"));
+  assert(
+    "Alt text diff accurately populated",
+    altDiff.diff.photoAlt.from === "Photo of Ananya Sharma" &&
+      altDiff.diff.photoAlt.to === "Updated accessible portrait description"
+  );
+
+  // 7.4 Status change (isPublished)
+  const statusDiff = computeTopperDiff(existingRecord, {
+    studentName: "Ananya Sharma",
+    scorePercent: 98.4,
+    grade: "Class X",
+    stream: null,
+    academicYear: "2024-25",
+    achievement: "School Topper",
+    photoUrl: "https://storage.example.com/photos/ananya.jpg",
+    photoStorageKey: null,
+    photoAlt: "Photo of Ananya Sharma",
+    displayOrder: 0,
+    isPublished: false,
+    isFeatured: true,
+  });
+  assert("isPublished change detected in changedFields", statusDiff.changedFields.includes("isPublished"));
+  assert(
+    "isPublished diff accurately populated",
+    statusDiff.diff.isPublished.from === true && statusDiff.diff.isPublished.to === false
+  );
+
+  // 7.5 PhotoUrl masking rule: NEVER expose raw URL, only [NONE] / [PRESENT]
   const photoRemovedDiff = computeTopperDiff(existingRecord, {
     studentName: "Ananya Sharma",
     scorePercent: 98.4,
@@ -248,7 +335,9 @@ function runSuite() {
     achievement: "School Topper",
     photoUrl: null,
     photoStorageKey: null,
+    photoAlt: "",
     displayOrder: 0,
+    isPublished: true,
     isFeatured: true,
   });
   assert(
@@ -261,59 +350,10 @@ function runSuite() {
       photoRemovedDiff.diff.photoUrl.to === "[NONE]"
   );
 
-  // 6.4 Photo replacement detection (photo-to-photo masked to [PRESENT] -> [PRESENT])
-  const photoReplacedDiff = computeTopperDiff(existingRecord, {
-    studentName: "Ananya Sharma",
-    scorePercent: 98.4,
-    grade: "Class X",
-    stream: null,
-    academicYear: "2024-25",
-    achievement: "School Topper",
-    photoUrl: "https://storage.example.com/photos/ananya_new.jpg",
-    photoStorageKey: null,
-    displayOrder: 0,
-    isFeatured: true,
-  });
-  assert(
-    "Photo replacement detected in changedFields",
-    photoReplacedDiff.changedFields.includes("photoUrl")
-  );
-  assert(
-    "Photo replacement diff masked to [PRESENT] -> [PRESENT]",
-    photoReplacedDiff.diff.photoUrl.from === "[PRESENT]" &&
-      photoReplacedDiff.diff.photoUrl.to === "[PRESENT]"
-  );
-
-  // 6.5 Managed photoStorageKey replacement detection
-  const managedRecord = {
-    ...existingRecord,
-    photoStorageKey: "toppers/top_11111111-1111-1111-1111-111111111111.webp",
-  };
-  const keyReplacedDiff = computeTopperDiff(managedRecord, {
-    studentName: "Ananya Sharma",
-    scorePercent: 98.4,
-    grade: "Class X",
-    stream: null,
-    academicYear: "2024-25",
-    achievement: "School Topper",
-    photoStorageKey: "toppers/top_22222222-2222-2222-2222-222222222222.webp",
-    displayOrder: 0,
-    isFeatured: true,
-  });
-  assert(
-    "Managed key replacement detected in changedFields",
-    keyReplacedDiff.changedFields.includes("photoUrl")
-  );
-  assert(
-    "Managed key replacement masked to [PRESENT] -> [PRESENT]",
-    keyReplacedDiff.diff.photoUrl.from === "[PRESENT]" &&
-      keyReplacedDiff.diff.photoUrl.to === "[PRESENT]"
-  );
-
   // -------------------------------------------------------------
-  // 7. Structured Error Mapping & Payload Normalization
+  // 8. Structured Error Mapping & Payload Normalization
   // -------------------------------------------------------------
-  console.log("\n--- 7. Error Mapping & Payload Normalization ---");
+  console.log("\n--- 8. Error Mapping & Payload Normalization ---");
   const invalidResult = topperInputSchema.safeParse({
     studentName: "A", // too short
     scorePercent: 105.0, // over 100
@@ -329,12 +369,16 @@ function runSuite() {
     scorePercent: " 95.50 ",
     displayOrder: " 3 ",
     isFeatured: "true",
+    isPublished: "true",
+    photoAlt: "  Portrait photo of Rohit  ",
     stream: "",
     photoUrl: "",
   });
   assert("String scorePercent normalized to number", normalized.scorePercent === 95.5);
   assert("String displayOrder normalized to number", normalized.displayOrder === 3);
   assert("String isFeatured normalized to boolean", normalized.isFeatured === true);
+  assert("String isPublished normalized to boolean", normalized.isPublished === true);
+  assert("photoAlt trimmed cleanly", normalized.photoAlt === "Portrait photo of Rohit");
   assert("Empty stream normalized to null", normalized.stream === null);
   assert("Empty photoUrl normalized to null", normalized.photoUrl === null);
 

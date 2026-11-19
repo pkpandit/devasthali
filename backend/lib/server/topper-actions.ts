@@ -21,6 +21,8 @@ import {
   topperDeleteSchema,
   topperInputSchema,
   topperUpdateSchema,
+  reorderToppersSchema,
+  toggleTopperStatusSchema,
   formatZodErrors,
   normalizeTopperPayload,
   computeTopperDiff,
@@ -171,6 +173,25 @@ export async function createTopperAction(
       }
     }
 
+    // Required alt text when photo is uploaded or provided
+    const hasPhoto = Boolean(uploadedFile || (targetPhotoUrl && targetPhotoUrl.trim() !== ""));
+    const altText = (data.photoAlt || "").trim();
+    if (hasPhoto && altText.length === 0) {
+      if (managedKey) {
+        try {
+          const filePath = resolveSafePath(managedKey);
+          await fs.promises.unlink(filePath);
+        } catch {
+          // Ignore rollback error
+        }
+      }
+      return {
+        success: false,
+        error: "Meaningful alt text is required for portrait images.",
+        fieldErrors: { photoAlt: ["Meaningful alt text is required for portrait images."] },
+      };
+    }
+
     // 4. Transactional mutation & audit log creation
     try {
       const created = await prisma.$transaction(async (tx) => {
@@ -184,7 +205,9 @@ export async function createTopperAction(
             achievement: data.achievement,
             photoUrl: targetPhotoUrl,
             photoStorageKey: managedKey,
+            photoAlt: altText,
             displayOrder: data.displayOrder,
+            isPublished: data.isPublished,
             isFeatured: data.isFeatured,
           },
         });
@@ -203,7 +226,9 @@ export async function createTopperAction(
               academicYear: topper.academicYear,
               scorePercent: Number(topper.scorePercent),
               achievement: topper.achievement,
+              photoAlt: topper.photoAlt,
               displayOrder: topper.displayOrder,
+              isPublished: topper.isPublished,
               isFeatured: topper.isFeatured,
               hasPhoto: Boolean(topper.photoUrl && topper.photoUrl.trim() !== ""),
             },
@@ -349,10 +374,21 @@ export async function updateTopperAction(
           }
         }
 
+        // Required alt text check when photo is retained or uploaded
+        const hasPhoto = Boolean(nextPhotoUrl && nextPhotoUrl.trim() !== "");
+        const altText = (data.photoAlt || "").trim();
+        if (hasPhoto && altText.length === 0) {
+          return {
+            altMissing: true as const,
+          };
+        }
+
         const { changedFields, diff } = computeTopperDiff(existing, {
           ...data,
           photoUrl: nextPhotoUrl,
           photoStorageKey: nextPhotoStorageKey,
+          photoAlt: hasPhoto ? altText : "",
+          isPublished: data.isPublished,
         });
 
         // If no editable field changed, return success with noOp=true and write no audit log
@@ -375,7 +411,9 @@ export async function updateTopperAction(
             achievement: data.achievement,
             photoUrl: nextPhotoUrl ?? null,
             photoStorageKey: nextPhotoStorageKey ?? null,
+            photoAlt: hasPhoto ? altText : "",
             displayOrder: data.displayOrder,
+            isPublished: data.isPublished,
             isFeatured: data.isFeatured,
           },
         });
@@ -402,6 +440,22 @@ export async function updateTopperAction(
 
         return { updated, noOp: false as const, oldStorageKeyToDelete };
       });
+
+      if ("altMissing" in txResult && txResult.altMissing) {
+        if (newlyManagedKey) {
+          try {
+            const filePath = resolveSafePath(newlyManagedKey);
+            await fs.promises.unlink(filePath);
+          } catch {
+            // Ignore rollback error
+          }
+        }
+        return {
+          success: false,
+          error: "Meaningful alt text is required for portrait images.",
+          fieldErrors: { photoAlt: ["Meaningful alt text is required for portrait images."] },
+        };
+      }
 
       if ("notFound" in txResult && txResult.notFound) {
         if (newlyManagedKey) {
@@ -557,7 +611,9 @@ export async function deleteTopperAction(
               academicYear: existing.academicYear,
               scorePercent: Number(existing.scorePercent),
               achievement: existing.achievement,
+              photoAlt: existing.photoAlt,
               displayOrder: existing.displayOrder,
+              isPublished: existing.isPublished,
               isFeatured: existing.isFeatured,
               hasPhoto: Boolean(existing.photoUrl && existing.photoUrl.trim() !== ""),
             },
@@ -600,6 +656,142 @@ export async function deleteTopperAction(
       success: false,
       error:
         "An unexpected error occurred while deleting the topper record. Please try again.",
+    };
+  }
+}
+
+/**
+ * Server Action: Batch reorder toppers.
+ * Restricted strictly to SUPER_ADMIN.
+ */
+export async function reorderToppersAction(
+  rawInput: unknown
+): Promise<ActionState<{ updatedCount: number }>> {
+  try {
+    let user;
+    try {
+      user = await requireRole(["SUPER_ADMIN"]);
+    } catch (authErr) {
+      if (authErr instanceof AuthorizationError) {
+        return {
+          success: false,
+          error: "Access denied. SUPER_ADMIN privileges required.",
+        };
+      }
+      throw authErr;
+    }
+
+    const parsed = reorderToppersSchema.safeParse(rawInput);
+    if (!parsed.success) {
+      return {
+        success: false,
+        error: "Invalid reorder payload.",
+        fieldErrors: formatZodErrors(parsed.error),
+      };
+    }
+
+    const clientIp = await getClientIp();
+
+    await prisma.$transaction(async (tx) => {
+      for (const item of parsed.data.orders) {
+        await tx.boardResultTopper.update({
+          where: { id: item.id },
+          data: { displayOrder: item.displayOrder },
+        });
+      }
+
+      await recordAuditEvent(
+        {
+          action: "TOPPERS_REORDERED",
+          entityType: "BoardResultTopper",
+          entityId: "batch",
+          userId: user.id,
+          ipAddress: clientIp,
+          metadata: {
+            orders: parsed.data.orders,
+          },
+        },
+        tx
+      );
+    });
+
+    revalidatePath("/admin/academics/results");
+    return { success: true, data: { updatedCount: parsed.data.orders.length } };
+  } catch (err) {
+    console.error("[reorderToppersAction] Mutation failure:", err);
+    return {
+      success: false,
+      error: "An unexpected error occurred while reordering toppers.",
+    };
+  }
+}
+
+/**
+ * Server Action: Toggle publication status of a topper.
+ * Restricted strictly to SUPER_ADMIN.
+ */
+export async function toggleTopperStatusAction(
+  rawInput: unknown
+): Promise<ActionState<{ id: string; isPublished: boolean }>> {
+  try {
+    let user;
+    try {
+      user = await requireRole(["SUPER_ADMIN"]);
+    } catch (authErr) {
+      if (authErr instanceof AuthorizationError) {
+        return {
+          success: false,
+          error: "Access denied. SUPER_ADMIN privileges required.",
+        };
+      }
+      throw authErr;
+    }
+
+    const parsed = toggleTopperStatusSchema.safeParse(rawInput);
+    if (!parsed.success) {
+      return {
+        success: false,
+        error: "Invalid status update payload.",
+        fieldErrors: formatZodErrors(parsed.error),
+      };
+    }
+
+    const clientIp = await getClientIp();
+
+    const updated = await prisma.$transaction(async (tx) => {
+      const topper = await tx.boardResultTopper.update({
+        where: { id: parsed.data.id },
+        data: { isPublished: parsed.data.isPublished },
+      });
+
+      await recordAuditEvent(
+        {
+          action: "TOPPER_STATUS_CHANGED",
+          entityType: "BoardResultTopper",
+          entityId: topper.id,
+          userId: user.id,
+          ipAddress: clientIp,
+          metadata: {
+            isPublished: topper.isPublished,
+            studentName: topper.studentName,
+          },
+        },
+        tx
+      );
+
+      return topper;
+    });
+
+    revalidatePath("/admin/academics/results");
+    return {
+      success: true,
+      data: { id: updated.id, isPublished: updated.isPublished },
+    };
+  } catch (err) {
+    console.error("[toggleTopperStatusAction] Mutation failure:", err);
+    return {
+      success: false,
+      error: "An unexpected error occurred while updating topper status.",
     };
   }
 }

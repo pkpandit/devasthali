@@ -13,7 +13,9 @@ export type AuthAuditAction =
 export type TopperAuditAction =
   | "TOPPER_CREATED"
   | "TOPPER_UPDATED"
-  | "TOPPER_DELETED";
+  | "TOPPER_DELETED"
+  | "TOPPER_STATUS_CHANGED"
+  | "TOPPERS_REORDERED";
 
 export type NoticeAuditAction =
   | "NOTICE_CREATED"

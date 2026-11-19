@@ -6,6 +6,7 @@ export const TOPPER_POLICY = {
   ACHIEVEMENT_MIN_LENGTH: 3,
   ACHIEVEMENT_MAX_LENGTH: 200,
   STREAM_MAX_LENGTH: 50,
+  PHOTO_ALT_MAX_LENGTH: 255,
   MIN_SCORE_PERCENT: 0.0,
   MAX_SCORE_PERCENT: 100.0,
   ACADEMIC_YEAR_REGEX: /^\d{4}-\d{2}$/,
@@ -65,6 +66,15 @@ export const photoUrlSchema = z
   );
 
 /**
+ * Photo alt-text schema.
+ */
+export const photoAltSchema = z
+  .string()
+  .trim()
+  .max(TOPPER_POLICY.PHOTO_ALT_MAX_LENGTH, `Alt text must not exceed ${TOPPER_POLICY.PHOTO_ALT_MAX_LENGTH} characters.`)
+  .default("");
+
+/**
  * Canonical BoardResultTopper input schema for record creation.
  */
 export const topperInputSchema = z
@@ -89,11 +99,13 @@ export const topperInputSchema = z
       .min(TOPPER_POLICY.ACHIEVEMENT_MIN_LENGTH, `Achievement must be at least ${TOPPER_POLICY.ACHIEVEMENT_MIN_LENGTH} characters.`)
       .max(TOPPER_POLICY.ACHIEVEMENT_MAX_LENGTH, `Achievement must not exceed ${TOPPER_POLICY.ACHIEVEMENT_MAX_LENGTH} characters.`),
     photoUrl: photoUrlSchema,
+    photoAlt: photoAltSchema,
     displayOrder: z
       .number()
       .int("Display order must be an integer.")
       .min(0, "Display order must be a non-negative integer.")
       .default(0),
+    isPublished: z.boolean().default(true),
     isFeatured: z.boolean().default(true),
   });
 
@@ -127,10 +139,12 @@ export const topperUpdateSchema = z
       .min(TOPPER_POLICY.ACHIEVEMENT_MIN_LENGTH, `Achievement must be at least ${TOPPER_POLICY.ACHIEVEMENT_MIN_LENGTH} characters.`)
       .max(TOPPER_POLICY.ACHIEVEMENT_MAX_LENGTH, `Achievement must not exceed ${TOPPER_POLICY.ACHIEVEMENT_MAX_LENGTH} characters.`),
     photoUrl: photoUrlSchema,
+    photoAlt: z.string().trim().max(TOPPER_POLICY.PHOTO_ALT_MAX_LENGTH, `Alt text must not exceed ${TOPPER_POLICY.PHOTO_ALT_MAX_LENGTH} characters.`).default(""),
     displayOrder: z
       .number()
       .int("Display order must be an integer.")
       .min(0, "Display order must be a non-negative integer."),
+    isPublished: z.boolean(),
     isFeatured: z.boolean(),
   });
 
@@ -145,9 +159,33 @@ export const topperDeleteSchema = z
       .min(1, "Record ID is required for deletion."),
   });
 
+/**
+ * Reorder schema requiring an array of { id, displayOrder } items.
+ */
+export const reorderToppersSchema = z.object({
+  orders: z
+    .array(
+      z.object({
+        id: z.string().trim().min(1, "Record ID is required for reordering."),
+        displayOrder: z.number().int().min(0, "Display order must be a non-negative integer."),
+      })
+    )
+    .min(1, "At least one topper order must be provided."),
+});
+
+/**
+ * Toggle publication status schema.
+ */
+export const toggleTopperStatusSchema = z.object({
+  id: z.string().trim().min(1, "Record ID is required."),
+  isPublished: z.boolean(),
+});
+
 export type TopperInput = z.infer<typeof topperInputSchema>;
 export type TopperUpdateInput = z.infer<typeof topperUpdateSchema>;
 export type TopperDeleteInput = z.infer<typeof topperDeleteSchema>;
+export type ReorderToppersInput = z.infer<typeof reorderToppersSchema>;
+export type ToggleTopperStatusInput = z.infer<typeof toggleTopperStatusSchema>;
 
 /**
  * Maps Zod issues to a structured fieldErrors dictionary.
@@ -207,12 +245,25 @@ export function normalizeTopperPayload(
     }
   }
 
+  // Parse boolean isPublished if provided as string
+  if (typeof raw.isPublished === "string") {
+    const trimmed = raw.isPublished.trim().toLowerCase();
+    if (trimmed === "true" || trimmed === "on" || trimmed === "1") {
+      raw.isPublished = true;
+    } else if (trimmed === "false" || trimmed === "0") {
+      raw.isPublished = false;
+    }
+  }
+
   // Normalize empty strings to null for optional fields
   if (typeof raw.stream === "string" && raw.stream.trim() === "") {
     raw.stream = null;
   }
   if (typeof raw.photoUrl === "string" && raw.photoUrl.trim() === "") {
     raw.photoUrl = null;
+  }
+  if (typeof raw.photoAlt === "string") {
+    raw.photoAlt = raw.photoAlt.trim();
   }
 
   return raw;
@@ -237,7 +288,9 @@ export function computeTopperDiff(
     achievement: string;
     photoUrl: string | null;
     photoStorageKey?: string | null;
+    photoAlt?: string | null;
     displayOrder: number;
+    isPublished?: boolean;
     isFeatured: boolean;
   },
   updated: {
@@ -249,7 +302,9 @@ export function computeTopperDiff(
     achievement: string;
     photoUrl?: string | null;
     photoStorageKey?: string | null;
+    photoAlt?: string | null;
     displayOrder: number;
+    isPublished?: boolean;
     isFeatured: boolean;
   }
 ): TopperDiffResult {
@@ -305,9 +360,23 @@ export function computeTopperDiff(
     };
   }
 
+  const existingAlt = (existing.photoAlt ?? "").trim();
+  const updatedAlt = (updated.photoAlt ?? "").trim();
+  if (existingAlt !== updatedAlt) {
+    changedFields.push("photoAlt");
+    diff.photoAlt = { from: existingAlt, to: updatedAlt };
+  }
+
   if (existing.displayOrder !== updated.displayOrder) {
     changedFields.push("displayOrder");
     diff.displayOrder = { from: existing.displayOrder, to: updated.displayOrder };
+  }
+
+  const existingPublished = existing.isPublished ?? true;
+  const updatedPublished = updated.isPublished ?? true;
+  if (existingPublished !== updatedPublished) {
+    changedFields.push("isPublished");
+    diff.isPublished = { from: existingPublished, to: updatedPublished };
   }
 
   if (existing.isFeatured !== updated.isFeatured) {
