@@ -99,12 +99,16 @@ model BoardResultTopper {
   achievement     String   // e.g. "School Topper - 98.4%"
   photoUrl        String?
   photoStorageKey String?
+  photoAlt        String   @default("") @db.VarChar(255)
   displayOrder    Int      @default(0)
+  isPublished     Boolean  @default(true)
   isFeatured      Boolean  @default(true)
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
   @@index([academicYear, grade])
+  @@index([isPublished, displayOrder])
+  @@index([isPublished, academicYear])
   @@index([isFeatured, displayOrder])
   @@map("board_result_toppers")
 }
