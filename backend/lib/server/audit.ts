@@ -132,6 +132,18 @@ export type DownloadAuditAction =
   | "DOWNLOAD_DOCUMENT_STATUS_CHANGED"
   | "DOWNLOAD_DOCUMENTS_REORDERED";
 
+export type DisclosureAuditAction =
+  | "DISCLOSURE_SECTION_CREATED"
+  | "DISCLOSURE_SECTION_UPDATED"
+  | "DISCLOSURE_SECTION_DELETED"
+  | "DISCLOSURE_SECTION_STATUS_CHANGED"
+  | "DISCLOSURE_SECTIONS_REORDERED"
+  | "DISCLOSURE_DOCUMENT_CREATED"
+  | "DISCLOSURE_DOCUMENT_UPDATED"
+  | "DISCLOSURE_DOCUMENT_DELETED"
+  | "DISCLOSURE_DOCUMENT_STATUS_CHANGED"
+  | "DISCLOSURE_DOCUMENTS_REORDERED";
+
 export type AuditAction =
   | AuthAuditAction
   | TopperAuditAction
@@ -143,7 +155,8 @@ export type AuditAction =
   | FacultyAuditAction
   | GalleryAuditAction
   | EventAuditAction
-  | DownloadAuditAction;
+  | DownloadAuditAction
+  | DisclosureAuditAction;
 
 export interface CreateAuditLogParams {
   userId?: string | null;
@@ -175,7 +188,9 @@ export interface CreateAuditLogParams {
     | "GalleryImage"
     | "SchoolEvent"
     | "DownloadCategory"
-    | "DownloadDocument";
+    | "DownloadDocument"
+    | "DisclosureSection"
+    | "DisclosureDocument";
   entityId: string;
   metadata?: Record<string, unknown> | null;
   ipAddress?: string | null;

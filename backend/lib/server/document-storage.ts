@@ -9,6 +9,9 @@ export const MANAGED_DOCUMENT_KEY_REGEX =
 export const MANAGED_DOWNLOAD_DOCUMENT_KEY_REGEX =
   /^documents\/downloads\/doc_[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}\.pdf$/;
 
+export const MANAGED_DISCLOSURE_DOCUMENT_KEY_REGEX =
+  /^documents\/disclosures\/doc_[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}\.pdf$/;
+
 export const STAGING_DOCUMENT_KEY_REGEX =
   /^documents\/staging\/tmp_[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}\.tmp$/;
 
@@ -59,11 +62,23 @@ export function isValidManagedDownloadDocumentKey(key: string | null | undefined
 }
 
 /**
- * Validates that a permanent document key matches either notice or download format.
+ * Validates that a permanent disclosure document key matches the strict authoritative format.
+ */
+export function isValidManagedDisclosureDocumentKey(key: string | null | undefined): key is string {
+  if (!key) return false;
+  return MANAGED_DISCLOSURE_DOCUMENT_KEY_REGEX.test(key);
+}
+
+/**
+ * Validates that a permanent document key matches either notice, download, or disclosure format.
  */
 export function isValidAnyManagedDocumentKey(key: string | null | undefined): key is string {
   if (!key) return false;
-  return MANAGED_DOCUMENT_KEY_REGEX.test(key) || MANAGED_DOWNLOAD_DOCUMENT_KEY_REGEX.test(key);
+  return (
+    MANAGED_DOCUMENT_KEY_REGEX.test(key) ||
+    MANAGED_DOWNLOAD_DOCUMENT_KEY_REGEX.test(key) ||
+    MANAGED_DISCLOSURE_DOCUMENT_KEY_REGEX.test(key)
+  );
 }
 
 /**
@@ -88,6 +103,14 @@ export function generateManagedDocumentKey(): string {
 export function generateManagedDownloadDocumentKey(): string {
   const uuid = crypto.randomUUID();
   return `documents/downloads/doc_${uuid}.pdf`;
+}
+
+/**
+ * Generates an unpredictable, UUID-based permanent storage key for disclosures.
+ */
+export function generateManagedDisclosureDocumentKey(): string {
+  const uuid = crypto.randomUUID();
+  return `documents/disclosures/doc_${uuid}.pdf`;
 }
 
 /**
@@ -119,53 +142,52 @@ export function resolveSafePath(
     throw new Error(`Invalid document storage key format: "${storageKey}"`);
   }
 
-  // Reject directory traversal patterns
-  if (storageKey.includes("..") || storageKey.includes("%2e") || storageKey.includes("\0")) {
-    throw new Error(`Path traversal attempt detected in key: "${storageKey}"`);
-  }
-
   const root = getDocumentStorageRoot();
-  // Split key into relative segments ("documents/notices/doc_...", "documents/downloads/doc_...", or "documents/staging/tmp_...")
-  // We strip the leading "documents/" to resolve under root
-  const subPath = storageKey.replace(/^documents[/\\]/, "");
-  const resolved = path.resolve(root, subPath);
+  const normalizedKey = path.normalize(storageKey).replace(/^[\\/]+/, "");
+  const absolutePath = path.resolve(root, normalizedKey);
 
-  // Path containment check
-  const rootWithSep = root.endsWith(path.sep) ? root : root + path.sep;
-  if (!resolved.startsWith(rootWithSep)) {
-    throw new Error(`Path containment violation for key: "${storageKey}"`);
+  // Strict boundary containment check
+  const relative = path.relative(root, absolutePath);
+  if (relative.startsWith("..") || path.isAbsolute(relative)) {
+    throw new Error(`Path traversal attempt detected: "${storageKey}" escapes root`);
   }
 
-  return resolved;
+  return absolutePath;
 }
 
 /**
- * Stages an uploaded document buffer into the temporary staging directory.
- * Sets restrictive file permissions (0o600).
+ * Stages an uploaded document in temporary quarantine storage.
+ * File permissions are locked down to owner read/write (0o600).
  */
 export async function stageDocument(
-  buffer: Buffer
-): Promise<{ stagingKey: string; tempPath: string; byteSize: number }> {
+  buffer: Buffer,
+  filenameHint = "upload.pdf"
+): Promise<{ stagingKey: string; tempPath: string }> {
   assertLocalStoragePermitted();
 
   const stagingKey = generateStagingDocumentKey();
-  const root = getDocumentStorageRoot();
-  const stagingDir = path.resolve(root, "staging");
-
-  await fs.promises.mkdir(stagingDir, { recursive: true });
-
   const tempPath = resolveSafePath(stagingKey, "staging");
-  await fs.promises.writeFile(tempPath, buffer, { mode: 0o600 });
+  const tempDir = path.dirname(tempPath);
 
-  return {
-    stagingKey,
-    tempPath,
-    byteSize: buffer.length,
-  };
+  // Ensure staging directory exists
+  await fs.promises.mkdir(tempDir, { recursive: true });
+
+  // Write file with exclusive creation and restrictive permissions
+  await fs.promises.writeFile(tempPath, buffer, { mode: 0o600, flag: "wx" });
+
+  // Verify write
+  const stat = await fs.promises.stat(tempPath);
+  if (stat.size !== buffer.length) {
+    await fs.promises.unlink(tempPath).catch(() => {});
+    throw new Error(`Staged file size mismatch for ${filenameHint}`);
+  }
+
+  return { stagingKey, tempPath };
 }
 
 /**
- * Safely removes a staged temporary file (used for validation failure or rollback).
+ * Cleans up a temporary staged document.
+ * Idempotent: returns true if file was removed or never existed.
  */
 export async function cleanupStagedDocument(stagingKey: string): Promise<boolean> {
   if (!isValidStagingDocumentKey(stagingKey)) {
@@ -194,7 +216,7 @@ export async function cleanupStagedDocument(stagingKey: string): Promise<boolean
  */
 export async function promoteStagedDocument(
   stagingKey: string,
-  targetFolder: "notices" | "downloads" = "notices"
+  targetFolder: "notices" | "downloads" | "disclosures" = "notices"
 ): Promise<{ permanentKey: string; permanentPath: string }> {
   assertLocalStoragePermitted();
 
@@ -214,9 +236,11 @@ export async function promoteStagedDocument(
   }
 
   const permanentKey =
-    targetFolder === "downloads"
-      ? generateManagedDownloadDocumentKey()
-      : generateManagedDocumentKey();
+    targetFolder === "disclosures"
+      ? generateManagedDisclosureDocumentKey()
+      : targetFolder === "downloads"
+        ? generateManagedDownloadDocumentKey()
+        : generateManagedDocumentKey();
   const permanentPath = resolveSafePath(permanentKey, "managed");
   const targetDir = path.dirname(permanentPath);
 
@@ -280,63 +304,37 @@ export async function getManagedDocumentBuffer(storageKey: string): Promise<Buff
   const filePath = resolveSafePath(storageKey, "managed");
 
   const lstat = await fs.promises.lstat(filePath);
-  if (lstat.isSymbolicLink()) {
-    throw new Error(`Refusing to read symlink at "${filePath}"`);
+  if (lstat.isSymbolicLink() || !lstat.isFile()) {
+    throw new Error(`Inaccessible document at "${filePath}"`);
   }
 
   return fs.promises.readFile(filePath);
 }
 
 /**
- * Returns a readable stream for a managed permanent document.
+ * Calculates SHA-256 integrity hash of a Buffer.
  */
-export async function getManagedDocumentStream(storageKey: string): Promise<fs.ReadStream> {
-  assertLocalStoragePermitted();
-  const filePath = resolveSafePath(storageKey, "managed");
-
-  const lstat = await fs.promises.lstat(filePath);
-  if (lstat.isSymbolicLink()) {
-    throw new Error(`Refusing to read symlink at "${filePath}"`);
-  }
-
-  return fs.createReadStream(filePath);
+export function calculateDocumentSha256(buffer: Buffer): string {
+  return crypto.createHash("sha256").update(buffer).digest("hex");
 }
 
 /**
- * Inspects metadata of a managed permanent document.
- */
-export async function getManagedDocumentMetadata(
-  storageKey: string
-): Promise<{ byteSize: number; mtime: Date; sha256: string }> {
-  const buffer = await getManagedDocumentBuffer(storageKey);
-  const filePath = resolveSafePath(storageKey, "managed");
-  const stat = await fs.promises.stat(filePath);
-  const sha256 = crypto.createHash("sha256").update(buffer).digest("hex");
-
-  return {
-    byteSize: stat.size,
-    mtime: stat.mtime,
-    sha256,
-  };
-}
-
-/**
- * Scans the staging directory and cleans up stale temporary files older than maxAgeMs.
- * Default max age: 1 hour (3600000ms).
+ * Garbage collection: cleans up orphaned staging files older than maxAgeMs.
+ * Recommended run on a daily cron or at startup.
  */
 export async function cleanupStaleStagedDocuments(
-  maxAgeMs = 60 * 60 * 1000
+  maxAgeMs = 2 * 60 * 60 * 1000 // 2 hours
 ): Promise<{ cleanedCount: number; errors: string[] }> {
   assertLocalStoragePermitted();
 
   const root = getDocumentStorageRoot();
   const stagingDir = path.resolve(root, "staging");
+  const now = Date.now();
 
   const result = { cleanedCount: 0, errors: [] as string[] };
 
   try {
     const entries = await fs.promises.readdir(stagingDir, { withFileTypes: true });
-    const now = Date.now();
 
     for (const entry of entries) {
       if (!entry.isFile()) continue;
@@ -363,13 +361,13 @@ export async function cleanupStaleStagedDocuments(
 
 /**
  * Reconciles managed documents on disk against the set of referenced keys in the database.
- * Supports "notices" or "downloads" folders.
+ * Supports "notices", "downloads", or "disclosures" folders.
  * Identifies and optionally deletes unreferenced / orphaned files.
  */
 export async function reconcileOrphanedDocuments(
   referencedKeys: Set<string>,
   autoDelete = false,
-  folder: "notices" | "downloads" = "notices"
+  folder: "notices" | "downloads" | "disclosures" = "notices"
 ): Promise<{ orphanedKeys: string[]; deletedCount: number; errors: string[] }> {
   assertLocalStoragePermitted();
 
