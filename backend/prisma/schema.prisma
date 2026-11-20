@@ -74,7 +74,7 @@ model AuditLog {
   userId     String?
   user       User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
   action     String   // E.g., 'AUTH_LOGIN_SUCCESS', 'AUTH_LOGIN_FAILED', 'NOTICE_CREATED', 'SITE_PROFILE_UPDATED', etc.
-  entityType String   // Target entity type: 'User', 'Session', 'BoardResultTopper', 'Notice', 'SiteProfile', 'CampusDirectoryEntry', 'NavigationItem', 'NavigationColumn', 'NavigationLinkItem', 'HomepageHero', 'HomepagePrincipalMessage', 'HomepageStatistic', 'HomepageHighlight'
+  entityType String   // Target entity type: 'User', 'Session', 'BoardResultTopper', 'Notice', 'SiteProfile', 'CampusDirectoryEntry', 'NavigationItem', 'NavigationColumn', 'NavigationLinkItem', 'HomepageHero', 'HomepagePrincipalMessage', 'HomepageStatistic', 'HomepageHighlight', 'DownloadCategory', 'DownloadDocument', 'DisclosureSection', 'DisclosureDocument'
   entityId   String   // Target entity ID
   metadata   Json?    // Structured diagnostic context (IP, user agent, failure reason, modified fields)
   ipAddress  String?
@@ -664,4 +664,46 @@ model DownloadDocument {
   @@index([categoryId, isPublished])
   @@index([fileStorageKey])
   @@map("download_documents")
+}
+
+// ==========================================
+// 15. MANDATORY PUBLIC DISCLOSURE (APPENDIX IX)
+// ==========================================
+
+model DisclosureSection {
+  id           String               @id @default(cuid())
+  slug         String               @unique @db.VarChar(100)
+  title        String               @db.VarChar(150)
+  description  String?              @db.VarChar(500)
+  displayOrder Int                  @default(0)
+  isPublished  Boolean              @default(true)
+  documents    DisclosureDocument[]
+  createdAt    DateTime             @default(now())
+  updatedAt    DateTime             @updatedAt
+
+  @@index([isPublished, displayOrder])
+  @@map("disclosure_sections")
+}
+
+model DisclosureDocument {
+  id             String            @id @default(cuid())
+  sectionId      String
+  section        DisclosureSection @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+  title          String            @db.VarChar(200)
+  description    String?           @db.VarChar(500)
+  fileUrl        String?           @db.VarChar(500)
+  fileStorageKey String?           @db.VarChar(255)
+  fileSizeBytes  Int?
+  fileSize       String?           @db.VarChar(50)
+  fileType       String            @default("application/pdf") @db.VarChar(100)
+  linkLabel      String?           @default("VIEW/DOWNLOAD") @db.VarChar(100)
+  displayOrder   Int               @default(0)
+  isPublished    Boolean           @default(true)
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+
+  @@index([sectionId, displayOrder])
+  @@index([sectionId, isPublished])
+  @@index([fileStorageKey])
+  @@map("disclosure_documents")
 }
