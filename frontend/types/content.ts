@@ -59,7 +59,8 @@ export type FacilityCategory =
   | "Residential"
   | "Sports"
   | "Transport"
-  | "Wellness";
+  | "Wellness"
+  | string;
 
 export type GalleryCategory =
   | "Campus"
@@ -166,12 +167,23 @@ export interface BoardTopper {
 
 export interface FacilityItem {
   id: string;
+  slug?: string;
   title: string;
   category: FacilityCategory;
   description: string;
   iconName: string;
   highlights: string[];
   image?: string;
+  imageAlt?: string;
+}
+
+export interface FacilityCategoryGroup {
+  id?: string;
+  slug?: string;
+  title: string;
+  description?: string | null;
+  displayOrder?: number;
+  items: FacilityItem[];
 }
 
 export interface FacultyMember {

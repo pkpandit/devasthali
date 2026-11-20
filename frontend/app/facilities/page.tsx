@@ -2,7 +2,7 @@ import React from "react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import Image from "next/image";
-import { FACILITIES_DATA, FACILITY_IMAGE_MAP } from "@/lib/content/facilities";
+import { getPublicFacilityItems } from "@/lib/api/facilities";
 import {
   CheckCircle2,
   Bus,
@@ -14,6 +14,8 @@ import {
   MonitorPlay,
   HeartPulse,
   Sparkles,
+  Shield,
+  Building,
 } from "lucide-react";
 
 const FACILITY_ICONS: Record<string, React.ElementType> = {
@@ -25,6 +27,8 @@ const FACILITY_ICONS: Record<string, React.ElementType> = {
   Bus,
   BookOpen,
   HeartPulse,
+  Sparkles,
+  Shield,
 };
 
 export const metadata: Metadata = {
@@ -33,7 +37,9 @@ export const metadata: Metadata = {
     "Explore the 15-acre green campus of Devasthaly Vidyapeeth, Chilkahar, Ballia. High-tech science labs, smart classrooms, separate air-cooled hostels, pure veg mess, and GPS-tracked bus fleet.",
 };
 
-export default function FacilitiesPage() {
+export default async function FacilitiesPage() {
+  const facilities = await getPublicFacilityItems();
+
   return (
     <div className="w-full bg-[#F3F4F6] pb-16">
       {/* Full-Width White Edunex Page Header Banner */}
@@ -53,66 +59,79 @@ export default function FacilitiesPage() {
       </div>
 
       <div className="site-container space-y-10">
-
         {/* Facilities Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
-          {FACILITIES_DATA.map((fac) => {
-            const IconComponent = FACILITY_ICONS[fac.iconName] || BookOpen;
-            const facilityImage = FACILITY_IMAGE_MAP[fac.id] || "/images/facilities/campus-grounds.jpg";
+        {facilities.length === 0 ? (
+          <div className="w-full bg-white rounded-3xl border border-gray-200/90 p-12 text-center shadow-xs">
+            <Building className="w-12 h-12 text-gray-400 mx-auto mb-3" aria-hidden="true" />
+            <h2 className="text-xl font-heading font-bold text-gray-800 mb-2">
+              No Facilities Published Yet
+            </h2>
+            <p className="text-sm text-gray-600 max-w-md mx-auto">
+              Our campus infrastructure details are currently being updated. Please check back shortly or contact the school administration.
+            </p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
+            {facilities.map((fac) => {
+              const IconComponent = FACILITY_ICONS[fac.iconName] || BookOpen;
+              const facilityImage = fac.image || "/images/facilities/campus-grounds.jpg";
+              const elementId =
+                fac.slug ||
+                (fac.id === "fac-hostel-mess" ? "hostel" : fac.id.replace("fac-", ""));
 
-            const elementId = fac.id === "fac-hostel-mess" ? "hostel" : fac.id.replace("fac-", "");
-            return (
-              <div
-                key={fac.id}
-                id={elementId}
-                className="scroll-mt-28 bg-white rounded-2xl sm:rounded-3xl border border-gray-200/90 hover:border-red-300 shadow-xs hover:shadow-xl hover:-translate-y-1 p-4 sm:p-5 transition-all duration-300 flex flex-col justify-between group cursor-pointer"
-              >
-                {/* Top Image Container with Inset White Padding */}
-                <div>
-                  <div className="relative w-full aspect-[16/10] rounded-xl sm:rounded-2xl overflow-hidden bg-gray-100 mb-4 shadow-xs">
-                    <Image
-                      src={facilityImage}
-                      alt={fac.title}
-                      fill
-                      sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                      className="object-cover group-hover:scale-105 transition-transform duration-500"
-                    />
-                    <div className="absolute top-3 left-3 px-2.5 py-1 bg-white/95 backdrop-blur-md rounded-lg shadow-sm text-xs font-heading font-bold text-[#B91C1C]">
-                      {fac.category}
+              return (
+                <div
+                  key={fac.id}
+                  id={elementId}
+                  className="scroll-mt-28 bg-white rounded-2xl sm:rounded-3xl border border-gray-200/90 hover:border-red-300 shadow-xs hover:shadow-xl hover:-translate-y-1 p-4 sm:p-5 transition-all duration-300 flex flex-col justify-between group cursor-pointer"
+                >
+                  {/* Top Image Container with Inset White Padding */}
+                  <div>
+                    <div className="relative w-full aspect-[16/10] rounded-xl sm:rounded-2xl overflow-hidden bg-gray-100 mb-4 shadow-xs">
+                      <Image
+                        src={facilityImage}
+                        alt={fac.imageAlt || fac.title}
+                        fill
+                        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                        className="object-cover group-hover:scale-105 transition-transform duration-500"
+                      />
+                      <div className="absolute top-3 left-3 px-2.5 py-1 bg-white/95 backdrop-blur-md rounded-lg shadow-sm text-xs font-heading font-bold text-[#B91C1C]">
+                        {fac.category}
+                      </div>
                     </div>
+
+                    <div className="flex items-center gap-3 mb-2">
+                      <div className="w-9 h-9 rounded-xl bg-red-50 text-[#B91C1C] flex items-center justify-center shrink-0 border border-red-100">
+                        <IconComponent className="w-5 h-5 text-[#B91C1C]" />
+                      </div>
+                      <h2 className="font-heading font-bold text-lg text-[#111827] group-hover:text-[#B91C1C] transition-colors leading-snug">
+                        {fac.title}
+                      </h2>
+                    </div>
+
+                    <p className="text-sm text-gray-600 leading-relaxed font-sans mb-4">
+                      {fac.description}
+                    </p>
                   </div>
 
-                  <div className="flex items-center gap-3 mb-2">
-                    <div className="w-9 h-9 rounded-xl bg-red-50 text-[#B91C1C] flex items-center justify-center shrink-0 border border-red-100">
-                      <IconComponent className="w-5 h-5 text-[#B91C1C]" />
-                    </div>
-                    <h2 className="font-heading font-bold text-lg text-[#111827] group-hover:text-[#B91C1C] transition-colors leading-snug">
-                      {fac.title}
-                    </h2>
+                  <div className="border-t border-gray-100 pt-3">
+                    <span className="text-[11px] font-heading font-bold text-gray-400 uppercase tracking-wider block mb-2">
+                      Key Highlights
+                    </span>
+                    <ul className="space-y-1.5">
+                      {fac.highlights.map((h, i) => (
+                        <li key={i} className="text-xs text-gray-700 flex items-center gap-2 font-medium">
+                          <CheckCircle2 className="w-3.5 h-3.5 text-[#047857] shrink-0" />
+                          <span>{h}</span>
+                        </li>
+                      ))}
+                    </ul>
                   </div>
-
-                  <p className="text-sm text-gray-600 leading-relaxed font-sans mb-4">
-                    {fac.description}
-                  </p>
                 </div>
-
-                <div className="border-t border-gray-100 pt-3">
-                  <span className="text-[11px] font-heading font-bold text-gray-400 uppercase tracking-wider block mb-2">
-                    Key Highlights
-                  </span>
-                  <ul className="space-y-1.5">
-                    {fac.highlights.map((h, i) => (
-                      <li key={i} className="text-xs text-gray-700 flex items-center gap-2 font-medium">
-                        <CheckCircle2 className="w-3.5 h-3.5 text-[#047857] shrink-0" />
-                        <span>{h}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              </div>
-            );
-          })}
-        </div>
+              );
+            })}
+          </div>
+        )}
 
         {/* Hostel Highlight Section */}
         <div id="hostel" className="bg-[#111827] text-white p-8 sm:p-10 rounded-3xl border-t-4 border-[#B91C1C] shadow-xl space-y-6">
