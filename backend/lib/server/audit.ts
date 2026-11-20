@@ -144,6 +144,18 @@ export type DisclosureAuditAction =
   | "DISCLOSURE_DOCUMENT_STATUS_CHANGED"
   | "DISCLOSURE_DOCUMENTS_REORDERED";
 
+export type FacilityAuditAction =
+  | "FACILITY_CATEGORY_CREATED"
+  | "FACILITY_CATEGORY_UPDATED"
+  | "FACILITY_CATEGORY_DELETED"
+  | "FACILITY_CATEGORY_STATUS_CHANGED"
+  | "FACILITY_CATEGORIES_REORDERED"
+  | "FACILITY_ITEM_CREATED"
+  | "FACILITY_ITEM_UPDATED"
+  | "FACILITY_ITEM_DELETED"
+  | "FACILITY_ITEM_STATUS_CHANGED"
+  | "FACILITY_ITEMS_REORDERED";
+
 export type AuditAction =
   | AuthAuditAction
   | TopperAuditAction
@@ -156,7 +168,8 @@ export type AuditAction =
   | GalleryAuditAction
   | EventAuditAction
   | DownloadAuditAction
-  | DisclosureAuditAction;
+  | DisclosureAuditAction
+  | FacilityAuditAction;
 
 export interface CreateAuditLogParams {
   userId?: string | null;
@@ -190,7 +203,9 @@ export interface CreateAuditLogParams {
     | "DownloadCategory"
     | "DownloadDocument"
     | "DisclosureSection"
-    | "DisclosureDocument";
+    | "DisclosureDocument"
+    | "FacilityCategory"
+    | "FacilityItem";
   entityId: string;
   metadata?: Record<string, unknown> | null;
   ipAddress?: string | null;

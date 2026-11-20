@@ -4,10 +4,23 @@ import path from "node:path";
 import crypto from "node:crypto";
 import { prisma } from "@/lib/server/prisma";
 
-export type ManagedMediaFolder = "toppers" | "gallery" | "events";
+export type ManagedMediaFolder = "toppers" | "gallery" | "events" | "facilities";
 
 export const MANAGED_KEY_REGEX =
   /^(toppers\/top|gallery\/gal|events\/eve)_[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}\.webp$/;
+
+export const MANAGED_FACILITY_KEY_REGEX =
+  /^facilities\/fac_[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}\.webp$/;
+
+export function isValidManagedFacilityKey(key: string | null | undefined): key is string {
+  if (!key) return false;
+  return MANAGED_FACILITY_KEY_REGEX.test(key);
+}
+
+export function isValidManagedMediaKey(key: string | null | undefined): key is string {
+  if (!key) return false;
+  return MANAGED_KEY_REGEX.test(key) || MANAGED_FACILITY_KEY_REGEX.test(key);
+}
 
 export function getUploadRoot(folder: ManagedMediaFolder = "toppers"): string {
   if (process.env.TEST_UPLOAD_ROOT) {
@@ -51,7 +64,7 @@ export function isValidManagedKey(key: string | null | undefined): key is string
  */
 export function generateManagedKey(folder: ManagedMediaFolder = "toppers"): string {
   const uuid = crypto.randomUUID();
-  const prefix = folder === "gallery" ? "gal" : folder === "events" ? "eve" : "top";
+  const prefix = folder === "gallery" ? "gal" : folder === "events" ? "eve" : folder === "facilities" ? "fac" : "top";
   return `${folder}/${prefix}_${uuid}.webp`;
 }
 
@@ -59,7 +72,7 @@ export function generateManagedKey(folder: ManagedMediaFolder = "toppers"): stri
  * Resolves a managed key to an absolute filesystem path with strict boundary containment.
  */
 export function resolveSafePath(storageKey: string): string {
-  if (!isValidManagedKey(storageKey)) {
+  if (!isValidManagedMediaKey(storageKey)) {
     throw new Error(`Invalid managed storage key format: "${storageKey}"`);
   }
 
@@ -107,7 +120,7 @@ export async function saveManagedPhoto(
 export async function deleteManagedPhotoIfUnreferenced(
   storageKey: string | null | undefined
 ): Promise<boolean> {
-  if (!storageKey || !isValidManagedKey(storageKey)) {
+  if (!storageKey || !isValidManagedMediaKey(storageKey)) {
     // Legacy assets or external URLs have null or unmanaged keys — ignore safely
     return false;
   }
@@ -129,6 +142,7 @@ export async function deleteManagedPhotoIfUnreferenced(
     galleryAlbumCount,
     galleryImageCount,
     eventCount,
+    facilityItemCount,
   ] = await Promise.all([
     prisma.boardResultTopper.count({ where: { photoStorageKey: storageKey } }),
     prisma.homepageHero.count({ where: { backgroundImageStorageKey: storageKey } }),
@@ -143,6 +157,7 @@ export async function deleteManagedPhotoIfUnreferenced(
     prisma.galleryAlbum.count({ where: { coverImageStorageKey: storageKey } }),
     prisma.galleryImage.count({ where: { imageStorageKey: storageKey } }),
     prisma.schoolEvent.count({ where: { coverImageStorageKey: storageKey } }),
+    prisma.facilityItem.count({ where: { imageStorageKey: storageKey } }),
   ]);
 
   const refCount =
@@ -158,7 +173,8 @@ export async function deleteManagedPhotoIfUnreferenced(
     facultyCount +
     galleryAlbumCount +
     galleryImageCount +
-    eventCount;
+    eventCount +
+    facilityItemCount;
 
   if (refCount > 0) {
     console.warn(
