@@ -17,12 +17,13 @@ interface RouteParams {
  * Public Controlled Document Download Endpoint.
  * 
  * Invariants:
- * 1. Identifier: Uses stable public document identifier (Notice ID, Slug, Attachment ID, or DownloadDocument ID).
+ * 1. Identifier: Uses stable public document identifier (Notice ID, Slug, Attachment ID, DownloadDocument ID, or DisclosureDocument ID).
  *    Never exposes raw storage keys, internal paths, or SHA-256 hashes.
  * 2. Strict Lifecycle Guard:
- *    Only serves documents for ACTIVE, PUBLISHED notices or published download documents:
+ *    Only serves documents for ACTIVE, PUBLISHED items:
  *    - Notice/Attachment: isPublished === true, publishDate <= now, expiryDate is null OR expiryDate > now
  *    - DownloadDocument: isPublished === true AND category.isPublished === true
+ *    - DisclosureDocument: isPublished === true AND section.isPublished === true
  *    Returns 404 for Draft, Scheduled, or Expired items.
  * 3. Content-Disposition: Strictly 'attachment' (no inline PDF rendering).
  * 4. Cache-Control: Conservative public cache 'public, max-age=300, must-revalidate'.
@@ -135,6 +136,35 @@ export async function GET(
       }
     }
 
+    // 4. Query DisclosureDocument if not resolved by notice attachment/notice/download document
+    if (!storageKeyToServe) {
+      const disclosureDoc = await prisma.disclosureDocument.findFirst({
+        where: {
+          id: cleanId,
+          isPublished: true,
+          section: { isPublished: true },
+        },
+        select: {
+          id: true,
+          title: true,
+          fileStorageKey: true,
+          fileSizeBytes: true,
+          section: {
+            select: {
+              slug: true,
+            },
+          },
+        },
+      });
+
+      if (disclosureDoc && disclosureDoc.fileStorageKey) {
+        storageKeyToServe = disclosureDoc.fileStorageKey;
+        const safeSecSlug = (disclosureDoc.section.slug || "disclosure").replace(/[^a-zA-Z0-9_-]/g, "_");
+        const safeDocTitle = disclosureDoc.title.replace(/[^a-zA-Z0-9_-]/g, "_").slice(0, 50);
+        safeDownloadFilename = `${safeSecSlug}_${safeDocTitle}.pdf`;
+      }
+    }
+
     if (!storageKeyToServe) {
       return new NextResponse("Document not found or inaccessible.", {
         status: 404,
@@ -142,7 +172,7 @@ export async function GET(
       });
     }
 
-    // 4. Validate managed storage key format and containment
+    // 5. Validate managed storage key format and containment
     if (!isValidAnyManagedDocumentKey(storageKeyToServe)) {
       console.error(
         `[public-download] Document "${cleanId}" has invalid storage key: "${storageKeyToServe}"`
@@ -152,7 +182,7 @@ export async function GET(
 
     const filePath = resolveSafePath(storageKeyToServe, "managed");
 
-    // 5. Verify file exists on disk and is a regular file (not symlink)
+    // 6. Verify file exists on disk and is a regular file (not symlink)
     const lstat = await fs.promises.lstat(filePath);
     if (lstat.isSymbolicLink() || !lstat.isFile()) {
       return new NextResponse("Document not found.", { status: 404 });
