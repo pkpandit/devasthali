@@ -707,3 +707,46 @@ model DisclosureDocument {
   @@index([fileStorageKey])
   @@map("disclosure_documents")
 }
+
+// ==========================================
+// 16. FACILITIES & CAMPUS INFRASTRUCTURE
+// ==========================================
+
+model FacilityCategory {
+  id           String         @id @default(cuid())
+  slug         String         @unique @db.VarChar(100)
+  title        String         @db.VarChar(150)
+  description  String?        @db.VarChar(500)
+  displayOrder Int            @default(0)
+  isPublished  Boolean        @default(true)
+  items        FacilityItem[]
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+
+  @@index([isPublished, displayOrder])
+  @@map("facility_categories")
+}
+
+model FacilityItem {
+  id              String           @id @default(cuid())
+  categoryId      String
+  category        FacilityCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  title           String           @db.VarChar(200)
+  slug            String           @unique @db.VarChar(100)
+  description     String           @db.Text
+  imageUrl        String?          @db.VarChar(500)
+  imageStorageKey String?          @db.VarChar(255)
+  imageAlt        String           @default("Campus facility photograph") @db.VarChar(255)
+  iconName        String?          @default("BookOpen") @db.VarChar(50)
+  highlights      String[]         @default([])
+  displayOrder    Int              @default(0)
+  isPublished     Boolean          @default(true)
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  @@index([categoryId, displayOrder])
+  @@index([categoryId, isPublished])
+  @@index([isPublished, displayOrder])
+  @@index([imageStorageKey])
+  @@map("facility_items")
+}
