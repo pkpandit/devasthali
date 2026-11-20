@@ -1,13 +1,12 @@
 import React from "react";
 import type { Metadata } from "next";
-import { Sparkles, Download } from "lucide-react";
+import { Sparkles, Download, FileText } from "lucide-react";
 import {
   MANDATORY_GENERAL_INFO as generalInfo,
-  MANDATORY_COMPLIANCE_DOCS as complianceDocs,
-  MANDATORY_RESULTS_ACADEMICS as resultsAcademics,
   MANDATORY_STAFF_DETAILS as staffDetails,
   MANDATORY_INFRA_DETAILS as infraDetails,
 } from "@/lib/content/mandatory-disclosure";
+import { getPublicMandatoryDisclosure } from "@/lib/api/mandatory-disclosure";
 
 export const metadata: Metadata = {
   title: "Mandatory Public Disclosure | Devasthaly Vidyapeeth",
@@ -15,7 +14,12 @@ export const metadata: Metadata = {
     "CBSE Mandatory Public Disclosure (Appendix IX) for Devasthaly Vidyapeeth, Chilkahar, Ballia. Affiliation No. 2130238, School Code 70184. General information, compliance certificates, staff, and results.",
 };
 
-export default function MandatoryPublicDisclosurePage() {
+export default async function MandatoryPublicDisclosurePage() {
+  const dynamicSections = await getPublicMandatoryDisclosure();
+  const hasResultsSection = dynamicSections.some((s) =>
+    s.title.toUpperCase().includes("RESULT")
+  );
+
   return (
     <div className="w-full bg-[#F3F4F6] pb-16">
       {/* Full-Width White Edunex Page Header Banner */}
@@ -69,98 +73,140 @@ export default function MandatoryPublicDisclosurePage() {
           </div>
         </div>
 
-        {/* Table B: Documents & Information */}
-        <div className="bg-white p-6 sm:p-8 rounded-3xl border border-gray-200/90 shadow-sm space-y-4">
-          <h2 className="font-heading text-xl font-bold text-[#111827] flex items-center gap-2">
-            <span className="w-8 h-8 rounded-xl bg-red-50 text-[#B91C1C] flex items-center justify-center text-sm font-bold">B</span>
-            <span>DOCUMENTS AND INFORMATION</span>
-          </h2>
-          <div
-            className="overflow-x-auto border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-[#B91C1C]"
-            role="region"
-            aria-label="Documents and Information Table (Scrollable)"
-            tabIndex={0}
-          >
-            <table className="w-full text-sm text-left">
-              <caption className="sr-only">Table B: Documents and Compliance Certificates</caption>
-              <thead className="bg-[#111827] text-white">
-                <tr>
-                  <th scope="col" className="py-3 px-4 font-heading font-bold w-16">S.NO</th>
-                  <th scope="col" className="py-3 px-4 font-heading font-bold">DOCUMENTS / INFORMATION</th>
-                  <th scope="col" className="py-3 px-4 font-heading font-bold text-right w-44">UPLOADED DOCUMENTS</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-200 font-sans text-gray-800">
-                {complianceDocs.map((row, idx) => (
-                  <tr key={idx} className="hover:bg-[#F3F4F6] transition-colors">
-                    <td className="py-3 px-4 font-bold text-[#111827]">{row.sno}</td>
-                    <td className="py-3 px-4 font-medium text-gray-700">{row.doc}</td>
-                    <td className="py-3 px-4 text-right">
-                      <a
-                        href={row.file}
-                        download
-                        aria-label={`Download ${row.doc} PDF`}
-                        className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-[#B91C1C] text-white text-sm font-heading font-bold hover:bg-[#991B1B] transition-colors shadow-2xs focus-visible:outline-2 focus-visible:outline-[#B91C1C]"
-                      >
-                        <Download className="w-3.5 h-3.5" />
-                        <span>VIEW/DOWNLOAD</span>
-                      </a>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+        {/* Dynamic Compliance Sections or Authoritative Empty State */}
+        {dynamicSections.length === 0 ? (
+          <div className="bg-white p-8 sm:p-12 rounded-3xl border border-gray-200/90 text-center space-y-3">
+            <div className="w-12 h-12 rounded-2xl bg-red-50 text-[#B91C1C] flex items-center justify-center mx-auto">
+              <FileText className="w-6 h-6 text-[#B91C1C]" />
+            </div>
+            <h2 className="font-heading text-xl font-bold text-[#111827]">
+              No Compliance Documents Currently Published
+            </h2>
+            <p className="text-gray-500 text-sm max-w-md mx-auto">
+              Mandatory compliance certificates and academic documents will be updated shortly. Please check back later or contact the school office.
+            </p>
           </div>
-        </div>
+        ) : (
+          dynamicSections.map((section, sIdx) => {
+            const letter = String.fromCharCode(66 + sIdx); // 0 -> B, 1 -> C, ...
+            const isResults = section.title.toUpperCase().includes("RESULT");
 
-        {/* Table C: Results and Academics */}
-        <div className="bg-white p-6 sm:p-8 rounded-3xl border border-gray-200/90 shadow-sm space-y-4">
-          <h2 className="font-heading text-xl font-bold text-[#111827] flex items-center gap-2">
-            <span className="w-8 h-8 rounded-xl bg-red-50 text-[#B91C1C] flex items-center justify-center text-sm font-bold">C</span>
-            <span>RESULTS AND ACADEMICS</span>
-          </h2>
-          <div
-            className="overflow-x-auto border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-[#B91C1C]"
-            role="region"
-            aria-label="Results and Academics Table (Scrollable)"
-            tabIndex={0}
-          >
-            <table className="w-full text-sm text-left">
-              <caption className="sr-only">Table C: Results and Academic Documents</caption>
-              <thead className="bg-[#111827] text-white">
-                <tr>
-                  <th scope="col" className="py-3 px-4 font-heading font-bold w-16">S.NO</th>
-                  <th scope="col" className="py-3 px-4 font-heading font-bold">DOCUMENTS / INFORMATION</th>
-                  <th scope="col" className="py-3 px-4 font-heading font-bold text-right w-44">UPLOADED DOCUMENTS</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-200 font-sans text-gray-800">
-                {resultsAcademics.map((row, idx) => (
-                  <tr key={idx} className="hover:bg-[#F3F4F6] transition-colors">
-                    <td className="py-3 px-4 font-bold text-[#111827]">{row.sno}</td>
-                    <td className="py-3 px-4 font-medium text-gray-700">{row.doc}</td>
-                    <td className="py-3 px-4 text-right">
-                      <a
-                        href={row.file}
-                        download
-                        aria-label={`Download ${row.doc} PDF`}
-                        className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-[#B91C1C] text-white text-sm font-heading font-bold hover:bg-[#991B1B] transition-colors shadow-2xs focus-visible:outline-2 focus-visible:outline-[#B91C1C]"
-                      >
-                        <Download className="w-3.5 h-3.5" />
-                        <span>VIEW/DOWNLOAD</span>
-                      </a>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+            return (
+              <div
+                key={section.id || sIdx}
+                className="bg-white p-6 sm:p-8 rounded-3xl border border-gray-200/90 shadow-sm space-y-4"
+              >
+                <h2 className="font-heading text-xl font-bold text-[#111827] flex items-center gap-2">
+                  <span className="w-8 h-8 rounded-xl bg-red-50 text-[#B91C1C] flex items-center justify-center text-sm font-bold">
+                    {letter}
+                  </span>
+                  <span>{section.title}</span>
+                </h2>
 
-          {/* Result Class X Table */}
-          <div className="pt-4 space-y-2">
-            <h3 className="font-heading text-sm font-bold uppercase tracking-wider text-[#111827]">
-              RESULT CLASS X
-            </h3>
+                {section.description && (
+                  <p className="text-sm text-gray-600 font-sans">{section.description}</p>
+                )}
+
+                <div
+                  className="overflow-x-auto border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-[#B91C1C]"
+                  role="region"
+                  aria-label={`${section.title} Table (Scrollable)`}
+                  tabIndex={0}
+                >
+                  <table className="w-full text-sm text-left">
+                    <caption className="sr-only">
+                      Table {letter}: {section.title}
+                    </caption>
+                    <thead className="bg-[#111827] text-white">
+                      <tr>
+                        <th scope="col" className="py-3 px-4 font-heading font-bold w-16">
+                          S.NO
+                        </th>
+                        <th scope="col" className="py-3 px-4 font-heading font-bold">
+                          DOCUMENTS / INFORMATION
+                        </th>
+                        <th scope="col" className="py-3 px-4 font-heading font-bold text-right w-44">
+                          UPLOADED DOCUMENTS
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-200 font-sans text-gray-800">
+                      {section.documents.map((doc, dIdx) => (
+                        <tr key={doc.id || dIdx} className="hover:bg-[#F3F4F6] transition-colors">
+                          <td className="py-3 px-4 font-bold text-[#111827]">{dIdx + 1}</td>
+                          <td className="py-3 px-4 font-medium text-gray-700">
+                            <div>{doc.title}</div>
+                            {doc.description && (
+                              <div className="text-xs text-gray-500 mt-0.5">{doc.description}</div>
+                            )}
+                          </td>
+                          <td className="py-3 px-4 text-right">
+                            <a
+                              href={doc.fileUrl}
+                              download
+                              aria-label={`Download ${doc.title} PDF`}
+                              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-[#B91C1C] text-white text-sm font-heading font-bold hover:bg-[#991B1B] transition-colors shadow-2xs focus-visible:outline-2 focus-visible:outline-[#B91C1C]"
+                            >
+                              <Download className="w-3.5 h-3.5" />
+                              <span>{doc.linkLabel || "VIEW/DOWNLOAD"}</span>
+                            </a>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* If this is the Results and Academics section, embed Result Class X table */}
+                {isResults && (
+                  <div className="pt-4 space-y-2">
+                    <h3 className="font-heading text-sm font-bold uppercase tracking-wider text-[#111827]">
+                      RESULT CLASS X
+                    </h3>
+                    <div
+                      className="overflow-x-auto border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-[#B91C1C]"
+                      role="region"
+                      aria-label="Result Class X Table (Scrollable)"
+                      tabIndex={0}
+                    >
+                      <table className="w-full text-sm text-left">
+                        <caption className="sr-only">CBSE Board Examination Class X Results</caption>
+                        <thead className="bg-[#111827] text-white">
+                          <tr>
+                            <th scope="col" className="py-2.5 px-4 font-heading font-bold">S.NO.</th>
+                            <th scope="col" className="py-2.5 px-4 font-heading font-bold">YEAR</th>
+                            <th scope="col" className="py-2.5 px-4 font-heading font-bold">NO. OF REGISTERED STUDENTS</th>
+                            <th scope="col" className="py-2.5 px-4 font-heading font-bold">NO. OF STUDENTS PASSED</th>
+                            <th scope="col" className="py-2.5 px-4 font-heading font-bold">PASS PERCENTAGE</th>
+                            <th scope="col" className="py-2.5 px-4 font-heading font-bold">REMARKS</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-200 font-sans text-gray-800">
+                          <tr className="hover:bg-[#F3F4F6]">
+                            <td className="py-3 px-4 font-bold">1</td>
+                            <td className="py-3 px-4 font-bold text-[#B91C1C]">2025-26</td>
+                            <td className="py-3 px-4">288</td>
+                            <td className="py-3 px-4">288</td>
+                            <td className="py-3 px-4 font-bold text-[#16A34A]">100%</td>
+                            <td className="py-3 px-4 text-gray-500">All Passed with Merit Ranks</td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })
+        )}
+
+        {/* If no dynamic section matched RESULTS, preserve Result Class X standalone */}
+        {!hasResultsSection && (
+          <div className="bg-white p-6 sm:p-8 rounded-3xl border border-gray-200/90 shadow-sm space-y-4">
+            <h2 className="font-heading text-xl font-bold text-[#111827] flex items-center gap-2">
+              <span className="w-8 h-8 rounded-xl bg-red-50 text-[#B91C1C] flex items-center justify-center text-sm font-bold">C</span>
+              <span>RESULT CLASS X</span>
+            </h2>
             <div
               className="overflow-x-auto border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-[#B91C1C]"
               role="region"
@@ -192,7 +238,7 @@ export default function MandatoryPublicDisclosurePage() {
               </table>
             </div>
           </div>
-        </div>
+        )}
 
         {/* Table D: Staff Details */}
         <div className="bg-white p-6 sm:p-8 rounded-3xl border border-gray-200/90 shadow-sm space-y-4">
@@ -265,5 +311,3 @@ export default function MandatoryPublicDisclosurePage() {
     </div>
   );
 }
-
-

@@ -250,7 +250,30 @@ export interface MandatoryComplianceDoc {
   sno: string;
   doc: string;
   file: string;
+  id?: string;
   size?: string;
+  linkLabel?: string;
+  description?: string | null;
+}
+
+export interface MandatoryDisclosureDocument {
+  id: string;
+  title: string;
+  description: string | null;
+  fileUrl: string;
+  linkLabel: string;
+  fileSizeBytes: number;
+  fileSize: string;
+  fileType: string;
+  displayOrder: number;
+}
+
+export interface MandatoryDisclosureSection {
+  id: string;
+  title: string;
+  description: string | null;
+  displayOrder: number;
+  documents: MandatoryDisclosureDocument[];
 }
 
 export interface MandatoryStaffDetail {
