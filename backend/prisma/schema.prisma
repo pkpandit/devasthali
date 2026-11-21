@@ -845,3 +845,74 @@ model EnquirySubmission {
   @@index([ipHash, createdAt])
   @@map("enquiry_submissions")
 }
+
+// ==========================================
+// 18. ACADEMIC WINGS & CURRICULUM MANAGEMENT (MILESTONE 14)
+// ==========================================
+
+model AcademicWing {
+  id           String   @id @default(cuid())
+  slug         String   @unique @db.VarChar(100)
+  stageBadge   String   @db.VarChar(100)
+  title        String   @db.VarChar(150)
+  description  String   @db.Text
+  highlights   String[] @default([])
+  displayOrder Int      @default(0)
+  isPublished  Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([isPublished, displayOrder])
+  @@index([slug])
+  @@map("academic_wings")
+}
+
+model AcademicStream {
+  id              String   @id @default(cuid())
+  slug            String   @unique @db.VarChar(100)
+  title           String   @db.VarChar(100)
+  iconName        String   @default("BookOpen") @db.VarChar(50)
+  subjects        String[] @default([])
+  careerHighlight String   @db.VarChar(150)
+  displayOrder    Int      @default(0)
+  isPublished     Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([isPublished, displayOrder])
+  @@index([slug])
+  @@map("academic_streams")
+}
+
+model AcademicAssessmentRule {
+  id           String   @id @default(cuid())
+  ruleText     String   @db.Text
+  displayOrder Int      @default(0)
+  isPublished  Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([isPublished, displayOrder])
+  @@map("academic_assessment_rules")
+}
+
+model AcademicOverview {
+  id                         String   @id @default("default")
+  heroBadge                  String?  @db.VarChar(100)
+  heroImage                  String?  @db.VarChar(500)
+  heroImageAlt               String?  @db.VarChar(255)
+  heroImageStorageKey        String?  @db.VarChar(255)
+  competitiveBadge           String?  @db.VarChar(100)
+  competitiveTitle           String?  @db.VarChar(150)
+  competitiveDescription     String?  @db.Text
+  competitiveCtaText         String?  @db.VarChar(100)
+  competitiveCtaHref         String?  @db.VarChar(255)
+  assessmentParentNotice     String?  @db.Text
+  assessmentProspectusNotice String?  @db.Text
+  assessmentProspectusUrl    String?  @db.VarChar(255)
+  createdAt                  DateTime @default(now())
+  updatedAt                  DateTime @updatedAt
+
+  @@index([heroImageStorageKey])
+  @@map("academic_overviews")
+}
