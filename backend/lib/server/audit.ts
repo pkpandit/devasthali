@@ -184,6 +184,25 @@ export type AdmissionsAuditAction =
   | "ENQUIRY_NOTES_UPDATED"
   | "ENQUIRY_DELETED";
 
+
+export type AcademicAuditAction =
+  | "ACADEMIC_WING_CREATED"
+  | "ACADEMIC_WING_UPDATED"
+  | "ACADEMIC_WING_DELETED"
+  | "ACADEMIC_WINGS_REORDERED"
+  | "ACADEMIC_WING_TOGGLED"
+  | "ACADEMIC_STREAM_CREATED"
+  | "ACADEMIC_STREAM_UPDATED"
+  | "ACADEMIC_STREAM_DELETED"
+  | "ACADEMIC_STREAMS_REORDERED"
+  | "ACADEMIC_STREAM_TOGGLED"
+  | "ACADEMIC_RULE_CREATED"
+  | "ACADEMIC_RULE_UPDATED"
+  | "ACADEMIC_RULE_DELETED"
+  | "ACADEMIC_RULES_REORDERED"
+  | "ACADEMIC_RULE_TOGGLED"
+  | "ACADEMIC_OVERVIEW_UPDATED";
+
 export type AuditAction =
   | AuthAuditAction
   | TopperAuditAction
@@ -198,7 +217,8 @@ export type AuditAction =
   | DownloadAuditAction
   | DisclosureAuditAction
   | FacilityAuditAction
-  | AdmissionsAuditAction;
+  | AdmissionsAuditAction
+  | AcademicAuditAction;
 
 export interface CreateAuditLogParams {
   userId?: string | null;
@@ -239,6 +259,10 @@ export interface CreateAuditLogParams {
     | "AdmissionEligibilityCriteria"
     | "AdmissionDocumentRequirement"
     | "AdmissionFaq"
+    | "AcademicWing"
+    | "AcademicStream"
+    | "AcademicAssessmentRule"
+    | "AcademicOverview"
     | "EnquirySubmission";
   entityId: string;
   metadata?: Record<string, unknown> | null;

@@ -14,6 +14,7 @@ import { DownloadWorkspace } from "@/components/admin/downloads/DownloadWorkspac
 import { DisclosureWorkspace } from "@/components/admin/disclosure/DisclosureWorkspace";
 import { FacilityWorkspace } from "@/components/admin/facilities/FacilityWorkspace";
 import { AdmissionsWorkspace } from "@/components/admin/admissions/AdmissionsWorkspace";
+import { AcademicsWorkspace } from "@/components/admin/academics/AcademicsWorkspace";
 import { Breadcrumbs } from "@/components/ui/Breadcrumbs";
 import { Badge } from "@/components/ui/Badge";
 import { Card } from "@/components/ui/Card";
@@ -114,6 +115,89 @@ export default async function AdminWorkspacePage({
 
         <div className="workspace-content">
           <TopperWorkspace toppers={serializedToppers} />
+        </div>
+      </Card>
+    );
+  }
+
+  // Specialization: /admin/academics and /admin/academics/academic-system render AcademicsWorkspace
+  if (href === "/admin/academics" || href === "/admin/academics/academic-system") {
+    // Restricted strictly to SUPER_ADMIN
+    await requireRole(["SUPER_ADMIN"], href);
+
+    const [overview, wings, streams, rules] = await Promise.all([
+      prisma.academicOverview.findUnique({
+        where: { id: "default" },
+      }),
+      prisma.academicWing.findMany({
+        orderBy: [{ displayOrder: "asc" }, { id: "asc" }],
+      }),
+      prisma.academicStream.findMany({
+        orderBy: [{ displayOrder: "asc" }, { id: "asc" }],
+      }),
+      prisma.academicAssessmentRule.findMany({
+        orderBy: [{ displayOrder: "asc" }, { id: "asc" }],
+      }),
+    ]);
+
+    const serializedOverview = overview
+      ? {
+          ...overview,
+          createdAt: overview.createdAt.toISOString(),
+          updatedAt: overview.updatedAt.toISOString(),
+        }
+      : null;
+
+    const serializedWings = wings.map((w) => ({
+      ...w,
+      createdAt: w.createdAt.toISOString(),
+      updatedAt: w.updatedAt.toISOString(),
+    }));
+
+    const serializedStreams = streams.map((s) => ({
+      ...s,
+      createdAt: s.createdAt.toISOString(),
+      updatedAt: s.updatedAt.toISOString(),
+    }));
+
+    const serializedRules = rules.map((r) => ({
+      ...r,
+      createdAt: r.createdAt.toISOString(),
+      updatedAt: r.updatedAt.toISOString(),
+    }));
+
+    const initialTab = href === "/admin/academics/academic-system" ? "rules" : "wings";
+
+    return (
+      <Card as="section" aria-labelledby="admin-workspace-title">
+        <Breadcrumbs items={workspace.breadcrumbs} />
+
+        <div className="workspace-header">
+          <h1 className="workspace-title" id="admin-workspace-title" tabIndex={-1}>
+            {workspace.title}
+          </h1>
+          {workspace.badge && <Badge>{workspace.badge}</Badge>}
+        </div>
+
+        {workspace.description && (
+          <p className="workspace-description">{workspace.description}</p>
+        )}
+
+        <div className="workspace-meta-bar">
+          <PublicReferenceLink
+            publicHref={workspace.publicHref}
+            title={workspace.title}
+          />
+        </div>
+
+        <div className="workspace-content">
+          <AcademicsWorkspace
+            overview={serializedOverview}
+            wings={serializedWings}
+            streams={serializedStreams}
+            rules={serializedRules}
+            initialTab={initialTab}
+          />
         </div>
       </Card>
     );
