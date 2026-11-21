@@ -36,11 +36,26 @@ async function runTests() {
     }
   }
 
+  async function testAsync(name, fn) {
+    total++;
+    try {
+      await fn();
+      console.log(`  ✓ ${name}`);
+      passed++;
+    } catch (err) {
+      console.error(`  ✗ ${name}`);
+      console.error(`    ${err.message}`);
+    }
+  }
+
   try {
     const {
       publicSiteProfileSchema,
       STATIC_FALLBACK_SITE_PROFILE,
+      STATIC_FALLBACK_DIRECTORY_ENTRIES,
       isValidGoogleMapsEmbedUrl,
+      getPublicSiteProfile,
+      getPublicCampusDirectory,
     } = require("../dist_test_frontend_profile");
 
     // 1. Test helper functions
@@ -145,6 +160,52 @@ async function runTests() {
       assert.strictEqual(parsed.data.location.mapEmbedUrl, payload.location.mapEmbedUrl);
       assert.strictEqual(parsed.data.contacts.emergencyMedicalPhone, "9415805530");
       assert.strictEqual(parsed.data.contacts.emergencySecurityPhone, "6307798158");
+    });
+
+    // 4. Cache Hygiene & Tag Alignment Verification
+    const profileSource = fs.readFileSync(path.resolve(__dirname, "../lib/api/profile.ts"), "utf8");
+
+    test("profile.ts registers canonical tags and no-store for development", () => {
+      assert.ok(profileSource.includes('"use cache";'), "profile.ts must declare 'use cache'");
+      assert.ok(profileSource.includes('tags: ["profile"]'), "profile.ts must register canonical 'profile' tag");
+      assert.ok(profileSource.includes('tags: ["directory"]'), "profile.ts must register canonical 'directory' tag");
+      assert.ok(profileSource.includes('cache: "no-store"'), "profile.ts must configure cache: 'no-store' in dev");
+      assert.ok(profileSource.includes("revalidate: 60"), "profile.ts must configure revalidate: 60 in prod");
+      assert.ok(!profileSource.includes('tags: ["contact"]'), "profile.ts must not reference unused 'contact' tag");
+    });
+
+    // 5. Fallback integrity when fetch is disconnected
+    await testAsync("getPublicSiteProfile preserves static fallback on network error", async () => {
+      const origEnv = process.env.BACKEND_INTERNAL_URL;
+      process.env.BACKEND_INTERNAL_URL = "http://127.0.0.1:59999"; // Non-existent port
+      try {
+        const profile = await getPublicSiteProfile();
+        assert.ok(profile);
+        assert.strictEqual(profile.schoolName, STATIC_FALLBACK_SITE_PROFILE.schoolName);
+        assert.strictEqual(profile.contacts.emergencyMedicalPhone, "9415805530");
+      } finally {
+        if (origEnv) {
+          process.env.BACKEND_INTERNAL_URL = origEnv;
+        } else {
+          delete process.env.BACKEND_INTERNAL_URL;
+        }
+      }
+    });
+
+    await testAsync("getPublicCampusDirectory preserves static fallback on network error", async () => {
+      const origEnv = process.env.BACKEND_INTERNAL_URL;
+      process.env.BACKEND_INTERNAL_URL = "http://127.0.0.1:59999"; // Non-existent port
+      try {
+        const directory = await getPublicCampusDirectory();
+        assert.ok(Array.isArray(directory));
+        assert.strictEqual(directory.length, STATIC_FALLBACK_DIRECTORY_ENTRIES.length);
+      } finally {
+        if (origEnv) {
+          process.env.BACKEND_INTERNAL_URL = origEnv;
+        } else {
+          delete process.env.BACKEND_INTERNAL_URL;
+        }
+      }
     });
 
     console.log(`\nResults: ${passed}/${total} tests passed.\n`);

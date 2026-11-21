@@ -11,6 +11,7 @@
  * 7. Invalid emergency phone numbers reject
  * 8. Audit log recording with masked phone numbers
  * 9. Null-field preservation
+ * 10. Contact cache tags and path invalidation alignment
  */
 
 /* eslint-disable @typescript-eslint/no-require-imports */
@@ -202,6 +203,27 @@ async function runTests() {
   assert(
     sanitized.diff.officeEmail.to === "pr***@***.com",
     "officeEmail is automatically masked in audit log (pr***@***.com)"
+  );
+
+  // 6. Cache Tag & Path Invalidation Alignment
+  const actionsFilePath = path.resolve(__dirname, "../lib/server/contact-actions.ts");
+  const actionsContent = fs.readFileSync(actionsFilePath, "utf8");
+
+  assert(
+    actionsContent.includes('revalidateTag("profile", "max")'),
+    "contact-actions.ts calls revalidateTag('profile', 'max')"
+  );
+  assert(
+    actionsContent.includes('revalidatePath("/admin/contact")'),
+    "contact-actions.ts calls revalidatePath('/admin/contact')"
+  );
+  assert(
+    !actionsContent.includes('revalidateTag("contact"'),
+    "contact-actions.ts does NOT call unused revalidateTag('contact')"
+  );
+  assert(
+    !actionsContent.includes('revalidatePath("/contact")'),
+    "contact-actions.ts does NOT call non-existent backend route revalidatePath('/contact')"
   );
 
   console.log(`\n  All tests passed: ${passed}/${total}`);

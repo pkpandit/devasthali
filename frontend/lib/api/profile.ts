@@ -176,8 +176,17 @@ export function getBackendOrigin(): string | null {
 /**
  * Server-side fetch for the institutional SiteProfile singleton.
  * Resiliently falls back to static SCHOOL_INFO when backend is unreachable.
+ *
+ * CROSS-PROCESS CACHE ISOLATION:
+ * The frontend and backend run as separate Next.js application processes.
+ * Backend revalidateTag calls do not invalidate the separate frontend process cache.
+ * Instead:
+ * - Development: updates reflect immediately via cache: "no-store".
+ * - Production: updates reflect within the 60-second revalidation window via next: { revalidate: 60, tags: ["profile"] }.
+ * - Fallback: preserves static SCHOOL_INFO fallback on network errors, non-200 HTTP, or Zod validation errors.
  */
 export async function getPublicSiteProfile(): Promise<PublicSiteProfileDto> {
+  "use cache";
   const backendOrigin = getBackendOrigin();
   if (!backendOrigin) {
     return STATIC_FALLBACK_SITE_PROFILE;
@@ -186,8 +195,12 @@ export async function getPublicSiteProfile(): Promise<PublicSiteProfileDto> {
   const endpoint = `${backendOrigin}/api/public/profile`;
 
   try {
+    const isDev = process.env.NODE_ENV === "development";
     const res = await fetch(endpoint, {
-      next: { revalidate: 60 },
+      ...(isDev
+        ? { cache: "no-store" as const }
+        : { next: { revalidate: 60, tags: ["profile"] } }),
+      headers: { Accept: "application/json" },
     });
 
     if (!res.ok) {
@@ -212,8 +225,17 @@ export async function getPublicSiteProfile(): Promise<PublicSiteProfileDto> {
 /**
  * Server-side fetch for published campus directory contacts.
  * Resiliently falls back to static contact lists when backend is unreachable.
+ *
+ * CROSS-PROCESS CACHE ISOLATION:
+ * The frontend and backend run as separate Next.js application processes.
+ * Backend revalidateTag calls do not invalidate the separate frontend process cache.
+ * Instead:
+ * - Development: updates reflect immediately via cache: "no-store".
+ * - Production: updates reflect within the 60-second revalidation window via next: { revalidate: 60, tags: ["directory"] }.
+ * - Fallback: preserves static contact list fallback on network errors, non-200 HTTP, or Zod validation errors.
  */
 export async function getPublicCampusDirectory(): Promise<PublicDirectoryEntryDto[]> {
+  "use cache";
   const backendOrigin = getBackendOrigin();
   if (!backendOrigin) {
     return STATIC_FALLBACK_DIRECTORY_ENTRIES;
@@ -222,8 +244,12 @@ export async function getPublicCampusDirectory(): Promise<PublicDirectoryEntryDt
   const endpoint = `${backendOrigin}/api/public/directory`;
 
   try {
+    const isDev = process.env.NODE_ENV === "development";
     const res = await fetch(endpoint, {
-      next: { revalidate: 60 },
+      ...(isDev
+        ? { cache: "no-store" as const }
+        : { next: { revalidate: 60, tags: ["directory"] } }),
+      headers: { Accept: "application/json" },
     });
 
     if (!res.ok) {

@@ -118,8 +118,6 @@ export async function updateContactLocation(
     });
 
     revalidateTag("profile", "max");
-    revalidateTag("contact", "max");
-    revalidatePath("/contact");
     revalidatePath("/admin/contact");
 
     return {
@@ -218,8 +216,6 @@ export async function updateContactHelplines(
     });
 
     revalidateTag("profile", "max");
-    revalidateTag("contact", "max");
-    revalidatePath("/contact");
     revalidatePath("/admin/contact");
 
     return {
