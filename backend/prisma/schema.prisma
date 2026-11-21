@@ -221,6 +221,16 @@ model SiteProfile {
   youtubeUrl        String?
   instagramUrl      String?
 
+  // Campus Location, Directions & Map (Milestone 13)
+  mapEmbedUrl            String?
+  mapDirectionsUrl       String?
+  directionsOverview     String?
+  visitorGuidelines      String?
+
+  // 24/7 Campus Emergency Desks (Milestone 13)
+  emergencyMedicalPhone  String?
+  emergencySecurityPhone String?
+
   // Footer & Compliance Meta
   copyrightText     String?
 
