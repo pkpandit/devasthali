@@ -31,7 +31,21 @@ export interface PublicSiteProfileDto {
     email: string | null;
     officeEmail: string | null;
     workingHours: string | null;
+    emergencyMedicalPhone: string | null;
+    emergencySecurityPhone: string | null;
   };
+  location: {
+    mapEmbedUrl: string | null;
+    mapDirectionsUrl: string | null;
+    directionsOverview: string | null;
+    visitorGuidelines: string | null;
+  };
+  mapEmbedUrl?: string | null;
+  mapDirectionsUrl?: string | null;
+  directionsOverview?: string | null;
+  visitorGuidelines?: string | null;
+  emergencyMedicalPhone?: string | null;
+  emergencySecurityPhone?: string | null;
   social: {
     facebook: string | null;
     youtube: string | null;
@@ -80,7 +94,21 @@ export async function GET() {
         email: profile.principalEmail || profile.officeEmail,
         officeEmail: profile.officeEmail,
         workingHours: profile.workingHours,
+        emergencyMedicalPhone: profile.emergencyMedicalPhone,
+        emergencySecurityPhone: profile.emergencySecurityPhone,
       },
+      location: {
+        mapEmbedUrl: profile.mapEmbedUrl,
+        mapDirectionsUrl: profile.mapDirectionsUrl,
+        directionsOverview: profile.directionsOverview,
+        visitorGuidelines: profile.visitorGuidelines,
+      },
+      mapEmbedUrl: profile.mapEmbedUrl,
+      mapDirectionsUrl: profile.mapDirectionsUrl,
+      directionsOverview: profile.directionsOverview,
+      visitorGuidelines: profile.visitorGuidelines,
+      emergencyMedicalPhone: profile.emergencyMedicalPhone,
+      emergencySecurityPhone: profile.emergencySecurityPhone,
       social: {
         facebook: profile.facebookUrl,
         youtube: profile.youtubeUrl,
@@ -89,10 +117,15 @@ export async function GET() {
       copyrightText: profile.copyrightText,
     };
 
+    const isDev = process.env.NODE_ENV === "development";
+    const cacheHeader = isDev
+      ? "no-store, max-age=0"
+      : "public, s-maxage=60, stale-while-revalidate=300";
+
     return NextResponse.json(payload, {
       status: 200,
       headers: {
-        "Cache-Control": "public, s-maxage=60, stale-while-revalidate=300",
+        "Cache-Control": cacheHeader,
       },
     });
   } catch (err) {
