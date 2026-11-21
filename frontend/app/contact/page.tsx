@@ -1,7 +1,7 @@
 import React from "react";
 import type { Metadata } from "next";
-import { Phone, Mail, MessageCircle, Sparkles, Shield, UserCheck, HeartPulse, Building2 } from "lucide-react";
-import { getPublicSiteProfile, getPublicCampusDirectory } from "@/lib/api/profile";
+import { Phone, Mail, MessageCircle, Sparkles, Shield, UserCheck, HeartPulse, Building2, Navigation, Compass, Info } from "lucide-react";
+import { getPublicSiteProfile, getPublicCampusDirectory, isValidGoogleMapsEmbedUrl } from "@/lib/api/profile";
 
 export const metadata: Metadata = {
   title: "Contact Us & Campus Directory | Devasthaly Vidyapeeth",
@@ -41,7 +41,7 @@ export default async function ContactPage() {
   ) || {
     roleTitle: "Medical Emergency Desk",
     contactName: "Dr. Deepak Chaubey",
-    phoneNumber: "9415805530",
+    phoneNumber: profile.contacts.emergencyMedicalPhone || "9415805530",
   };
 
   const securityDesk = securityTransport.find(
@@ -52,8 +52,19 @@ export default async function ContactPage() {
   ) || {
     roleTitle: "DVP School Security",
     contactName: "Guard 1st (Main Gate)",
-    phoneNumber: "6307798158",
+    phoneNumber: profile.contacts.emergencySecurityPhone || "6307798158",
   };
+
+  const defaultEmbed =
+    "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d14371.74567283457!2d84.0045237871582!3d25.772635999999997!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x399263158c6e26cf%3A0xa193d5b0373ab71c!2sDevasthaly%20Vidyapeeth!5e0!3m2!1sen!2sin!4v1700000000000!5m2!1sen!2sin";
+  const rawEmbed = profile.location?.mapEmbedUrl;
+  const safeMapEmbedUrl =
+    rawEmbed && isValidGoogleMapsEmbedUrl(rawEmbed) ? rawEmbed : defaultEmbed;
+  const directionsUrl =
+    profile.location?.mapDirectionsUrl ||
+    "https://maps.google.com/?q=Devasthaly+Vidyapeeth+Chilkahar+Ballia+Uttar+Pradesh+277301";
+  const directionsOverview = profile.location?.directionsOverview;
+  const visitorGuidelines = profile.location?.visitorGuidelines;
 
   const primaryPhone = profile.contacts.primaryPhone || profile.contacts.admissionsPhone || "9554960408";
   const primaryEmail = profile.contacts.officeEmail || profile.contacts.email || "principaldvp@gmail.com";
@@ -305,22 +316,65 @@ export default async function ContactPage() {
         </div>
 
         {/* Location & Map Section */}
-        <div id="location" className="bg-white p-6 sm:p-8 rounded-3xl border border-gray-200/90 shadow-sm space-y-4">
-          <div className="space-y-2">
-            <span className="text-sm font-heading font-bold uppercase tracking-wider text-[#B91C1C] bg-red-50 border border-red-100/60 px-3 py-1 rounded-full inline-block">
-              Campus Location
-            </span>
-            <h2 className="font-heading text-2xl font-bold text-[#111827]">
-              How to Reach Chilkahar Campus
-            </h2>
-            <p className="text-sm text-gray-600 font-sans">
-              Address: {fullCampusAddress}. ({landmarkText})
-            </p>
+        <div id="location" className="bg-white p-6 sm:p-8 rounded-3xl border border-gray-200/90 shadow-sm space-y-5">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div className="space-y-2">
+              <span className="text-sm font-heading font-bold uppercase tracking-wider text-[#B91C1C] bg-red-50 border border-red-100/60 px-3 py-1 rounded-full inline-block">
+                Campus Location
+              </span>
+              <h2 className="font-heading text-2xl font-bold text-[#111827]">
+                How to Reach Chilkahar Campus
+              </h2>
+              <p className="text-sm text-gray-600 font-sans">
+                Address: {fullCampusAddress}. ({landmarkText})
+              </p>
+            </div>
+            {directionsUrl && (
+              <div className="shrink-0">
+                <a
+                  href={directionsUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-[#B91C1C] hover:bg-[#991B1B] text-white text-sm font-heading font-bold transition-all shadow-xs hover:shadow-sm"
+                >
+                  <Navigation className="w-4 h-4" />
+                  <span>Get Driving Directions</span>
+                </a>
+              </div>
+            )}
           </div>
+
+          {(directionsOverview || visitorGuidelines) && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-1">
+              {directionsOverview && (
+                <div className="bg-[#F9FAFB] p-5 rounded-2xl border border-gray-200">
+                  <div className="flex items-center gap-2 text-sm font-heading font-bold text-[#111827] mb-2">
+                    <Compass className="w-4 h-4 text-[#B91C1C]" />
+                    <span>Transit &amp; Route Overview</span>
+                  </div>
+                  <p className="text-sm text-gray-600 leading-relaxed font-sans">
+                    {directionsOverview}
+                  </p>
+                </div>
+              )}
+              {visitorGuidelines && (
+                <div className="bg-[#F9FAFB] p-5 rounded-2xl border border-gray-200">
+                  <div className="flex items-center gap-2 text-sm font-heading font-bold text-[#111827] mb-2">
+                    <Info className="w-4 h-4 text-[#B91C1C]" />
+                    <span>Campus Visitor Protocol</span>
+                  </div>
+                  <p className="text-sm text-gray-600 leading-relaxed font-sans">
+                    {visitorGuidelines}
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
+
           <div className="w-full h-[400px] rounded-2xl overflow-hidden border border-gray-200 shadow-xs">
             <iframe
               title="Devasthaly Vidyapeeth Campus Location"
-              src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d14372.416823334255!2d84.0152431!3d25.8643212!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x39925bf784a6c4f7%3A0xbcf0bf5377f0a9a1!2sChilkahar%2C%20Uttar%20Pradesh%20277123!5e0!3m2!1sen!2sin!4v1700000000000!5m2!1sen!2sin"
+              src={safeMapEmbedUrl}
               width="100%"
               height="100%"
               style={{ border: 0 }}

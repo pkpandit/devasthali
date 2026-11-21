@@ -29,6 +29,15 @@ export const publicSiteProfileSchema = z.object({
     pinCode: z.string().nullable().optional(),
     landmark: z.string().nullable().optional(),
   }),
+  location: z
+    .object({
+      mapEmbedUrl: z.string().nullable().optional(),
+      mapDirectionsUrl: z.string().nullable().optional(),
+      directionsOverview: z.string().nullable().optional(),
+      visitorGuidelines: z.string().nullable().optional(),
+    })
+    .nullable()
+    .optional(),
   contacts: z.object({
     primaryPhone: z.string().nullable().optional(),
     admissionsPhone: z.string().nullable().optional(),
@@ -38,6 +47,8 @@ export const publicSiteProfileSchema = z.object({
     email: z.string().nullable().optional(),
     officeEmail: z.string().nullable().optional(),
     workingHours: z.string().nullable().optional(),
+    emergencyMedicalPhone: z.string().nullable().optional(),
+    emergencySecurityPhone: z.string().nullable().optional(),
   }),
   social: z.object({
     facebook: z.string().nullable().optional(),
@@ -80,6 +91,16 @@ export const STATIC_FALLBACK_SITE_PROFILE: PublicSiteProfileDto = {
     pinCode: SCHOOL_INFO.address.pinCode,
     landmark: SCHOOL_INFO.address.landmark,
   },
+  location: {
+    mapEmbedUrl:
+      "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d14371.74567283457!2d84.0045237871582!3d25.772635999999997!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x399263158c6e26cf%3A0xa193d5b0373ab71c!2sDevasthaly%20Vidyapeeth!5e0!3m2!1sen!2sin!4v1700000000000!5m2!1sen!2sin",
+    mapDirectionsUrl:
+      "https://maps.google.com/?q=Devasthaly+Vidyapeeth+Chilkahar+Ballia+Uttar+Pradesh+277301",
+    directionsOverview:
+      "Located on the Ballia–Rasra State Highway near the Chilkahar bus stop. Direct private auto-rickshaws, roadways buses, and transport connectivity available from both Ballia (22 km) and Rasra (18 km) railway stations.",
+    visitorGuidelines:
+      "All visitors must report to the security gate for campus entry pass issuance. Visiting hours for prospective parents and guardians are Monday to Saturday, 8:30 AM to 1:30 PM. Advance appointments recommended for Principal or admissions counseling.",
+  },
   contacts: {
     primaryPhone: SCHOOL_INFO.contacts.primaryPhone,
     admissionsPhone: SCHOOL_INFO.contacts.admissionsPhone,
@@ -89,6 +110,8 @@ export const STATIC_FALLBACK_SITE_PROFILE: PublicSiteProfileDto = {
     email: SCHOOL_INFO.contacts.email,
     officeEmail: SCHOOL_INFO.contacts.officeEmail,
     workingHours: SCHOOL_INFO.contacts.workingHours,
+    emergencyMedicalPhone: "9415805530",
+    emergencySecurityPhone: "6307798158",
   },
   social: {
     facebook: SCHOOL_INFO.social.facebook,
@@ -219,5 +242,25 @@ export async function getPublicCampusDirectory(): Promise<PublicDirectoryEntryDt
   } catch (err) {
     console.warn(`[directory-api] Network/fetch error connecting to ${endpoint}; using static fallback.`, err);
     return STATIC_FALLBACK_DIRECTORY_ENTRIES;
+  }
+}
+
+/**
+ * Safely validate whether an embed URL points to trusted Google Maps HTTPS embed endpoint.
+ */
+export function isValidGoogleMapsEmbedUrl(url: string | null | undefined): boolean {
+  if (!url) return false;
+  try {
+    const parsed = new URL(url);
+    if (parsed.protocol !== "https:") return false;
+    const host = parsed.hostname.toLowerCase();
+    const isGoogle = host === "www.google.com" || host === "google.com" || host === "maps.google.com";
+    if (!isGoogle) return false;
+    return (
+      parsed.pathname.startsWith("/maps/embed") ||
+      (parsed.pathname.startsWith("/maps") && parsed.searchParams.get("output") === "embed")
+    );
+  } catch {
+    return false;
   }
 }

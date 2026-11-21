@@ -94,6 +94,15 @@ export interface SchoolContacts {
   email: string;
   officeEmail: string;
   workingHours: string;
+  emergencyMedicalPhone?: string;
+  emergencySecurityPhone?: string;
+}
+
+export interface SchoolLocation {
+  mapEmbedUrl?: string | null;
+  mapDirectionsUrl?: string | null;
+  directionsOverview?: string | null;
+  visitorGuidelines?: string | null;
 }
 
 export interface SchoolSocial {
@@ -123,6 +132,7 @@ export interface SchoolInfo {
   grades: string;
   address: SchoolAddress;
   contacts: SchoolContacts;
+  location?: SchoolLocation;
   social: SchoolSocial;
   stats: StatMetric[];
 }
