@@ -750,3 +750,88 @@ model FacilityItem {
   @@index([imageStorageKey])
   @@map("facility_items")
 }
+
+// ==========================================
+// 17. ADMISSIONS & ENQUIRIES
+// ==========================================
+
+enum EnquiryStatus {
+  PENDING
+  CONTACTED
+  RESOLVED
+  ARCHIVED
+}
+
+model AdmissionStep {
+  id           String   @id @default(cuid())
+  stepNumber   String   @db.VarChar(20)
+  title        String   @db.VarChar(200)
+  description  String   @db.Text
+  displayOrder Int      @default(0)
+  isPublished  Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([isPublished, displayOrder])
+  @@map("admission_steps")
+}
+
+model AdmissionEligibilityCriteria {
+  id             String   @id @default(cuid())
+  classGrade     String   @db.VarChar(100)
+  ageRequirement String   @db.VarChar(200)
+  evaluationMode String   @db.VarChar(255)
+  displayOrder   Int      @default(0)
+  isPublished    Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([isPublished, displayOrder])
+  @@map("admission_eligibility_criteria")
+}
+
+model AdmissionDocumentRequirement {
+  id           String   @id @default(cuid())
+  title        String   @db.VarChar(255)
+  description  String?  @db.Text
+  displayOrder Int      @default(0)
+  isPublished  Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([isPublished, displayOrder])
+  @@map("admission_document_requirements")
+}
+
+model AdmissionFaq {
+  id           String   @id @default(cuid())
+  question     String   @db.VarChar(300)
+  answer       String   @db.Text
+  displayOrder Int      @default(0)
+  isPublished  Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([isPublished, displayOrder])
+  @@map("admission_faqs")
+}
+
+model EnquirySubmission {
+  id          String        @id @default(cuid())
+  studentName String        @db.VarChar(150)
+  parentName  String        @db.VarChar(150)
+  phone       String        @db.VarChar(30)
+  email       String?       @db.VarChar(150)
+  grade       String        @db.VarChar(100)
+  message     String?       @db.Text
+  status      EnquiryStatus @default(PENDING)
+  adminNotes  String?       @db.Text
+  ipHash      String?       @db.VarChar(64)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  @@index([status, createdAt])
+  @@index([createdAt])
+  @@index([ipHash, createdAt])
+  @@map("enquiry_submissions")
+}
