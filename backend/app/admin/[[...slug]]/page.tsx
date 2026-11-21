@@ -3,7 +3,7 @@ import { notFound, redirect } from "next/navigation";
 import { PlaceholderWorkspace } from "@/components/admin/PlaceholderWorkspace";
 import { TopperWorkspace } from "@/components/admin/toppers/TopperWorkspace";
 import { NoticeWorkspace } from "@/components/admin/notices/NoticeWorkspace";
-import { ProfileDirectoryWorkspace } from "@/components/admin/profile/ProfileDirectoryWorkspace";
+import { ContactWorkspace } from "@/components/admin/contact/ContactWorkspace";
 import { NavigationWorkspace } from "@/components/admin/navigation/NavigationWorkspace";
 import { HomepageWorkspace } from "@/components/admin/homepage/HomepageWorkspace";
 import { AboutLeadershipWorkspace } from "@/components/admin/about/AboutLeadershipWorkspace";
@@ -345,8 +345,12 @@ export default async function AdminWorkspacePage({
     );
   }
 
-  // Specialization: /admin/contact/directory renders ProfileDirectoryWorkspace
-  if (href === "/admin/contact/directory") {
+  // Specialization: /admin/contact, /admin/contact/directory, /admin/contact/location render ContactWorkspace
+  if (
+    href === "/admin/contact" ||
+    href === "/admin/contact/directory" ||
+    href === "/admin/contact/location"
+  ) {
     await requireRole(["SUPER_ADMIN"], href);
 
     let profile = await prisma.siteProfile.findUnique({
@@ -377,6 +381,13 @@ export default async function AdminWorkspacePage({
       updatedAt: entry.updatedAt.toISOString(),
     }));
 
+    const initialTab: "directory" | "helplines" | "location" =
+      href === "/admin/contact/location"
+        ? "location"
+        : href === "/admin/contact/directory"
+        ? "directory"
+        : "directory";
+
     return (
       <Card as="section" aria-labelledby="admin-workspace-title">
         <Breadcrumbs items={workspace.breadcrumbs} />
@@ -400,9 +411,10 @@ export default async function AdminWorkspacePage({
         </div>
 
         <div className="workspace-content">
-          <ProfileDirectoryWorkspace
+          <ContactWorkspace
             profile={serializedProfile}
             directoryEntries={serializedDirectory}
+            initialTab={initialTab}
           />
         </div>
       </Card>
