@@ -13,6 +13,7 @@ import { EventsWorkspace } from "@/components/admin/events/EventsWorkspace";
 import { DownloadWorkspace } from "@/components/admin/downloads/DownloadWorkspace";
 import { DisclosureWorkspace } from "@/components/admin/disclosure/DisclosureWorkspace";
 import { FacilityWorkspace } from "@/components/admin/facilities/FacilityWorkspace";
+import { AdmissionsWorkspace } from "@/components/admin/admissions/AdmissionsWorkspace";
 import { Breadcrumbs } from "@/components/ui/Breadcrumbs";
 import { Badge } from "@/components/ui/Badge";
 import { Card } from "@/components/ui/Card";
@@ -818,6 +819,94 @@ export default async function AdminWorkspacePage({
 
         <div className="workspace-content">
           <FacilityWorkspace categories={serializedCategories} />
+        </div>
+      </Card>
+    );
+  }
+
+  // Specialization: /admin/admissions renders interactive AdmissionsWorkspace
+  if (href === "/admin/admissions") {
+    await requireRole(["SUPER_ADMIN"], href);
+
+    const [enquiries, steps, eligibilityCriteria, documentRequirements, faqs] =
+      await Promise.all([
+        prisma.enquirySubmission.findMany({
+          orderBy: [{ createdAt: "desc" }],
+        }),
+        prisma.admissionStep.findMany({
+          orderBy: [{ displayOrder: "asc" }, { id: "asc" }],
+        }),
+        prisma.admissionEligibilityCriteria.findMany({
+          orderBy: [{ displayOrder: "asc" }, { id: "asc" }],
+        }),
+        prisma.admissionDocumentRequirement.findMany({
+          orderBy: [{ displayOrder: "asc" }, { id: "asc" }],
+        }),
+        prisma.admissionFaq.findMany({
+          orderBy: [{ displayOrder: "asc" }, { id: "asc" }],
+        }),
+      ]);
+
+    const serializedEnquiries = enquiries.map((e) => ({
+      ...e,
+      createdAt: e.createdAt.toISOString(),
+      updatedAt: e.updatedAt.toISOString(),
+    }));
+
+    const serializedSteps = steps.map((s) => ({
+      ...s,
+      createdAt: s.createdAt.toISOString(),
+      updatedAt: s.updatedAt.toISOString(),
+    }));
+
+    const serializedCriteria = eligibilityCriteria.map((c) => ({
+      ...c,
+      createdAt: c.createdAt.toISOString(),
+      updatedAt: c.updatedAt.toISOString(),
+    }));
+
+    const serializedDocuments = documentRequirements.map((d) => ({
+      ...d,
+      createdAt: d.createdAt.toISOString(),
+      updatedAt: d.updatedAt.toISOString(),
+    }));
+
+    const serializedFaqs = faqs.map((f) => ({
+      ...f,
+      createdAt: f.createdAt.toISOString(),
+      updatedAt: f.updatedAt.toISOString(),
+    }));
+
+    return (
+      <Card as="section" aria-labelledby="admin-workspace-title">
+        <Breadcrumbs items={workspace.breadcrumbs} />
+
+        <div className="workspace-header">
+          <h1 className="workspace-title" id="admin-workspace-title" tabIndex={-1}>
+            {workspace.title}
+          </h1>
+          {workspace.badge && <Badge>{workspace.badge}</Badge>}
+        </div>
+
+        {workspace.description && (
+          <p className="workspace-description">{workspace.description}</p>
+        )}
+
+        <div className="workspace-meta-bar">
+          <PublicReferenceLink
+            publicHref={workspace.publicHref}
+            title={workspace.title}
+          />
+        </div>
+
+        <div className="workspace-content">
+          <AdmissionsWorkspace
+            enquiries={serializedEnquiries}
+            steps={serializedSteps}
+            eligibilityCriteria={serializedCriteria}
+            documentRequirements={serializedDocuments}
+            faqs={serializedFaqs}
+          />
         </div>
       </Card>
     );

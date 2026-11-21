@@ -32,7 +32,7 @@ export interface ActionResponse<T = unknown> {
 
 function revalidateAdmissions() {
   try {
-    revalidateTag("admissions");
+    revalidateTag("admissions", "max");
     revalidatePath("/admin/admissions");
     revalidatePath("/admissions");
   } catch (err) {
