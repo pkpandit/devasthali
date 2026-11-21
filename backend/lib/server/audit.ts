@@ -35,6 +35,8 @@ export type NoticeAuditAction =
 
 export type ProfileAuditAction =
   | "SITE_PROFILE_UPDATED"
+  | "CONTACT_LOCATION_UPDATED"
+  | "CONTACT_HELPLINES_UPDATED"
   | "DIRECTORY_ENTRY_CREATED"
   | "DIRECTORY_ENTRY_UPDATED"
   | "DIRECTORY_ENTRY_DELETED"
@@ -279,26 +281,58 @@ export function sanitizeAuditMetadata(
 
     for (const [key, val] of Object.entries(record)) {
       const lowerKey = key.toLowerCase();
+      const isPhoneKey =
+        lowerKey === "phone" ||
+        lowerKey === "phonenumber" ||
+        lowerKey === "mobile" ||
+        lowerKey.endsWith("phone");
+      const isEmailKey = lowerKey === "email" || lowerKey.endsWith("email");
+
       if (forbiddenKeys.has(lowerKey)) {
         result[key] = "[REDACTED]";
-      } else if (
-        (lowerKey === "phone" || lowerKey === "phonenumber" || lowerKey === "mobile") &&
-        typeof val === "string"
-      ) {
+      } else if (isPhoneKey && typeof val === "string") {
         result[key] = val.length > 4 ? "******" + val.slice(-4) : "******";
-      } else if (lowerKey === "email" && typeof val === "string") {
+      } else if (isEmailKey && typeof val === "string") {
         const parts = val.split("@");
         result[key] =
           parts.length === 2
             ? `${parts[0].slice(0, 2)}***@***.${parts[1].split(".").pop() || "com"}`
             : "[MASKED_EMAIL]";
       } else if (typeof val === "object" && val !== null) {
-        result[key] = cleanObject(val);
+        if (isPhoneKey) {
+          const diffObj = val as Record<string, unknown>;
+          const maskedDiff: Record<string, unknown> = {};
+          for (const [dk, dv] of Object.entries(diffObj)) {
+            maskedDiff[dk] =
+              typeof dv === "string" && dv.length > 4
+                ? "******" + dv.slice(-4)
+                : dv
+                ? "******"
+                : dv;
+          }
+          result[key] = maskedDiff;
+        } else if (isEmailKey) {
+          const diffObj = val as Record<string, unknown>;
+          const maskedDiff: Record<string, unknown> = {};
+          for (const [dk, dv] of Object.entries(diffObj)) {
+            if (typeof dv === "string") {
+              const parts = dv.split("@");
+              maskedDiff[dk] =
+                parts.length === 2
+                  ? `${parts[0].slice(0, 2)}***@***.${parts[1].split(".").pop() || "com"}`
+                  : "[MASKED_EMAIL]";
+            } else {
+              maskedDiff[dk] = dv;
+            }
+          }
+          result[key] = maskedDiff;
+        } else {
+          result[key] = cleanObject(val);
+        }
       } else {
         result[key] = val;
       }
     }
-
     return result;
   };
 

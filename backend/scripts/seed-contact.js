@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-require-imports */
 /**
  * Seed Script: Contact & Campus Information (Milestone 13)
  *
