@@ -321,6 +321,44 @@ export interface DownloadCategoryGroup {
 // Admissions & Events
 // ==========================================
 
+
+export interface AdmissionStepItem {
+  id: string;
+  stepNumber: string;
+  title: string;
+  description: string;
+  displayOrder: number;
+}
+
+export interface AdmissionEligibilityCriteriaItem {
+  id: string;
+  classGrade: string;
+  ageRequirement: string;
+  evaluationMode: string;
+  displayOrder: number;
+}
+
+export interface AdmissionDocumentRequirementItem {
+  id: string;
+  title: string;
+  description: string | null;
+  displayOrder: number;
+}
+
+export interface AdmissionFaqItem {
+  id: string;
+  question: string;
+  answer: string;
+  displayOrder: number;
+}
+
+export interface PublicAdmissionsData {
+  steps: AdmissionStepItem[];
+  eligibilityCriteria: AdmissionEligibilityCriteriaItem[];
+  documentRequirements: AdmissionDocumentRequirementItem[];
+  faqs: AdmissionFaqItem[];
+}
+
 export interface AdmissionStep {
   step: string;
   title: string;

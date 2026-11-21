@@ -4,9 +4,19 @@ import { admissionEnquirySchema, type AdmissionEnquiryInput } from "@/lib/valida
 import type { ActionResponse } from "@/types";
 import { SCHOOL_INFO } from "@/lib/content/settings";
 
+function getBackendOrigin(): string {
+  if (process.env.BACKEND_INTERNAL_URL) {
+    return process.env.BACKEND_INTERNAL_URL.replace(/\/+$/, "");
+  }
+  if (process.env.NEXT_PUBLIC_BACKEND_URL) {
+    return process.env.NEXT_PUBLIC_BACKEND_URL.replace(/\/+$/, "");
+  }
+  return "http://127.0.0.1:3001";
+}
+
 export async function submitAdmissionEnquiry(
   rawInput: AdmissionEnquiryInput
-): Promise<ActionResponse<{ enquiryId?: string; whatsappRedirectUrl?: string }>> {
+): Promise<ActionResponse<{ message?: string; whatsappRedirectUrl?: string }>> {
   try {
     // 1. Zod Server Validation
     const validationResult = admissionEnquirySchema.safeParse(rawInput);
@@ -31,8 +41,9 @@ export async function submitAdmissionEnquiry(
     // 2. Anti-Spam Honeypot Verification
     if (data.website_honey && data.website_honey.trim() !== "") {
       return {
-        success: false,
-        message: "Online admission enquiry submission is currently unavailable.",
+        success: true,
+        message:
+          "Enquiry submitted successfully. Our admissions desk will contact you shortly.",
       };
     }
 
@@ -45,21 +56,49 @@ export async function submitAdmissionEnquiry(
       whatsappRedirectUrl = `https://wa.me/${SCHOOL_INFO.contacts.whatsappNumber}?text=${text}`;
     }
 
-    // 4. Online persistence is not active - accurately inform parent with verified alternatives
+    // 4. Send to backend endpoint
+    const backendOrigin = getBackendOrigin();
+    const endpoint = `${backendOrigin}/api/public/enquiries`;
+
+    const res = await fetch(endpoint, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        studentName: data.studentName,
+        parentName: data.parentName,
+        phone: data.phone,
+        grade: `${data.grade} (${data.admissionType})`,
+        message: `[City: ${data.city}] ${data.message || ""}`.trim(),
+        website_honey: data.website_honey || "",
+      }),
+    });
+
+    const json = await res.json().catch(() => ({}));
+
+    if (res.status === 201 || res.status === 200) {
+      return {
+        success: true,
+        message:
+          json.message ||
+          "Enquiry submitted successfully. Our admissions desk will contact you shortly.",
+        data: {
+          whatsappRedirectUrl,
+        },
+      };
+    }
+
     return {
       success: false,
       message:
-        "Online admission enquiry submission is not yet available. Please contact our admissions desk directly at 9554960408 / 9554960415, email principaldvp@gmail.com, or visit the school campus at Chilkahar, Ballia.",
-      data: {
-        whatsappRedirectUrl,
-      },
+        json.error ||
+        "An error occurred while submitting your enquiry. Please try again or call our admissions helpline.",
     };
   } catch (error) {
     console.error("[ADMISSION ENGINE ERROR]:", error);
     return {
       success: false,
       message:
-        "Online admission submission is not yet available. Please call our admissions desk directly at 9554960408.",
+        "Unable to submit enquiry at this moment. Please call our admissions desk directly.",
     };
   }
 }

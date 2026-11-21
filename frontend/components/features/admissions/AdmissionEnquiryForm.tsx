@@ -2,7 +2,17 @@
 
 import React, { useState } from "react";
 import { SCHOOL_INFO } from "@/lib/school-data";
-import { Sparkles, MessageCircle, AlertCircle, Info, Phone, MapPin, Mail, ArrowLeft } from "lucide-react";
+import {
+  Sparkles,
+  MessageCircle,
+  AlertCircle,
+  Info,
+  Phone,
+  CheckCircle2,
+  Loader2,
+  RefreshCw,
+} from "lucide-react";
+import { submitAdmissionEnquiry } from "@/features/admissions/actions";
 
 interface FormProps {
   className?: string;
@@ -14,15 +24,16 @@ export function AdmissionEnquiryForm({ className = "" }: FormProps) {
     parentName: "",
     phone: "",
     grade: "Class I",
-    admissionType: "Day-Scholar",
+    admissionType: "Day-Scholar" as "Day-Scholar" | "Residential Boarder",
     city: "Ballia",
     sendToWhatsapp: true,
     message: "",
     website_honey: "", // Anti-spam honeypot
   });
 
-  const [status, setStatus] = useState<"idle" | "notice" | "error">("idle");
+  const [status, setStatus] = useState<"idle" | "submitting" | "success" | "error">("idle");
   const [errorMessage, setErrorMessage] = useState("");
+  const [successData, setSuccessData] = useState<{ message?: string; whatsappRedirectUrl?: string } | null>(null);
 
   const grades = [
     "LKG / Nursery",
@@ -58,7 +69,9 @@ export function AdmissionEnquiryForm({ className = "" }: FormProps) {
     "Other Location",
   ];
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
+  ) => {
     const { name, value, type } = e.target;
     if (type === "checkbox") {
       const checked = (e.target as HTMLInputElement).checked;
@@ -68,12 +81,15 @@ export function AdmissionEnquiryForm({ className = "" }: FormProps) {
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Honeypot spam trap
-    if (formData.website_honey) {
-      setStatus("notice");
+    // Honeypot spam trap: fake success immediately
+    if (formData.website_honey && formData.website_honey.trim().length > 0) {
+      setStatus("success");
+      setSuccessData({
+        message: "Enquiry submitted successfully. Our admissions desk will contact you shortly.",
+      });
       return;
     }
 
@@ -91,9 +107,59 @@ export function AdmissionEnquiryForm({ className = "" }: FormProps) {
       return;
     }
 
+    setStatus("submitting");
     setErrorMessage("");
-    // Online submission is not yet available; show verified contact alternatives
-    setStatus("notice");
+
+    try {
+      const res = await submitAdmissionEnquiry({
+        studentName: formData.studentName.trim(),
+        parentName: formData.parentName.trim(),
+        phone: phoneClean,
+        grade: formData.grade,
+        admissionType: formData.admissionType,
+        city: formData.city,
+        sendToWhatsapp: formData.sendToWhatsapp,
+        message: formData.message.trim() || undefined,
+        website_honey: formData.website_honey,
+      });
+
+      if (res.success) {
+        setStatus("success");
+        setSuccessData({
+          message:
+            res.message ||
+            "Enquiry submitted successfully. Our admissions desk will contact you shortly.",
+          whatsappRedirectUrl: res.data?.whatsappRedirectUrl,
+        });
+      } else {
+        setStatus("error");
+        setErrorMessage(
+          res.message || "Failed to submit enquiry. Please call our helpline."
+        );
+      }
+    } catch {
+      setStatus("error");
+      setErrorMessage(
+        "Unable to connect to admissions service. Please call our helpline directly."
+      );
+    }
+  };
+
+  const handleReset = () => {
+    setFormData({
+      studentName: "",
+      parentName: "",
+      phone: "",
+      grade: "Class I",
+      admissionType: "Day-Scholar",
+      city: "Ballia",
+      sendToWhatsapp: true,
+      message: "",
+      website_honey: "",
+    });
+    setStatus("idle");
+    setErrorMessage("");
+    setSuccessData(null);
   };
 
   const whatsappMessage = encodeURIComponent(
@@ -123,16 +189,17 @@ export function AdmissionEnquiryForm({ className = "" }: FormProps) {
         </div>
       </div>
 
-      {status === "notice" ? (
+      {status === "success" ? (
         <div className="p-5 sm:p-8 space-y-6">
-          <div className="p-4 sm:p-5 rounded-2xl bg-amber-50 border border-amber-200 text-amber-900 flex items-start gap-3">
-            <Info className="w-5 h-5 shrink-0 text-amber-700 mt-0.5" />
+          <div className="p-5 sm:p-6 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-950 flex items-start gap-4">
+            <CheckCircle2 className="w-7 h-7 shrink-0 text-emerald-600 mt-0.5" />
             <div>
-              <h4 className="font-heading text-base font-bold text-amber-950">
-                Online Form Submission Not Yet Available
+              <h4 className="font-heading text-lg font-bold text-emerald-950">
+                Enquiry Registered Successfully!
               </h4>
-              <p className="text-sm text-amber-800 mt-1 leading-relaxed">
-                Automated online submission is currently inactive. Your enquiry details have not been transmitted online. Please use one of the direct verified alternatives below to contact our admissions team:
+              <p className="text-sm text-emerald-800 mt-1 leading-relaxed font-sans">
+                {successData?.message ||
+                  "Thank you for reaching out to Devasthaly Vidyapeeth. Your admission enquiry has been submitted. Our admissions counselor will contact you shortly to assist with prospectus and campus interaction."}
               </p>
             </div>
           </div>
@@ -140,9 +207,9 @@ export function AdmissionEnquiryForm({ className = "" }: FormProps) {
           {/* Enquiry Summary */}
           <div className="p-4 sm:p-5 rounded-2xl bg-[#F9FAFB] border border-gray-200 text-sm space-y-2">
             <h5 className="font-heading font-bold text-xs uppercase tracking-wider text-gray-500">
-              Enquiry Summary
+              Submitted Enquiry Summary
             </h5>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-gray-800">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-gray-800 font-sans">
               <p><strong>Student:</strong> {formData.studentName || "—"}</p>
               <p><strong>Class:</strong> {formData.grade} ({formData.admissionType})</p>
               <p><strong>Parent/Guardian:</strong> {formData.parentName || "—"}</p>
@@ -151,10 +218,10 @@ export function AdmissionEnquiryForm({ className = "" }: FormProps) {
             </div>
           </div>
 
-          {/* Verified Contact Options */}
+          {/* Immediate Action Buttons */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <a
-              href={`https://wa.me/${SCHOOL_INFO.contacts.whatsappNumber}?text=${whatsappMessage}`}
+              href={successData?.whatsappRedirectUrl || `https://wa.me/${SCHOOL_INFO.contacts.whatsappNumber}?text=${whatsappMessage}`}
               target="_blank"
               rel="noopener noreferrer"
               className="p-4 min-h-[52px] rounded-2xl bg-emerald-50 border border-emerald-200 hover:bg-emerald-100/70 transition-colors flex items-center gap-3.5 group focus-visible:outline-2 focus-visible:outline-[#25D366]"
@@ -163,8 +230,8 @@ export function AdmissionEnquiryForm({ className = "" }: FormProps) {
                 <MessageCircle className="w-5 h-5" />
               </div>
               <div>
-                <p className="font-heading font-bold text-sm text-[#111827]">Send via WhatsApp</p>
-                <p className="text-xs text-gray-600">Open WhatsApp with your enquiry details pre-filled</p>
+                <p className="font-heading font-bold text-sm text-[#111827]">Connect on WhatsApp</p>
+                <p className="text-xs text-gray-600">Chat directly with pre-filled details</p>
               </div>
             </a>
 
@@ -178,43 +245,20 @@ export function AdmissionEnquiryForm({ className = "" }: FormProps) {
               <div>
                 <p className="font-heading font-bold text-sm text-[#111827]">Call Admissions Desk</p>
                 <p className="text-xs text-gray-600 font-mono font-bold text-[#B91C1C]">
-                  +91 {SCHOOL_INFO.contacts.admissionsPhone} / {SCHOOL_INFO.contacts.receptionPhone}
+                  +91 {SCHOOL_INFO.contacts.admissionsPhone}
                 </p>
               </div>
             </a>
-
-            <a
-              href={`mailto:${SCHOOL_INFO.contacts.email}?subject=Admission Enquiry for ${encodeURIComponent(formData.studentName || "Student")}`}
-              className="p-4 min-h-[52px] rounded-2xl bg-gray-50 border border-gray-200 hover:bg-gray-100 transition-colors flex items-center gap-3.5 group focus-visible:outline-2 focus-visible:outline-[#111827]"
-            >
-              <div className="w-10 h-10 rounded-xl bg-gray-700 text-white flex items-center justify-center shrink-0">
-                <Mail className="w-5 h-5" />
-              </div>
-              <div>
-                <p className="font-heading font-bold text-sm text-[#111827]">Email Admissions</p>
-                <p className="text-xs text-gray-600">{SCHOOL_INFO.contacts.email}</p>
-              </div>
-            </a>
-
-            <div className="p-4 min-h-[52px] rounded-2xl bg-gray-50 border border-gray-200 flex items-center gap-3.5">
-              <div className="w-10 h-10 rounded-xl bg-gray-700 text-white flex items-center justify-center shrink-0">
-                <MapPin className="w-5 h-5" />
-              </div>
-              <div>
-                <p className="font-heading font-bold text-sm text-[#111827]">Campus Admissions Counter</p>
-                <p className="text-xs text-gray-600">Chilkahar, Ballia (Mon–Sat: 8:00 AM – 3:30 PM)</p>
-              </div>
-            </div>
           </div>
 
           <div className="pt-2 flex justify-start">
             <button
               type="button"
-              onClick={() => setStatus("idle")}
+              onClick={handleReset}
               className="inline-flex items-center gap-2 px-5 py-2.5 min-h-[44px] rounded-xl border border-gray-300 text-sm font-bold text-[#111827] hover:bg-gray-100 transition-colors focus-visible:outline-2 focus-visible:outline-[#B91C1C]"
             >
-              <ArrowLeft className="w-4 h-4" />
-              <span>Edit Details / Back to Form</span>
+              <RefreshCw className="w-4 h-4" />
+              <span>Submit Another Enquiry</span>
             </button>
           </div>
         </div>
@@ -234,11 +278,11 @@ export function AdmissionEnquiryForm({ className = "" }: FormProps) {
             />
           </div>
 
-          {/* Clear online status notice */}
-          <div className="p-3.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-sm flex items-start gap-2.5">
-            <Info className="w-4 h-4 shrink-0 text-amber-700 mt-0.5" />
+          {/* Help notice */}
+          <div className="p-3.5 rounded-xl bg-red-50/60 border border-red-100 text-[#111827] text-sm flex items-start gap-2.5">
+            <Info className="w-4 h-4 shrink-0 text-[#B91C1C] mt-0.5" />
             <span>
-              <strong>Admissions Desk Notice:</strong> Online form submission is not yet available. You may fill your details below to generate a direct WhatsApp message, call our admissions helpline directly at <strong>{SCHOOL_INFO.contacts.admissionsPhone}</strong>, or visit the campus counter.
+              <strong>Admissions Desk Notice:</strong> Submit your details below to register directly with our administrative team for the 2026–27 academic session, or call our admissions helpline directly at <strong>{SCHOOL_INFO.contacts.admissionsPhone}</strong>.
             </span>
           </div>
 
@@ -258,88 +302,69 @@ export function AdmissionEnquiryForm({ className = "" }: FormProps) {
             <div>
               <label
                 htmlFor="enquiry-student-name"
-                className="block text-sm font-heading font-bold text-[#111827] uppercase tracking-wider mb-1.5"
+                className="block text-sm font-heading font-bold text-[#111827] mb-1"
               >
-                Student Full Name <span className="text-[#DC2626]">*</span>
+                Student Name <span className="text-[#B91C1C]">*</span>
               </label>
               <input
                 type="text"
                 id="enquiry-student-name"
                 name="studentName"
-                autoComplete="name"
-                required
-                aria-required="true"
-                aria-invalid={status === "error" && !formData.studentName.trim()}
-                aria-describedby={status === "error" ? "enquiry-error-msg" : undefined}
                 value={formData.studentName}
                 onChange={handleChange}
-                placeholder="e.g. Aryan Pandey"
-                className="w-full px-3.5 py-3 min-h-[44px] rounded-xl border border-[#E5E7EB] text-base text-[#111827] focus:border-[#B91C1C] focus:ring-2 focus:ring-[#B91C1C]/20 focus-visible:outline-hidden transition-all bg-white"
+                placeholder="Enter student full name"
+                required
+                className="w-full px-3.5 py-3 min-h-[44px] rounded-xl border border-[#E5E7EB] text-base text-[#111827] placeholder:text-gray-400 focus:border-[#B91C1C] focus:ring-2 focus:ring-[#B91C1C]/20 focus-visible:outline-hidden transition-all bg-white"
               />
             </div>
 
-            {/* Parent / Guardian Name */}
+            {/* Parent Name */}
             <div>
               <label
                 htmlFor="enquiry-parent-name"
-                className="block text-sm font-heading font-bold text-[#111827] uppercase tracking-wider mb-1.5"
+                className="block text-sm font-heading font-bold text-[#111827] mb-1"
               >
-                Parent / Guardian Name <span className="text-[#DC2626]">*</span>
+                Parent / Guardian Name <span className="text-[#B91C1C]">*</span>
               </label>
               <input
                 type="text"
                 id="enquiry-parent-name"
                 name="parentName"
-                autoComplete="name"
-                required
-                aria-required="true"
-                aria-invalid={status === "error" && !formData.parentName.trim()}
-                aria-describedby={status === "error" ? "enquiry-error-msg" : undefined}
                 value={formData.parentName}
                 onChange={handleChange}
-                placeholder="e.g. Rameshwar Pandey"
-                className="w-full px-3.5 py-3 min-h-[44px] rounded-xl border border-[#E5E7EB] text-base text-[#111827] focus:border-[#B91C1C] focus:ring-2 focus:ring-[#B91C1C]/20 focus-visible:outline-hidden transition-all bg-white"
+                placeholder="Enter parent / guardian name"
+                required
+                className="w-full px-3.5 py-3 min-h-[44px] rounded-xl border border-[#E5E7EB] text-base text-[#111827] placeholder:text-gray-400 focus:border-[#B91C1C] focus:ring-2 focus:ring-[#B91C1C]/20 focus-visible:outline-hidden transition-all bg-white"
               />
             </div>
-          </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {/* WhatsApp Mobile Number */}
+            {/* Phone */}
             <div>
               <label
                 htmlFor="enquiry-phone"
-                className="block text-sm font-heading font-bold text-[#111827] uppercase tracking-wider mb-1.5"
+                className="block text-sm font-heading font-bold text-[#111827] mb-1"
               >
-                WhatsApp Mobile Number <span className="text-[#DC2626]">*</span>
+                Mobile Number <span className="text-[#B91C1C]">*</span>
               </label>
-              <div className="relative">
-                <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-sm font-bold text-gray-500">
-                  +91
-                </span>
-                <input
-                  type="tel"
-                  id="enquiry-phone"
-                  name="phone"
-                  autoComplete="tel"
-                  required
-                  aria-required="true"
-                  aria-invalid={status === "error" && formData.phone.replace(/[^0-9]/g, "").length < 10}
-                  aria-describedby={status === "error" ? "enquiry-error-msg" : undefined}
-                  value={formData.phone}
-                  onChange={handleChange}
-                  placeholder="98765 43210"
-                  className="w-full pl-12 pr-3.5 py-3 min-h-[44px] rounded-xl border border-[#E5E7EB] text-base text-[#111827] focus:border-[#B91C1C] focus:ring-2 focus:ring-[#B91C1C]/20 transition-all outline-none bg-white"
-                />
-              </div>
+              <input
+                type="tel"
+                id="enquiry-phone"
+                name="phone"
+                value={formData.phone}
+                onChange={handleChange}
+                placeholder="10-digit mobile number"
+                required
+                className="w-full px-3.5 py-3 min-h-[44px] rounded-xl border border-[#E5E7EB] text-base text-[#111827] placeholder:text-gray-400 focus:border-[#B91C1C] focus:ring-2 focus:ring-[#B91C1C]/20 focus-visible:outline-hidden transition-all bg-white"
+              />
             </div>
 
-            {/* Grade Selection */}
+            {/* Grade */}
             <div>
               <label
                 htmlFor="enquiry-grade"
-                className="block text-sm font-heading font-bold text-[#111827] uppercase tracking-wider mb-1.5"
+                className="block text-sm font-heading font-bold text-[#111827] mb-1"
               >
-                Class Seeking Admission <span className="text-[#DC2626]">*</span>
+                Seeking Admission In <span className="text-[#B91C1C]">*</span>
               </label>
               <select
                 id="enquiry-grade"
@@ -355,45 +380,34 @@ export function AdmissionEnquiryForm({ className = "" }: FormProps) {
                 ))}
               </select>
             </div>
-          </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {/* Admission Type (Day vs Boarder) */}
+            {/* Admission Type */}
             <div>
-              <span className="block text-sm font-heading font-bold text-[#111827] uppercase tracking-wider mb-1.5">
-                Admission Preference
-              </span>
-              <div className="grid grid-cols-2 gap-2" role="radiogroup" aria-label="Admission Preference">
-                {["Day-Scholar", "Residential Boarder"].map((type) => (
-                  <label
-                    key={type}
-                    className={`flex items-center justify-center min-h-[44px] px-3 py-2.5 rounded-xl border text-sm font-heading font-bold cursor-pointer transition-all ${
-                      formData.admissionType === type
-                        ? "bg-[#B91C1C] text-white border-[#B91C1C] shadow-xs"
-                        : "bg-[#F3F4F6] text-[#111827] border-[#E5E7EB] hover:bg-gray-100"
-                    }`}
-                  >
-                    <input
-                      type="radio"
-                      name="admissionType"
-                      value={type}
-                      checked={formData.admissionType === type}
-                      onChange={handleChange}
-                      className="sr-only"
-                    />
-                    <span>{type}</span>
-                  </label>
-                ))}
-              </div>
+              <label
+                htmlFor="enquiry-admission-type"
+                className="block text-sm font-heading font-bold text-[#111827] mb-1"
+              >
+                Scholarship / Residence Type
+              </label>
+              <select
+                id="enquiry-admission-type"
+                name="admissionType"
+                value={formData.admissionType}
+                onChange={handleChange}
+                className="w-full px-3.5 py-3 min-h-[44px] rounded-xl border border-[#E5E7EB] text-base text-[#111827] focus:border-[#B91C1C] focus:ring-2 focus:ring-[#B91C1C]/20 focus-visible:outline-hidden transition-all bg-white"
+              >
+                <option value="Day-Scholar">Day-Scholar</option>
+                <option value="Residential Boarder">Residential Boarder (Hostel)</option>
+              </select>
             </div>
 
-            {/* Town / City */}
+            {/* City */}
             <div>
               <label
                 htmlFor="enquiry-city"
-                className="block text-sm font-heading font-bold text-[#111827] uppercase tracking-wider mb-1.5"
+                className="block text-sm font-heading font-bold text-[#111827] mb-1"
               >
-                Your Current Location / Town
+                City / Location
               </label>
               <select
                 id="enquiry-city"
@@ -409,6 +423,25 @@ export function AdmissionEnquiryForm({ className = "" }: FormProps) {
                 ))}
               </select>
             </div>
+          </div>
+
+          {/* Optional Message */}
+          <div>
+            <label
+              htmlFor="enquiry-message"
+              className="block text-sm font-heading font-bold text-[#111827] mb-1"
+            >
+              Optional Message / Queries
+            </label>
+            <textarea
+              id="enquiry-message"
+              name="message"
+              rows={2}
+              value={formData.message}
+              onChange={handleChange}
+              placeholder="Ask about boarding facilities, bus routes, fee structure, or entrance assessment..."
+              className="w-full px-3.5 py-3 rounded-xl border border-[#E5E7EB] text-base text-[#111827] placeholder:text-gray-400 focus:border-[#B91C1C] focus:ring-2 focus:ring-[#B91C1C]/20 focus-visible:outline-hidden transition-all bg-white"
+            />
           </div>
 
           {/* Direct WhatsApp Pre-fill option */}
@@ -435,9 +468,17 @@ export function AdmissionEnquiryForm({ className = "" }: FormProps) {
           <div className="pt-2">
             <button
               type="submit"
-              className="w-full py-3.5 sm:py-4 px-6 min-h-[48px] rounded-full bg-[#B91C1C] text-white font-heading font-bold text-sm tracking-wide uppercase hover:bg-[#991B1B] active:scale-[0.99] transition-all flex items-center justify-center gap-2 shadow-md hover:shadow-lg border border-[#991B1B] focus-visible:outline-2 focus-visible:outline-[#B91C1C] focus-visible:outline-offset-2 cursor-pointer"
+              disabled={status === "submitting"}
+              className="w-full py-3.5 sm:py-4 px-6 min-h-[48px] rounded-full bg-[#B91C1C] text-white font-heading font-bold text-sm tracking-wide uppercase hover:bg-[#991B1B] active:scale-[0.99] transition-all flex items-center justify-center gap-2 shadow-md hover:shadow-lg border border-[#991B1B] focus-visible:outline-2 focus-visible:outline-[#B91C1C] focus-visible:outline-offset-2 cursor-pointer disabled:opacity-60"
             >
-              <span>Connect with Admissions Desk</span>
+              {status === "submitting" ? (
+                <>
+                  <Loader2 className="w-5 h-5 animate-spin" aria-hidden="true" />
+                  <span>Submitting Enquiry...</span>
+                </>
+              ) : (
+                <span>Submit Admission Enquiry</span>
+              )}
             </button>
             <p className="text-center text-xs sm:text-sm text-gray-500 mt-2">
               Admissions Helpline: {SCHOOL_INFO.contacts.admissionsPhone} • Mon–Sat: 8:00 AM – 3:30 PM

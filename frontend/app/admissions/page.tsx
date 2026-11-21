@@ -1,8 +1,9 @@
 import React from "react";
 import type { Metadata } from "next";
 import Link from "next/link";
-import { SCHOOL_INFO, FAQ_DATA } from "@/lib/school-data";
+import { SCHOOL_INFO } from "@/lib/school-data";
 import { AdmissionEnquiryForm } from "@/components/features/admissions/AdmissionEnquiryForm";
+import { getPublicAdmissions } from "@/lib/api/admissions";
 import {
   Sparkles,
   MessageCircle,
@@ -15,7 +16,10 @@ export const metadata: Metadata = {
     "Apply for admission at Devasthaly Vidyapeeth, Chilkahar, Ballia for the 2026–27 session. Day-scholar and residential boarding options. Download prospectus and fee structure.",
 };
 
-export default function AdmissionsPage() {
+export default async function AdmissionsPage() {
+  const admissions = await getPublicAdmissions();
+  const { steps, eligibilityCriteria, faqs } = admissions;
+
   return (
     <div className="w-full bg-[#F3F4F6] pb-16">
       {/* Edunex Page Header */}
@@ -59,7 +63,6 @@ export default function AdmissionsPage() {
       </div>
 
       <div className="site-container space-y-10">
-
         {/* 4-Step Admission Journey (Edunex Steps Archetype) */}
         <div className="bg-white p-8 sm:p-10 rounded-3xl border border-gray-200/90 shadow-xs space-y-6">
           <div className="text-left">
@@ -70,51 +73,42 @@ export default function AdmissionsPage() {
               The 4-Step Parent Admission Journey
             </h2>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {[
-              {
-                step: "01",
-                title: "Online Enquiry",
-                desc: "Submit the quick form below or send a WhatsApp message to receive the 2026–27 prospectus.",
-              },
-              {
-                step: "02",
-                title: "Campus Interaction",
-                desc: "Visit our Chilkahar campus for an informal interaction (LKG-I) or diagnostic assessment (II-XI).",
-              },
-              {
-                step: "03",
-                title: "Document Verification",
-                desc: "Verification of child's birth certificate, Aadhaar card, previous report cards, and transfer certificate.",
-              },
-              {
-                step: "04",
-                title: "Provisional Enrollment",
-                desc: "Complete registration fee payment, uniform requisition, and hostel room allocation (for boarders).",
-              },
-            ].map((st) => (
-              <div key={st.step} className="p-6 rounded-2xl bg-[#F3F4F6] border border-gray-200/90 hover:border-red-300 shadow-2xs hover:shadow-md hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between">
-                <div>
-                  <div className="w-10 h-10 rounded-xl bg-red-50 text-[#B91C1C] flex items-center justify-center font-heading font-black text-lg mb-3 shadow-2xs border border-red-100/60">
-                    {st.step}
+
+          {steps.length > 0 ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              {steps.map((st) => (
+                <div
+                  key={st.id || st.stepNumber}
+                  className="p-6 rounded-2xl bg-[#F3F4F6] border border-gray-200/90 hover:border-red-300 shadow-2xs hover:shadow-md hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between"
+                >
+                  <div>
+                    <div className="w-10 h-10 rounded-xl bg-red-50 text-[#B91C1C] flex items-center justify-center font-heading font-black text-lg mb-3 shadow-2xs border border-red-100/60">
+                      {st.stepNumber}
+                    </div>
+                    <h3 className="font-heading font-bold text-base text-[#111827] mb-2">
+                      {st.title}
+                    </h3>
+                    <p className="text-base text-gray-600 leading-relaxed font-sans">
+                      {st.description}
+                    </p>
                   </div>
-                  <h3 className="font-heading font-bold text-base text-[#111827] mb-2">
-                    {st.title}
-                  </h3>
-                  <p className="text-base text-gray-600 leading-relaxed font-sans">{st.desc}</p>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          ) : (
+            <div className="p-8 text-center text-gray-500 bg-[#F9FAFB] rounded-2xl border border-gray-200">
+              <p>Admission procedure guidelines are currently being finalized for the upcoming session.</p>
+            </div>
+          )}
         </div>
 
         {/* Age Criteria & Eligibility Table */}
         <div className="bg-white p-4 sm:p-10 rounded-3xl border border-gray-200/90 shadow-xs space-y-4">
           <h2 className="font-heading text-2xl font-bold text-[#111827]">
-            Age Criteria & Eligibility Table (Session 2026–27)
+            Age Criteria &amp; Eligibility Table (Session 2026–27)
           </h2>
           <p className="text-base text-gray-600 font-sans">
-            Age is calculated as on <strong>31st March 2025</strong> in compliance with CBSE & National Education Policy guidelines:
+            Age is calculated as on <strong>31st March 2025</strong> in compliance with CBSE &amp; National Education Policy guidelines:
           </p>
 
           <div className="overflow-x-auto border border-gray-200 rounded-2xl">
@@ -127,36 +121,21 @@ export default function AdmissionsPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200 text-gray-700 font-sans">
-                <tr className="hover:bg-[#F3F4F6]">
-                  <td className="py-3.5 px-4 font-bold text-[#111827]">LKG / Nursery</td>
-                  <td className="py-3.5 px-4">3 to 4 Years</td>
-                  <td className="py-3.5 px-4">Informal Parent-Child Observation</td>
-                </tr>
-                <tr className="hover:bg-[#F3F4F6]">
-                  <td className="py-3.5 px-4 font-bold text-[#111827]">UKG / KG</td>
-                  <td className="py-3.5 px-4">4 to 5 Years</td>
-                  <td className="py-3.5 px-4">Basic Learning Readiness Assessment</td>
-                </tr>
-                <tr className="hover:bg-[#F3F4F6]">
-                  <td className="py-3.5 px-4 font-bold text-[#111827]">Class I</td>
-                  <td className="py-3.5 px-4">6+ Years (NEP Mandate)</td>
-                  <td className="py-3.5 px-4">Oral & Written Readiness</td>
-                </tr>
-                <tr className="hover:bg-[#F3F4F6]">
-                  <td className="py-3.5 px-4 font-bold text-[#111827]">Classes II to VIII</td>
-                  <td className="py-3.5 px-4">Age commensurate with grade</td>
-                  <td className="py-3.5 px-4">Written Aptitude Test (English & Mathematics)</td>
-                </tr>
-                <tr className="hover:bg-[#F3F4F6]">
-                  <td className="py-3.5 px-4 font-bold text-[#111827]">Class IX & X</td>
-                  <td className="py-3.5 px-4">13+ / 14+ Years</td>
-                  <td className="py-3.5 px-4">Diagnostic Test (Eng, Math, Sci) & Previous Marksheet</td>
-                </tr>
-                <tr className="hover:bg-[#F3F4F6]">
-                  <td className="py-3.5 px-4 font-bold text-[#111827]">Class XI (Sci/Com/Hum)</td>
-                  <td className="py-3.5 px-4">Class X Board Qualified</td>
-                  <td className="py-3.5 px-4">Class X Board Percentage & Stream Aptitude Counselling</td>
-                </tr>
+                {eligibilityCriteria.length > 0 ? (
+                  eligibilityCriteria.map((item) => (
+                    <tr key={item.id} className="hover:bg-[#F3F4F6]">
+                      <td className="py-3.5 px-4 font-bold text-[#111827]">{item.classGrade}</td>
+                      <td className="py-3.5 px-4">{item.ageRequirement}</td>
+                      <td className="py-3.5 px-4">{item.evaluationMode}</td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan={3} className="py-8 text-center text-gray-500">
+                      Eligibility criteria will be announced shortly.
+                    </td>
+                  </tr>
+                )}
               </tbody>
             </table>
           </div>
@@ -177,20 +156,26 @@ export default function AdmissionsPage() {
             Frequently Asked Admission Questions
           </h2>
           <div className="space-y-3 pt-2">
-            {FAQ_DATA.map((faq, idx) => (
-              <details
-                key={idx}
-                className="group bg-white rounded-2xl border border-gray-200 hover:border-[#B91C1C] open:border-[#B91C1C] p-5 transition-all"
-              >
-                <summary className="font-heading font-bold text-sm sm:text-base text-[#111827] cursor-pointer list-none flex items-center justify-between group-hover:text-[#B91C1C]">
-                  <span>{faq.question}</span>
-                  <span className="text-gray-400 group-open:rotate-180 transition-transform">▾</span>
-                </summary>
-                <p className="text-base text-gray-600 mt-3 pt-3 border-t border-gray-100 leading-relaxed font-sans">
-                  {faq.answer}
-                </p>
-              </details>
-            ))}
+            {faqs.length > 0 ? (
+              faqs.map((faq) => (
+                <details
+                  key={faq.id}
+                  className="group bg-white rounded-2xl border border-gray-200 hover:border-[#B91C1C] open:border-[#B91C1C] p-5 transition-all"
+                >
+                  <summary className="font-heading font-bold text-sm sm:text-base text-[#111827] cursor-pointer list-none flex items-center justify-between group-hover:text-[#B91C1C]">
+                    <span>{faq.question}</span>
+                    <span className="text-gray-400 group-open:rotate-180 transition-transform">▾</span>
+                  </summary>
+                  <p className="text-base text-gray-600 mt-3 pt-3 border-t border-gray-100 leading-relaxed font-sans">
+                    {faq.answer}
+                  </p>
+                </details>
+              ))
+            ) : (
+              <div className="p-6 text-center text-gray-500 bg-[#F9FAFB] rounded-2xl border border-gray-200">
+                <p>No admission questions currently listed.</p>
+              </div>
+            )}
           </div>
         </div>
       </div>
