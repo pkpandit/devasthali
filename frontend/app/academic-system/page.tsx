@@ -1,6 +1,7 @@
 import React from "react";
 import type { Metadata } from "next";
 import { Sparkles, BookOpen, Download } from "lucide-react";
+import { getPublicAcademics } from "@/lib/api/academics";
 
 export const metadata: Metadata = {
   title: "Academic System | Devasthaly Vidyapeeth",
@@ -8,7 +9,19 @@ export const metadata: Metadata = {
     "Assessment, promotion guidelines, and examination rules at Devasthaly Vidyapeeth, Chilkahar, Ballia.",
 };
 
-export default function AcademicSystemPage() {
+export default async function AcademicSystemPage() {
+  const { overview, assessmentRules } = await getPublicAcademics();
+
+  const parentNotice =
+    overview?.assessmentParentNotice ||
+    "The Parents/Guardians of these students are free to come to the school and meet the class teachers to know the progress of their children/wards on this day.";
+
+  const prospectusNotice =
+    overview?.assessmentProspectusNotice ||
+    "Download the official school prospectus for comprehensive academic curriculum and regulations.";
+
+  const prospectusUrl = overview?.assessmentProspectusUrl || "/documents/original/prospectus-2.pdf";
+
   return (
     <div className="w-full bg-[#F3F4F6] pb-20">
       {/* Edplus University Page Header Banner */}
@@ -43,37 +56,35 @@ export default function AcademicSystemPage() {
             </div>
           </div>
 
-          {/* Verbatim Source Content Preserved */}
+          {/* Dynamic Assessment Rules */}
           <div className="space-y-4 text-sm sm:text-base text-[#111827] leading-relaxed font-sans">
-            <div className="p-5 rounded-2xl bg-[#F9FAFB] border border-gray-200/80 hover:border-red-200 transition-colors">
-              <p>
-                • Promotions will be decided on the average marks obtained in the Terminal and Final Examinations in addition to the year’s work including the unit test. To pass in any subject, a student has to secure 35% marks except for languages. Any students who losses the progress card will be fined Rs. 25/-.
-              </p>
-            </div>
+            {assessmentRules.length === 0 ? (
+              <div className="text-center py-10 space-y-2">
+                <BookOpen className="w-8 h-8 text-gray-400 mx-auto" aria-hidden="true" />
+                <p className="text-gray-600 text-sm font-sans">
+                  Assessment regulations and evaluation standards are currently being updated for the session.
+                </p>
+              </div>
+            ) : (
+              assessmentRules.map((rule) => (
+                <div
+                  key={rule.id}
+                  className="p-5 rounded-2xl bg-[#F9FAFB] border border-gray-200/80 hover:border-red-200 transition-colors"
+                >
+                  <p>• {rule.ruleText}</p>
+                </div>
+              ))
+            )}
 
-            <div className="p-5 rounded-2xl bg-[#F9FAFB] border border-gray-200/80 hover:border-red-200 transition-colors">
-              <p>
-                • Those students who are absent for any of the termination is punishable with expulsion from terminal/unit examination will not be tested earlier or later.
-              </p>
-            </div>
-
-            <div className="p-5 rounded-2xl bg-[#F9FAFB] border border-gray-200/80 hover:border-red-200 transition-colors">
-              <p>
-                • Willful breach of any of the regulations for the conduct of Examination is punishable with expulsion from examination or if subsequently discovered cancelling of paper.
-              </p>
-            </div>
-
-            <p className="pt-2 text-gray-700">
-              The Parents/Guardians of these students are free to come to the school and meet the class teachers to know the progress of their children/wards on this day.
-            </p>
+            {parentNotice && <p className="pt-2 text-gray-700">{parentNotice}</p>}
           </div>
 
           <div className="pt-6 border-t border-gray-100 flex flex-wrap items-center justify-between gap-4">
             <span className="text-sm text-gray-500 font-sans">
-              Download the official school prospectus for comprehensive academic curriculum and regulations.
+              {prospectusNotice}
             </span>
             <a
-              href="/documents/original/prospectus-2.pdf"
+              href={prospectusUrl}
               download
               className="inline-flex items-center gap-2 px-6 py-3.5 rounded-full bg-[#B91C1C] hover:bg-[#991B1B] text-white text-sm font-heading font-bold uppercase tracking-wider transition-all shadow-sm hover:shadow-md border border-[#991B1B] hover:-translate-y-0.5 focus-visible:outline-2 focus-visible:outline-[#B91C1C] focus-visible:outline-offset-2"
             >
