@@ -156,6 +156,32 @@ export type FacilityAuditAction =
   | "FACILITY_ITEM_STATUS_CHANGED"
   | "FACILITY_ITEMS_REORDERED";
 
+export type AdmissionsAuditAction =
+  | "ADMISSION_STEP_CREATED"
+  | "ADMISSION_STEP_UPDATED"
+  | "ADMISSION_STEP_DELETED"
+  | "ADMISSION_STEP_STATUS_CHANGED"
+  | "ADMISSION_STEPS_REORDERED"
+  | "ADMISSION_ELIGIBILITY_CREATED"
+  | "ADMISSION_ELIGIBILITY_UPDATED"
+  | "ADMISSION_ELIGIBILITY_DELETED"
+  | "ADMISSION_ELIGIBILITY_STATUS_CHANGED"
+  | "ADMISSION_ELIGIBILITY_REORDERED"
+  | "ADMISSION_DOC_REQ_CREATED"
+  | "ADMISSION_DOC_REQ_UPDATED"
+  | "ADMISSION_DOC_REQ_DELETED"
+  | "ADMISSION_DOC_REQ_STATUS_CHANGED"
+  | "ADMISSION_DOC_REQS_REORDERED"
+  | "ADMISSION_FAQ_CREATED"
+  | "ADMISSION_FAQ_UPDATED"
+  | "ADMISSION_FAQ_DELETED"
+  | "ADMISSION_FAQ_STATUS_CHANGED"
+  | "ADMISSION_FAQS_REORDERED"
+  | "ENQUIRY_SUBMITTED"
+  | "ENQUIRY_STATUS_UPDATED"
+  | "ENQUIRY_NOTES_UPDATED"
+  | "ENQUIRY_DELETED";
+
 export type AuditAction =
   | AuthAuditAction
   | TopperAuditAction
@@ -169,7 +195,8 @@ export type AuditAction =
   | EventAuditAction
   | DownloadAuditAction
   | DisclosureAuditAction
-  | FacilityAuditAction;
+  | FacilityAuditAction
+  | AdmissionsAuditAction;
 
 export interface CreateAuditLogParams {
   userId?: string | null;
@@ -205,15 +232,21 @@ export interface CreateAuditLogParams {
     | "DisclosureSection"
     | "DisclosureDocument"
     | "FacilityCategory"
-    | "FacilityItem";
+    | "FacilityItem"
+    | "AdmissionStep"
+    | "AdmissionEligibilityCriteria"
+    | "AdmissionDocumentRequirement"
+    | "AdmissionFaq"
+    | "EnquirySubmission";
   entityId: string;
   metadata?: Record<string, unknown> | null;
   ipAddress?: string | null;
 }
 
 /**
- * Strips sensitive keys (passwords, tokens, cookies, secrets) from any metadata object
- * to prevent accidental security leakage into audit logs.
+ * Strips sensitive keys (passwords, tokens, cookies, secrets) and masks PII
+ * (phone numbers, email addresses) from any metadata object to prevent
+ * accidental security leakage into audit logs.
  */
 export function sanitizeAuditMetadata(
   meta?: Record<string, unknown> | null
@@ -245,8 +278,20 @@ export function sanitizeAuditMetadata(
     const result: Record<string, unknown> = {};
 
     for (const [key, val] of Object.entries(record)) {
-      if (forbiddenKeys.has(key.toLowerCase())) {
+      const lowerKey = key.toLowerCase();
+      if (forbiddenKeys.has(lowerKey)) {
         result[key] = "[REDACTED]";
+      } else if (
+        (lowerKey === "phone" || lowerKey === "phonenumber" || lowerKey === "mobile") &&
+        typeof val === "string"
+      ) {
+        result[key] = val.length > 4 ? "******" + val.slice(-4) : "******";
+      } else if (lowerKey === "email" && typeof val === "string") {
+        const parts = val.split("@");
+        result[key] =
+          parts.length === 2
+            ? `${parts[0].slice(0, 2)}***@***.${parts[1].split(".").pop() || "com"}`
+            : "[MASKED_EMAIL]";
       } else if (typeof val === "object" && val !== null) {
         result[key] = cleanObject(val);
       } else {
