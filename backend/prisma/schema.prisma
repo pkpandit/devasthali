@@ -990,3 +990,57 @@ model GeneralInstruction {
   @@index([slug])
   @@map("general_instructions")
 }
+
+// ==========================================
+// 21. ALUMNI NETWORK & CAREER OPPORTUNITIES (MILESTONE 17)
+// ==========================================
+
+model AlumniOverview {
+  id           String   @id @default("default")
+  badgeText    String?  @map("badge_text") @db.VarChar(100)
+  title        String?  @db.VarChar(150)
+  subtitle     String?  @db.VarChar(300)
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  @@map("alumni_overviews")
+}
+
+model AlumniReunion {
+  id                  String   @id @default(cuid())
+  slug                String   @unique @db.VarChar(120)
+  title               String   @db.VarChar(150)
+  description         String   @db.Text
+  heroImage           String?  @map("hero_image") @db.VarChar(500)
+  heroImageAlt        String?  @map("hero_image_alt") @db.VarChar(255)
+  heroImageStorageKey String?  @map("hero_image_storage_key") @db.VarChar(255)
+  eventDate           String?  @map("event_date") @db.VarChar(100)
+  displayOrder        Int      @default(0) @map("display_order")
+  isPublished         Boolean  @default(true) @map("is_published")
+  createdAt           DateTime @default(now()) @map("created_at")
+  updatedAt           DateTime @updatedAt @map("updated_at")
+
+  @@index([isPublished, displayOrder])
+  @@index([slug])
+  @@index([heroImageStorageKey])
+  @@map("alumni_reunions")
+}
+
+model CareerOpportunity {
+  id           String   @id @default(cuid())
+  slug         String   @unique @db.VarChar(120)
+  badgeText    String   @default("Institutional Notice") @map("badge_text") @db.VarChar(60)
+  title        String   @db.VarChar(150)
+  description  String   @db.Text
+  contactEmail String   @map("contact_email") @db.VarChar(150)
+  emailSubject String?  @map("email_subject") @db.VarChar(150)
+  ctaText      String   @default("Connect via Email") @map("cta_text") @db.VarChar(60)
+  displayOrder Int      @default(0) @map("display_order")
+  isPublished  Boolean  @default(true) @map("is_published")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  @@index([isPublished, displayOrder])
+  @@index([slug])
+  @@map("career_opportunities")
+}
