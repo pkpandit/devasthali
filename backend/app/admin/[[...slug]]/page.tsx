@@ -17,6 +17,7 @@ import { AdmissionsWorkspace } from "@/components/admin/admissions/AdmissionsWor
 import { AcademicsWorkspace } from "@/components/admin/academics/AcademicsWorkspace";
 import { ActivitiesWorkspace } from "@/components/admin/activities/ActivitiesWorkspace";
 import { InstructionsWorkspace } from "@/components/admin/instructions/InstructionsWorkspace";
+import { AlumniWorkspace } from "@/components/admin/alumni/AlumniWorkspace";
 import { Breadcrumbs } from "@/components/ui/Breadcrumbs";
 import { Badge } from "@/components/ui/Badge";
 import { Card } from "@/components/ui/Card";
@@ -1122,6 +1123,79 @@ export default async function AdminWorkspacePage({
           <InstructionsWorkspace
             overview={serializedOverview}
             instructions={serializedInstructions}
+          />
+        </div>
+      </Card>
+    );
+  }
+
+  // Specialization: /admin/students-parents/alumni renders interactive AlumniWorkspace
+  if (href === "/admin/students-parents/alumni") {
+    await requireRole(["SUPER_ADMIN"], href);
+
+    const [overview, reunions, opportunities] = await Promise.all([
+      prisma.alumniOverview.findUnique({
+        where: { id: "default" },
+      }),
+      prisma.alumniReunion.findMany({
+        orderBy: [{ displayOrder: "asc" }, { createdAt: "asc" }],
+      }),
+      prisma.careerOpportunity.findMany({
+        orderBy: [{ displayOrder: "asc" }, { createdAt: "asc" }],
+      }),
+    ]);
+
+    const serializedOverview = overview
+      ? {
+          ...overview,
+          createdAt: overview.createdAt.toISOString(),
+          updatedAt: overview.updatedAt.toISOString(),
+        }
+      : null;
+
+    const serializedReunions = reunions.map((reunion) => {
+      const { heroImageStorageKey: _omittedKey, ...rest } = reunion;
+      void _omittedKey;
+      return {
+        ...rest,
+        createdAt: reunion.createdAt.toISOString(),
+        updatedAt: reunion.updatedAt.toISOString(),
+      };
+    });
+
+    const serializedOpportunities = opportunities.map((opp) => ({
+      ...opp,
+      createdAt: opp.createdAt.toISOString(),
+      updatedAt: opp.updatedAt.toISOString(),
+    }));
+
+    return (
+      <Card as="section" aria-labelledby="admin-workspace-title">
+        <Breadcrumbs items={workspace.breadcrumbs} />
+
+        <div className="workspace-header">
+          <h1 className="workspace-title" id="admin-workspace-title" tabIndex={-1}>
+            {workspace.title}
+          </h1>
+          {workspace.badge && <Badge>{workspace.badge}</Badge>}
+        </div>
+
+        {workspace.description && (
+          <p className="workspace-description">{workspace.description}</p>
+        )}
+
+        <div className="workspace-meta-bar">
+          <PublicReferenceLink
+            publicHref={workspace.publicHref}
+            title={workspace.title}
+          />
+        </div>
+
+        <div className="workspace-content">
+          <AlumniWorkspace
+            overview={serializedOverview}
+            reunions={serializedReunions}
+            opportunities={serializedOpportunities}
           />
         </div>
       </Card>
