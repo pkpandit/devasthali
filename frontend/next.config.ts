@@ -28,6 +28,7 @@ function getMediaRemotePatterns() {
     "/api/public/media/toppers/**",
     "/api/public/media/gallery/**",
     "/api/public/media/events/**",
+    "/api/public/media/alumni/**",
   ];
 
   // Local development loopback patterns
