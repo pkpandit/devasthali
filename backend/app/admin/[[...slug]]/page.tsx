@@ -15,6 +15,7 @@ import { DisclosureWorkspace } from "@/components/admin/disclosure/DisclosureWor
 import { FacilityWorkspace } from "@/components/admin/facilities/FacilityWorkspace";
 import { AdmissionsWorkspace } from "@/components/admin/admissions/AdmissionsWorkspace";
 import { AcademicsWorkspace } from "@/components/admin/academics/AcademicsWorkspace";
+import { ActivitiesWorkspace } from "@/components/admin/activities/ActivitiesWorkspace";
 import { Breadcrumbs } from "@/components/ui/Breadcrumbs";
 import { Badge } from "@/components/ui/Badge";
 import { Card } from "@/components/ui/Card";
@@ -1002,6 +1003,65 @@ export default async function AdminWorkspacePage({
             eligibilityCriteria={serializedCriteria}
             documentRequirements={serializedDocuments}
             faqs={serializedFaqs}
+          />
+        </div>
+      </Card>
+    );
+  }
+
+  // Specialization: /admin/life-at-school/activities renders interactive ActivitiesWorkspace
+  if (href === "/admin/life-at-school/activities") {
+    await requireRole(["SUPER_ADMIN"], href);
+
+    const [overview, clubs] = await Promise.all([
+      prisma.activityOverview.findUnique({
+        where: { id: "default" },
+      }),
+      prisma.studentClub.findMany({
+        orderBy: [{ displayOrder: "asc" }, { id: "asc" }],
+      }),
+    ]);
+
+    const serializedOverview = overview
+      ? {
+          ...overview,
+          createdAt: overview.createdAt.toISOString(),
+          updatedAt: overview.updatedAt.toISOString(),
+        }
+      : null;
+
+    const serializedClubs = clubs.map((club) => ({
+      ...club,
+      createdAt: club.createdAt.toISOString(),
+      updatedAt: club.updatedAt.toISOString(),
+    }));
+
+    return (
+      <Card as="section" aria-labelledby="admin-workspace-title">
+        <Breadcrumbs items={workspace.breadcrumbs} />
+
+        <div className="workspace-header">
+          <h1 className="workspace-title" id="admin-workspace-title" tabIndex={-1}>
+            {workspace.title}
+          </h1>
+          {workspace.badge && <Badge>{workspace.badge}</Badge>}
+        </div>
+
+        {workspace.description && (
+          <p className="workspace-description">{workspace.description}</p>
+        )}
+
+        <div className="workspace-meta-bar">
+          <PublicReferenceLink
+            publicHref={workspace.publicHref}
+            title={workspace.title}
+          />
+        </div>
+
+        <div className="workspace-content">
+          <ActivitiesWorkspace
+            overview={serializedOverview}
+            clubs={serializedClubs}
           />
         </div>
       </Card>
