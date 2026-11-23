@@ -212,6 +212,14 @@ export type ActivityAuditAction =
   | "STUDENT_CLUB_TOGGLED"
   | "ACTIVITY_OVERVIEW_UPDATED";
 
+export type InstructionAuditAction =
+  | "INSTRUCTION_CREATED"
+  | "INSTRUCTION_UPDATED"
+  | "INSTRUCTION_DELETED"
+  | "INSTRUCTIONS_REORDERED"
+  | "INSTRUCTION_TOGGLED"
+  | "INSTRUCTION_OVERVIEW_UPDATED";
+
 export type AuditAction =
   | AuthAuditAction
   | TopperAuditAction
@@ -228,7 +236,8 @@ export type AuditAction =
   | FacilityAuditAction
   | AdmissionsAuditAction
   | AcademicAuditAction
-  | ActivityAuditAction;
+  | ActivityAuditAction
+  | InstructionAuditAction;
 
 export interface CreateAuditLogParams {
   userId?: string | null;
@@ -275,6 +284,8 @@ export interface CreateAuditLogParams {
     | "AcademicOverview"
     | "ActivityOverview"
     | "StudentClub"
+    | "InstructionOverview"
+    | "GeneralInstruction"
     | "EnquirySubmission";
   entityId: string;
   metadata?: Record<string, unknown> | null;
