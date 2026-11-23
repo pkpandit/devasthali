@@ -4,7 +4,7 @@ import path from "node:path";
 import crypto from "node:crypto";
 import { prisma } from "@/lib/server/prisma";
 
-export type ManagedMediaFolder = "toppers" | "gallery" | "events" | "facilities" | "academics";
+export type ManagedMediaFolder = "toppers" | "gallery" | "events" | "facilities" | "academics" | "activities";
 
 export const MANAGED_KEY_REGEX =
   /^(toppers\/top|gallery\/gal|events\/eve)_[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}\.webp$/;
@@ -14,6 +14,14 @@ export const MANAGED_FACILITY_KEY_REGEX =
 
 export const MANAGED_ACADEMIC_KEY_REGEX =
   /^academics\/aca_[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}\.webp$/;
+
+export const MANAGED_ACTIVITY_KEY_REGEX =
+  /^activities\/act_[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}\.webp$/;
+
+export function isValidManagedActivityKey(key: string | null | undefined): key is string {
+  if (!key) return false;
+  return MANAGED_ACTIVITY_KEY_REGEX.test(key);
+}
 
 export function isValidManagedFacilityKey(key: string | null | undefined): key is string {
   if (!key) return false;
@@ -30,7 +38,8 @@ export function isValidManagedMediaKey(key: string | null | undefined): key is s
   return (
     MANAGED_KEY_REGEX.test(key) ||
     MANAGED_FACILITY_KEY_REGEX.test(key) ||
-    MANAGED_ACADEMIC_KEY_REGEX.test(key)
+    MANAGED_ACADEMIC_KEY_REGEX.test(key) ||
+    MANAGED_ACTIVITY_KEY_REGEX.test(key)
   );
 }
 
@@ -85,6 +94,8 @@ export function generateManagedKey(folder: ManagedMediaFolder = "toppers"): stri
       ? "fac"
       : folder === "academics"
       ? "aca"
+      : folder === "activities"
+      ? "act"
       : "top";
   return `${folder}/${prefix}_${uuid}.webp`;
 }
@@ -165,6 +176,7 @@ export async function deleteManagedPhotoIfUnreferenced(
     eventCount,
     facilityItemCount,
     academicOverviewCount,
+    activityOverviewCount,
   ] = await Promise.all([
     prisma.boardResultTopper.count({ where: { photoStorageKey: storageKey } }),
     prisma.homepageHero.count({ where: { backgroundImageStorageKey: storageKey } }),
@@ -181,6 +193,7 @@ export async function deleteManagedPhotoIfUnreferenced(
     prisma.schoolEvent.count({ where: { coverImageStorageKey: storageKey } }),
     prisma.facilityItem.count({ where: { imageStorageKey: storageKey } }),
     prisma.academicOverview.count({ where: { heroImageStorageKey: storageKey } }),
+    prisma.activityOverview.count({ where: { heroImageStorageKey: storageKey } }),
   ]);
 
   const refCount =
@@ -198,7 +211,8 @@ export async function deleteManagedPhotoIfUnreferenced(
     galleryImageCount +
     eventCount +
     facilityItemCount +
-    academicOverviewCount;
+    academicOverviewCount +
+    activityOverviewCount;
 
   if (refCount > 0) {
     console.warn(

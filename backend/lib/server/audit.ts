@@ -203,6 +203,15 @@ export type AcademicAuditAction =
   | "ACADEMIC_RULE_TOGGLED"
   | "ACADEMIC_OVERVIEW_UPDATED";
 
+
+export type ActivityAuditAction =
+  | "STUDENT_CLUB_CREATED"
+  | "STUDENT_CLUB_UPDATED"
+  | "STUDENT_CLUB_DELETED"
+  | "STUDENT_CLUBS_REORDERED"
+  | "STUDENT_CLUB_TOGGLED"
+  | "ACTIVITY_OVERVIEW_UPDATED";
+
 export type AuditAction =
   | AuthAuditAction
   | TopperAuditAction
@@ -218,7 +227,8 @@ export type AuditAction =
   | DisclosureAuditAction
   | FacilityAuditAction
   | AdmissionsAuditAction
-  | AcademicAuditAction;
+  | AcademicAuditAction
+  | ActivityAuditAction;
 
 export interface CreateAuditLogParams {
   userId?: string | null;
@@ -263,6 +273,8 @@ export interface CreateAuditLogParams {
     | "AcademicStream"
     | "AcademicAssessmentRule"
     | "AcademicOverview"
+    | "ActivityOverview"
+    | "StudentClub"
     | "EnquirySubmission";
   entityId: string;
   metadata?: Record<string, unknown> | null;
