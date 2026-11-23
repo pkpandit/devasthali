@@ -4,7 +4,7 @@ import path from "node:path";
 import crypto from "node:crypto";
 import { prisma } from "@/lib/server/prisma";
 
-export type ManagedMediaFolder = "toppers" | "gallery" | "events" | "facilities" | "academics" | "activities";
+export type ManagedMediaFolder = "toppers" | "gallery" | "events" | "facilities" | "academics" | "activities" | "alumni";
 
 export const MANAGED_KEY_REGEX =
   /^(toppers\/top|gallery\/gal|events\/eve)_[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}\.webp$/;
@@ -20,7 +20,8 @@ export const MANAGED_ACTIVITY_KEY_REGEX =
 
 export function isValidManagedActivityKey(key: string | null | undefined): key is string {
   if (!key) return false;
-  return MANAGED_ACTIVITY_KEY_REGEX.test(key);
+  return MANAGED_ACTIVITY_KEY_REGEX.test(key) ||
+    MANAGED_ALUMNI_KEY_REGEX.test(key);
 }
 
 export function isValidManagedFacilityKey(key: string | null | undefined): key is string {
@@ -31,6 +32,14 @@ export function isValidManagedFacilityKey(key: string | null | undefined): key i
 export function isValidManagedAcademicKey(key: string | null | undefined): key is string {
   if (!key) return false;
   return MANAGED_ACADEMIC_KEY_REGEX.test(key);
+}
+
+export const MANAGED_ALUMNI_KEY_REGEX =
+  /^alumni\/alu_[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}\.webp$/;
+
+export function isValidManagedAlumniKey(key: string | null | undefined): key is string {
+  if (!key) return false;
+  return MANAGED_ALUMNI_KEY_REGEX.test(key);
 }
 
 export function isValidManagedMediaKey(key: string | null | undefined): key is string {
@@ -96,6 +105,8 @@ export function generateManagedKey(folder: ManagedMediaFolder = "toppers"): stri
       ? "aca"
       : folder === "activities"
       ? "act"
+      : folder === "alumni"
+      ? "alu"
       : "top";
   return `${folder}/${prefix}_${uuid}.webp`;
 }
@@ -177,6 +188,7 @@ export async function deleteManagedPhotoIfUnreferenced(
     facilityItemCount,
     academicOverviewCount,
     activityOverviewCount,
+    alumniReunionCount,
   ] = await Promise.all([
     prisma.boardResultTopper.count({ where: { photoStorageKey: storageKey } }),
     prisma.homepageHero.count({ where: { backgroundImageStorageKey: storageKey } }),
@@ -194,6 +206,7 @@ export async function deleteManagedPhotoIfUnreferenced(
     prisma.facilityItem.count({ where: { imageStorageKey: storageKey } }),
     prisma.academicOverview.count({ where: { heroImageStorageKey: storageKey } }),
     prisma.activityOverview.count({ where: { heroImageStorageKey: storageKey } }),
+    prisma.alumniReunion.count({ where: { heroImageStorageKey: storageKey } }),
   ]);
 
   const refCount =
@@ -212,7 +225,8 @@ export async function deleteManagedPhotoIfUnreferenced(
     eventCount +
     facilityItemCount +
     academicOverviewCount +
-    activityOverviewCount;
+    activityOverviewCount +
+    alumniReunionCount;
 
   if (refCount > 0) {
     console.warn(

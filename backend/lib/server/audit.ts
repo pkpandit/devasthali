@@ -212,6 +212,19 @@ export type ActivityAuditAction =
   | "STUDENT_CLUB_TOGGLED"
   | "ACTIVITY_OVERVIEW_UPDATED";
 
+export type AlumniAuditAction =
+  | "ALUMNI_OVERVIEW_UPDATED"
+  | "ALUMNI_REUNION_CREATED"
+  | "ALUMNI_REUNION_UPDATED"
+  | "ALUMNI_REUNION_DELETED"
+  | "ALUMNI_REUNIONS_REORDERED"
+  | "ALUMNI_REUNION_TOGGLED"
+  | "CAREER_OPPORTUNITY_CREATED"
+  | "CAREER_OPPORTUNITY_UPDATED"
+  | "CAREER_OPPORTUNITY_DELETED"
+  | "CAREER_OPPORTUNITIES_REORDERED"
+  | "CAREER_OPPORTUNITY_TOGGLED";
+
 export type InstructionAuditAction =
   | "INSTRUCTION_CREATED"
   | "INSTRUCTION_UPDATED"
@@ -237,7 +250,8 @@ export type AuditAction =
   | AdmissionsAuditAction
   | AcademicAuditAction
   | ActivityAuditAction
-  | InstructionAuditAction;
+  | InstructionAuditAction
+  | AlumniAuditAction;
 
 export interface CreateAuditLogParams {
   userId?: string | null;
@@ -286,6 +300,9 @@ export interface CreateAuditLogParams {
     | "StudentClub"
     | "InstructionOverview"
     | "GeneralInstruction"
+    | "AlumniOverview"
+    | "AlumniReunion"
+    | "CareerOpportunity"
     | "EnquirySubmission";
   entityId: string;
   metadata?: Record<string, unknown> | null;
