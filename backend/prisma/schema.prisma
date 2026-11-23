@@ -916,3 +916,44 @@ model AcademicOverview {
   @@index([heroImageStorageKey])
   @@map("academic_overviews")
 }
+
+// ==========================================
+// 19. CO-CURRICULAR & STUDENT CLUBS (MILESTONE 15)
+// ==========================================
+
+model ActivityOverview {
+  id                  String   @id @default("default")
+  badgeText           String?  @map("badge_text") @db.VarChar(100)
+  title               String?  @db.VarChar(150)
+  subtitle            String?  @db.VarChar(300)
+  arenaSize           String?  @map("arena_size") @db.VarChar(60)
+  cardTitle           String?  @map("card_title") @db.VarChar(150)
+  cardSubtitle        String?  @map("card_subtitle") @db.VarChar(200)
+  narrativeParagraph1 String?  @map("narrative_paragraph_1") @db.Text
+  narrativeParagraph2 String?  @map("narrative_paragraph_2") @db.Text
+  heroImage           String?  @map("hero_image") @db.VarChar(500)
+  heroImageAlt        String?  @map("hero_image_alt") @db.VarChar(255)
+  heroImageStorageKey String?  @map("hero_image_storage_key") @db.VarChar(255)
+  createdAt           DateTime @default(now()) @map("created_at")
+  updatedAt           DateTime @updatedAt @map("updated_at")
+
+  @@index([heroImageStorageKey])
+  @@map("activity_overviews")
+}
+
+model StudentClub {
+  id           String   @id @default(cuid())
+  slug         String   @unique @db.VarChar(120)
+  name         String   @db.VarChar(120)
+  category     String   @default("Cultural & Creative") @db.VarChar(80)
+  description  String?  @db.Text
+  iconName     String   @default("Activity") @map("icon_name") @db.VarChar(50)
+  displayOrder Int      @default(0) @map("display_order")
+  isPublished  Boolean  @default(true) @map("is_published")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  @@index([isPublished, displayOrder])
+  @@index([slug])
+  @@map("student_clubs")
+}
