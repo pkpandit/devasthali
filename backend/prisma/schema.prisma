@@ -957,3 +957,36 @@ model StudentClub {
   @@index([slug])
   @@map("student_clubs")
 }
+
+// ==========================================
+// 20. STUDENT CODE OF CONDUCT & GENERAL INSTRUCTIONS (MILESTONE 16)
+// ==========================================
+
+model InstructionOverview {
+  id           String   @id @default("default")
+  badgeText    String?  @map("badge_text") @db.VarChar(100)
+  title        String?  @db.VarChar(150)
+  subtitle     String?  @db.VarChar(300)
+  cardTitle    String?  @map("card_title") @db.VarChar(150)
+  cardSubtitle String?  @map("card_subtitle") @db.VarChar(200)
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  @@map("instruction_overviews")
+}
+
+model GeneralInstruction {
+  id           String   @id @default(cuid())
+  slug         String   @unique @db.VarChar(120)
+  ruleText     String   @map("rule_text") @db.VarChar(1000)
+  category     String   @default("General Discipline") @db.VarChar(80)
+  isCritical   Boolean  @default(false) @map("is_critical")
+  displayOrder Int      @default(0) @map("display_order")
+  isPublished  Boolean  @default(true) @map("is_published")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  @@index([isPublished, displayOrder])
+  @@index([slug])
+  @@map("general_instructions")
+}
