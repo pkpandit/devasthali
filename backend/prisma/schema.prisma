@@ -1044,3 +1044,83 @@ model CareerOpportunity {
   @@index([slug])
   @@map("career_opportunities")
 }
+
+// ==========================================
+// 22. ONLINE ADMISSION APPLICATIONS & DESK (MILESTONE 18)
+// ==========================================
+
+enum ApplicationStatus {
+  SUBMITTED
+  UNDER_REVIEW
+  VERIFIED
+  WITHDRAWN
+  REJECTED
+  ARCHIVED
+}
+
+model AdmissionRegistrationSetting {
+  id                 String   @id @default("default")
+  isRegistrationOpen Boolean  @default(false) @map("is_registration_open")
+  sessionLabel       String   @default("2026-27") @map("session_label") @db.VarChar(50)
+  guidanceNotice     String?  @map("guidance_notice") @db.Text
+  closedMessage      String?  @map("closed_message") @db.Text
+  updatedAt          DateTime @updatedAt @map("updated_at")
+
+  @@map("admission_registration_settings")
+}
+
+model AdmissionApplication {
+  id                    String            @id @default(cuid())
+  applicationNumber     String            @unique @map("application_number") @db.VarChar(40)
+  idempotencyKey        String            @unique @map("idempotency_key") @db.VarChar(64)
+  submissionFingerprint String            @map("submission_fingerprint") @db.VarChar(64)
+  sessionCode           String            @map("session_code") @db.VarChar(20)
+  appliedClass          String            @map("applied_class") @db.VarChar(50)
+  studentName           String            @map("student_name") @db.VarChar(150)
+  dob                   String            @db.VarChar(30)
+  gender                String            @db.VarChar(20)
+  nationality           String?           @default("Indian") @db.VarChar(50)
+  religion              String?           @db.VarChar(50)
+  category              String?           @db.VarChar(50)
+  mobile                String            @db.VarChar(30)
+  email                 String?           @db.VarChar(150)
+  address               String            @db.VarChar(500)
+  city                  String            @db.VarChar(100)
+
+  // Parent Details
+  fatherName            String            @map("father_name") @db.VarChar(150)
+  fatherMobile          String?           @map("father_mobile") @db.VarChar(30)
+  fatherOccupation      String?           @map("father_occupation") @db.VarChar(150)
+  motherName            String?           @map("mother_name") @db.VarChar(150)
+  motherMobile          String?           @map("mother_mobile") @db.VarChar(30)
+  motherOccupation      String?           @map("mother_occupation") @db.VarChar(150)
+
+  // Previous Academic Qualification
+  lastAttendedClass     String?           @map("last_attended_class") @db.VarChar(50)
+  previousSchoolName    String?           @map("previous_school_name") @db.VarChar(255)
+  previousSchoolBoard   String?           @map("previous_school_board") @db.VarChar(100)
+
+  declarationAgreed     Boolean           @map("declaration_agreed")
+  status                ApplicationStatus @default(SUBMITTED)
+  adminNotes            String?           @map("admin_notes") @db.Text
+  ipHash                String?           @map("ip_hash") @db.VarChar(64)
+  createdAt             DateTime          @default(now()) @map("created_at")
+  updatedAt             DateTime          @updatedAt @map("updated_at")
+
+  @@index([sessionCode, status, createdAt])
+  @@index([applicationNumber])
+  @@index([appliedClass])
+  @@index([createdAt])
+  @@index([ipHash, createdAt])
+  @@map("admission_applications")
+}
+
+model AdmissionSubmissionAttempt {
+  id        String   @id @default(cuid())
+  ipHash    String   @map("ip_hash") @db.VarChar(64)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([ipHash, createdAt])
+  @@map("admission_submission_attempts")
+}
+
