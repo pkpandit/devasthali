@@ -233,6 +233,11 @@ export type InstructionAuditAction =
   | "INSTRUCTION_TOGGLED"
   | "INSTRUCTION_OVERVIEW_UPDATED";
 
+export type OnlineAdmissionsAuditAction =
+  | "APPLICATION_SUBMITTED"
+  | "APPLICATION_STATUS_UPDATED"
+  | "REGISTRATION_SETTINGS_UPDATED";
+
 export type AuditAction =
   | AuthAuditAction
   | TopperAuditAction
@@ -251,7 +256,8 @@ export type AuditAction =
   | AcademicAuditAction
   | ActivityAuditAction
   | InstructionAuditAction
-  | AlumniAuditAction;
+  | AlumniAuditAction
+  | OnlineAdmissionsAuditAction;
 
 export interface CreateAuditLogParams {
   userId?: string | null;
@@ -303,7 +309,9 @@ export interface CreateAuditLogParams {
     | "AlumniOverview"
     | "AlumniReunion"
     | "CareerOpportunity"
-    | "EnquirySubmission";
+    | "EnquirySubmission"
+    | "AdmissionApplication"
+    | "AdmissionRegistrationSetting";
   entityId: string;
   metadata?: Record<string, unknown> | null;
   ipAddress?: string | null;

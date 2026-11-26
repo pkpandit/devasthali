@@ -80,9 +80,7 @@ export const onlineAdmissionApplicationSchema = z.object({
     .trim()
     .min(10, "Invalid idempotency key")
     .max(64, "Idempotency key too long"),
-  appliedClass: z.enum(ADMISSION_CLASSES, {
-    errorMap: () => ({ message: "Please select a valid applied class" }),
-  }),
+  appliedClass: z.enum(ADMISSION_CLASSES),
   studentName: z
     .string()
     .trim()
@@ -95,9 +93,7 @@ export const onlineAdmissionApplicationSchema = z.object({
       isValidNonFutureCalendarDate,
       "Please enter a valid, non-future calendar date of birth (YYYY-MM-DD)"
     ),
-  gender: z.enum(["Male", "Female"], {
-    errorMap: () => ({ message: "Please select gender (Male / Female)" }),
-  }),
+  gender: z.enum(["Male", "Female"]),
   nationality: z
     .string()
     .trim()
@@ -218,11 +214,7 @@ export const onlineAdmissionApplicationSchema = z.object({
     .transform((val) => (val && val.length > 0 ? val : null)),
 
   // Explicit Agreement & Honeypot
-  declarationAgreed: z.literal(true, {
-    errorMap: () => ({
-      message: "You must accept the declaration to submit the application",
-    }),
-  }),
+  declarationAgreed: z.literal(true),
   website_honey: z.string().optional().default(""),
 });
 
@@ -300,9 +292,7 @@ export function formatApplicationNumber(
 
 export const applicationStatusUpdateSchema = z.object({
   id: z.string().min(1, "Application ID is required"),
-  status: z.enum(APPLICATION_STATUSES, {
-    errorMap: () => ({ message: "Invalid application status" }),
-  }),
+  status: z.enum(APPLICATION_STATUSES),
   adminNotes: z
     .string()
     .trim()

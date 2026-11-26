@@ -14,6 +14,8 @@ import { DownloadWorkspace } from "@/components/admin/downloads/DownloadWorkspac
 import { DisclosureWorkspace } from "@/components/admin/disclosure/DisclosureWorkspace";
 import { FacilityWorkspace } from "@/components/admin/facilities/FacilityWorkspace";
 import { AdmissionsWorkspace } from "@/components/admin/admissions/AdmissionsWorkspace";
+import { OnlineAdmissionDeskWorkspace } from "@/components/admin/admissions/OnlineAdmissionDeskWorkspace";
+import type { ApplicationStatusType } from "@/lib/validation/online-admissions";
 import { AcademicsWorkspace } from "@/components/admin/academics/AcademicsWorkspace";
 import { ActivitiesWorkspace } from "@/components/admin/activities/ActivitiesWorkspace";
 import { InstructionsWorkspace } from "@/components/admin/instructions/InstructionsWorkspace";
