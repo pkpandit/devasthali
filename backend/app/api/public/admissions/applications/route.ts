@@ -247,10 +247,11 @@ export async function POST(req: NextRequest) {
         },
       });
       break; // Successfully inserted
-    } catch (dbErr: any) {
+    } catch (dbErr: unknown) {
+      const err = dbErr as { code?: string; meta?: { target?: string[] } };
       // Prisma P2002 indicates unique constraint violation
-      if (dbErr.code === "P2002") {
-        const target = (dbErr.meta?.target as string[]) || [];
+      if (err.code === "P2002") {
+        const target = (err.meta?.target as string[]) || [];
         const targetStr = Array.isArray(target) ? target.join(",") : String(target);
 
         // A. Idempotency Key collision (concurrent request with same key)
