@@ -1,14 +1,29 @@
 import React from "react";
 import type { Metadata } from "next";
-import { Sparkles, Download, FileText, CheckCircle2 } from "lucide-react";
+import { Sparkles, Download, FileText, CheckCircle2, AlertCircle } from "lucide-react";
+import { getPublicAdmissionsPublications } from "@/lib/api/admissions-publications";
 
-export const metadata: Metadata = {
-  title: "School Prospectus (Session 2026–27) | Devasthaly Vidyapeeth",
-  description:
-    "Download the official School Prospectus of Devasthaly Vidyapeeth, Chilkahar, Ballia. Comprehensive academic, residential, curriculum, and admission guidelines.",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const data = await getPublicAdmissionsPublications();
+  const session = data.overview?.sessionLabel ?? "2026–27";
 
-export default function SchoolProspectusPage() {
+  return {
+    title: `School Prospectus (Session ${session}) | Devasthaly Vidyapeeth`,
+    description: `Download the official School Prospectus of Devasthaly Vidyapeeth, Chilkahar, Ballia. Comprehensive academic, residential, curriculum, and admission guidelines for session ${session}.`,
+  };
+}
+
+export default async function SchoolProspectusPage() {
+  const { overview } = await getPublicAdmissionsPublications();
+
+  const session = overview?.sessionLabel ?? "2026–27";
+  const title = overview?.prospectusTitle ?? "Official Devasthaly Vidyapeeth Prospectus";
+  const description =
+    overview?.prospectusDescription ??
+    "Complete publication containing the vision of Founder Shri Chandra Shekhar, admission eligibility, code of conduct, academic syllabus, examination assessment rules, and hostel guidelines.";
+  const prospectusPdf = overview?.prospectusPdfUrl ?? "/documents/original/prospectus-2.pdf";
+  const prospectusLabel = overview?.prospectusDisplayLabel ?? "Prospectus PDF (5.6 MB)";
+
   return (
     <div className="w-full bg-[#F3F4F6] pb-16">
       {/* Full-Width White Edunex Page Header Banner */}
@@ -19,7 +34,7 @@ export default function SchoolProspectusPage() {
             <span>Admissions / Prospectus</span>
           </div>
           <h1 className="font-heading text-2xl sm:text-3xl lg:text-[40px] lg:leading-[50px] font-bold text-[#111827] tracking-tight">
-            School Prospectus (Session 2026–27)
+            School Prospectus (Session {session})
           </h1>
           <p className="text-base text-gray-600 leading-[1.7] mt-3 max-w-3xl leading-relaxed font-sans">
             Official institutional handbook, code of conduct, and curriculum syllabus for Devasthaly Vidyapeeth.
@@ -35,23 +50,32 @@ export default function SchoolProspectusPage() {
 
           <div className="space-y-2 max-w-xl mx-auto">
             <h2 className="font-heading text-2xl font-bold text-[#111827]">
-              Official Devasthaly Vidyapeeth Prospectus
+              {title}
             </h2>
             <p className="text-sm text-gray-600 font-sans leading-relaxed">
-              Complete publication containing the vision of Founder Shri Chandra Shekhar, admission eligibility, code of conduct, academic syllabus, examination assessment rules, and hostel guidelines.
+              {description}
             </p>
           </div>
 
-          <div className="pt-4">
-            <a
-              href="/documents/original/prospectus-2.pdf"
-              download
-              className="inline-flex items-center gap-2.5 px-8 py-4 rounded-full bg-[#B91C1C] hover:bg-[#991B1B] text-white font-heading font-bold text-sm uppercase tracking-wider transition-all duration-300 shadow-md hover:shadow-lg border border-[#991B1B] hover:-translate-y-0.5 focus-visible:outline-2 focus-visible:outline-[#B91C1C] focus-visible:outline-offset-2"
-            >
-              <Download className="w-5 h-5" />
-              <span>Download Official Prospectus PDF (5.6 MB)</span>
-            </a>
-          </div>
+          {prospectusPdf ? (
+            <div className="pt-4">
+              <a
+                href={prospectusPdf}
+                download
+                className="inline-flex items-center gap-2.5 px-8 py-4 rounded-full bg-[#B91C1C] hover:bg-[#991B1B] text-white font-heading font-bold text-sm uppercase tracking-wider transition-all duration-300 shadow-md hover:shadow-lg border border-[#991B1B] hover:-translate-y-0.5 focus-visible:outline-2 focus-visible:outline-[#B91C1C] focus-visible:outline-offset-2"
+              >
+                <Download className="w-5 h-5" />
+                <span>Download Official {prospectusLabel}</span>
+              </a>
+            </div>
+          ) : (
+            <div className="pt-4">
+              <div className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-amber-50 text-amber-800 text-sm font-medium border border-amber-200">
+                <AlertCircle className="w-4 h-4 text-amber-600" />
+                <span>Prospectus is currently being updated for Session {session}.</span>
+              </div>
+            </div>
+          )}
 
           <div className="pt-6 border-t border-gray-100 grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm text-gray-600 font-sans">
             <div className="flex items-center justify-center gap-2">
@@ -64,7 +88,7 @@ export default function SchoolProspectusPage() {
             </div>
             <div className="flex items-center justify-center gap-2">
               <CheckCircle2 className="w-4 h-4 text-[#B91C1C]" />
-              <span>Session 2026–27</span>
+              <span>Session {session}</span>
             </div>
           </div>
         </div>
@@ -72,4 +96,3 @@ export default function SchoolProspectusPage() {
     </div>
   );
 }
-

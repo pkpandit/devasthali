@@ -1,32 +1,21 @@
 import React from "react";
 import type { Metadata } from "next";
 import Link from "next/link";
-import { CheckCircle2, ArrowRight, Sparkles } from "lucide-react";
+import { CheckCircle2, ArrowRight, Sparkles, AlertCircle } from "lucide-react";
+import { getPublicAdmissionsPublications } from "@/lib/api/admissions-publications";
 
-export const metadata: Metadata = {
-  title: "Admission Procedure & Subject for Entrance Exam | Devasthaly Vidyapeeth",
-  description:
-    "Official admission procedure, registration rules (16th Jan to 20th March), demand draft requirements, and entrance examination subjects for Devasthaly Vidyapeeth, Chilkahar, Ballia.",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const data = await getPublicAdmissionsPublications();
+  const session = data.overview?.sessionLabel ?? "2026–27";
 
-export default function AdmissionProcedurePage() {
-  const rules = [
-    "Before admission child’s name has to be registered (16th January to 20th of March) in advance. A sum of Rs.1000/- is charged as registration fee for boarder and day scholar. The said payment is to done in form of Demand Draft (DD) in favour of \"Principal Devasthaly, Devasthaly Ballia\", Payable at Ballia, Along with application form.",
-    "No admission will be granted to the student unless a transfer certificate from the previous institution is produced along with application form",
-    "Formal admission is completed after the perusal of the application form by the principal and the parents are informed of his decision after a test and an interview",
-    "Every student will have to produce a birth certificate from from the Hospital, Nursing home, The Municipality or the Gram Panchayat",
-    "The child must have attained the age of four years at the time of admission in L.K.G.",
-    "If the child fails for two successive years he/ she will not allowed to continue his/her education in this institute",
-  ];
+  return {
+    title: `Admission Procedure & Subject for Entrance Exam (Session ${session}) | Devasthaly Vidyapeeth`,
+    description: `Official admission procedure, registration rules, demand draft requirements, and entrance examination subjects for session ${session} at Devasthaly Vidyapeeth, Chilkahar, Ballia.`,
+  };
+}
 
-  const examSubjects = [
-    { grade: "L.K.G.", subjects: "Oral Test" },
-    { grade: "U.K.G. To V", subjects: "English, Hindi, Maths" },
-    { grade: "VI to IX", subjects: "English, Maths, Science" },
-    { grade: "XI (Maths & Bio Group)", subjects: "English, Maths, Science" },
-    { grade: "XI (Commerce Group)", subjects: "English, Social Science & Maths" },
-    { grade: "XI (Humanity Group)", subjects: "English, Hindi & Social Science" },
-  ];
+export default async function AdmissionProcedurePage() {
+  const { procedureRules, entranceSubjects } = await getPublicAdmissionsPublications();
 
   return (
     <div className="w-full bg-[#F3F4F6] pb-16">
@@ -54,19 +43,28 @@ export default function AdmissionProcedurePage() {
             <span>Registration &amp; Eligibility Guidelines</span>
           </h2>
 
-          <div className="space-y-4">
-            {rules.map((rule, idx) => (
-              <div
-                key={idx}
-                className="p-4 sm:p-5 rounded-2xl bg-[#F3F4F6] border border-gray-200/80 flex items-start gap-3.5"
-              >
-                <CheckCircle2 className="w-5 h-5 text-[#B91C1C] shrink-0 mt-0.5" />
-                <p className="text-sm text-[#111827] leading-relaxed font-sans font-medium">
-                  {rule}
-                </p>
-              </div>
-            ))}
-          </div>
+          {procedureRules.length === 0 ? (
+            <div className="p-8 rounded-2xl bg-[#F3F4F6] border border-gray-200/80 text-center space-y-2">
+              <AlertCircle className="w-6 h-6 text-amber-600 mx-auto" />
+              <p className="text-sm text-gray-600 font-sans">
+                No admission procedure rules are currently published. Please contact our campus administrative desk.
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {procedureRules.map((rule) => (
+                <div
+                  key={rule.id}
+                  className="p-4 sm:p-5 rounded-2xl bg-[#F3F4F6] border border-gray-200/80 flex items-start gap-3.5"
+                >
+                  <CheckCircle2 className="w-5 h-5 text-[#B91C1C] shrink-0 mt-0.5" />
+                  <p className="text-sm text-[#111827] leading-relaxed font-sans font-medium">
+                    {rule.ruleText}
+                  </p>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Entrance Exam Subjects Table */}
@@ -76,24 +74,33 @@ export default function AdmissionProcedurePage() {
             <span>Subject For Entrance Examination</span>
           </h2>
 
-          <div className="overflow-x-auto border border-gray-200 rounded-2xl">
-            <table className="w-full text-sm text-left">
-              <thead className="bg-[#111827] text-white">
-                <tr>
-                  <th className="py-3 px-4 font-heading font-bold w-1/3">CLASS / GROUP</th>
-                  <th className="py-3 px-4 font-heading font-bold">EXAMINATION SUBJECTS</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-200 font-sans text-gray-800">
-                {examSubjects.map((item, idx) => (
-                  <tr key={idx} className="hover:bg-[#F3F4F6] transition-colors">
-                    <td className="py-3.5 px-4 font-bold text-[#111827]">{item.grade}</td>
-                    <td className="py-3.5 px-4 font-medium text-gray-700">{item.subjects}</td>
+          {entranceSubjects.length === 0 ? (
+            <div className="p-8 rounded-2xl bg-[#F3F4F6] border border-gray-200/80 text-center space-y-2">
+              <AlertCircle className="w-6 h-6 text-amber-600 mx-auto" />
+              <p className="text-sm text-gray-600 font-sans">
+                No entrance examination subjects are currently scheduled.
+              </p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto border border-gray-200 rounded-2xl">
+              <table className="w-full text-sm text-left">
+                <thead className="bg-[#111827] text-white">
+                  <tr>
+                    <th className="py-3 px-4 font-heading font-bold w-1/3">CLASS / GROUP</th>
+                    <th className="py-3 px-4 font-heading font-bold">EXAMINATION SUBJECTS</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody className="divide-y divide-gray-200 font-sans text-gray-800">
+                  {entranceSubjects.map((item) => (
+                    <tr key={item.id} className="hover:bg-[#F3F4F6] transition-colors">
+                      <td className="py-3.5 px-4 font-bold text-[#111827]">{item.classGrade}</td>
+                      <td className="py-3.5 px-4 font-medium text-gray-700">{item.subjects}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
 
           <div className="pt-4 flex flex-wrap items-center justify-between gap-4 border-t border-gray-100">
             <Link
