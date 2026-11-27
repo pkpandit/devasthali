@@ -4,17 +4,17 @@ import React, { useState, useCallback } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { Container } from "@/components/ui/Container";
-import { APPROVED_TESTIMONIALS, type TestimonialItem } from "@/lib/testimonials-data";
+import type { HomepageTestimonialData } from "@/types/homepage";
 import { Play, Quote, ChevronLeft, ChevronRight, Star } from "lucide-react";
 
 interface TestimonialSectionProps {
-  testimonials?: TestimonialItem[];
+  testimonials?: HomepageTestimonialData[];
   /** Flag to show draft preview banner when no approved testimonials are present */
   showDraftPlaceholder?: boolean;
 }
 
 export function TestimonialSection({
-  testimonials = APPROVED_TESTIMONIALS,
+  testimonials = [],
   showDraftPlaceholder = false,
 }: TestimonialSectionProps) {
   const [activeIndex, setActiveIndex] = useState(0);
@@ -219,10 +219,14 @@ export function TestimonialSection({
                     >
                       {/* Author Information Header (.tes_top) */}
                       <div className="flex items-center gap-4 mb-4 text-left">
-                        {item.avatar ? (
+                        {item.avatarUrl || (item as unknown as { avatar?: string }).avatar ? (
                           <div className="relative w-14 h-14 sm:w-16 sm:h-16 rounded-full overflow-hidden border-2 border-[#E5E7EB] shrink-0">
                             <Image
-                              src={item.avatar}
+                              src={
+                                item.avatarUrl ||
+                                (item as unknown as { avatar?: string }).avatar ||
+                                ""
+                              }
                               alt=""
                               aria-hidden="true"
                               fill
@@ -234,7 +238,7 @@ export function TestimonialSection({
                             className="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-[#B91C1C] text-white flex items-center justify-center font-heading font-bold text-lg sm:text-xl shadow-xs shrink-0 select-none"
                             aria-hidden="true"
                           >
-                            {item.monogram}
+                            {item.monogram || "★"}
                           </div>
                         )}
 
@@ -263,13 +267,17 @@ export function TestimonialSection({
                       </blockquote>
 
                       {/* Star Ratings (Preserving Existing 5-Star Benchmark) */}
-                      {item.rating && (
+                      {typeof item.rating === "number" && (
                         <div
                           className="flex items-center gap-1 mt-4 text-[#F59E0B]"
                           aria-label={`${item.rating} out of 5 stars`}
                         >
-                          {[...Array(item.rating)].map((_, i) => (
-                            <Star key={i} className="w-4 h-4 fill-[#F59E0B] text-[#F59E0B]" aria-hidden="true" />
+                          {[...Array(Math.max(1, Math.min(5, Math.floor(item.rating))))].map((_, i) => (
+                            <Star
+                              key={`${item.id}-star-${i}`}
+                              className="w-4 h-4 fill-[#F59E0B] text-[#F59E0B]"
+                              aria-hidden="true"
+                            />
                           ))}
                         </div>
                       )}

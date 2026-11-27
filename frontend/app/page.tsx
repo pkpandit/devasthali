@@ -228,7 +228,7 @@ async function HomeNoticesSection() {
 }
 
 export default async function HomePage() {
-  const { hero, statistics, highlights, announcement, faqs } =
+  const { hero, statistics, highlights, announcement, faqs, testimonials } =
     await getPublicHomepage();
 
   return (
@@ -1122,7 +1122,7 @@ export default async function HomePage() {
       {/* =========================================================================
           SECTION 9: DEDICATED PARENT & COMMUNITY TESTIMONIALS (Edplus Reference)
       ========================================================================= */}
-      <TestimonialSection />
+      <TestimonialSection testimonials={testimonials} />
 
       {/* =========================================================================
           SECTION 10: FREQUENTLY ASKED QUESTIONS (FAQ)

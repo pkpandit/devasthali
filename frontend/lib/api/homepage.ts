@@ -95,6 +95,18 @@ export const publicFaqSchema = z.object({
   displayOrder: z.number(),
 });
 
+export const publicTestimonialSchema = z.object({
+  id: z.string().min(1),
+  author: z.string().min(1),
+  relationship: z.string().min(1),
+  subject: z.string().nullable().optional(),
+  quote: z.string().min(1),
+  rating: z.number().int().min(1).max(5),
+  avatarUrl: z.string().nullable().optional(),
+  monogram: z.string().min(1),
+  displayOrder: z.number(),
+});
+
 export const publicHomepageResponseSchema = z.object({
   success: z.boolean(),
   data: z.object({
@@ -104,6 +116,7 @@ export const publicHomepageResponseSchema = z.object({
     highlights: z.array(publicHighlightSchema),
     announcement: publicAnnouncementSchema.default(null),
     faqs: z.array(publicFaqSchema).default([]),
+    testimonials: z.array(publicTestimonialSchema).default([]),
   }),
 });
 
@@ -293,6 +306,7 @@ export const STATIC_FALLBACK_HOMEPAGE: PublicHomepageData = {
   highlights: STATIC_FALLBACK_HIGHLIGHTS,
   announcement: STATIC_FALLBACK_ANNOUNCEMENT,
   faqs: STATIC_FALLBACK_FAQS,
+  testimonials: [],
 };
 
 function getBackendOrigin(): string | null {
