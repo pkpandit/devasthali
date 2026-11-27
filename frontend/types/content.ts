@@ -422,6 +422,38 @@ export interface PublicAdmissionsPublicationsData {
   entranceSubjects: PublicEntranceExamSubject[];
 }
 
+// ==========================================
+// Life at School (Hostels & Transport) Interfaces
+// ==========================================
+
+export interface PublicHostelFeature {
+  id: string;
+  title: string;
+  description: string;
+  displayOrder: number;
+}
+
+export interface PublicHostelSection {
+  badge: string;
+  title: string;
+  description: string;
+  features: PublicHostelFeature[];
+}
+
+export interface PublicTransportSection {
+  badge: string;
+  title: string;
+  description: string;
+  ctaText: string;
+  ctaUrl: string;
+}
+
+export interface PublicLifeAtSchoolOverview {
+  hostel: PublicHostelSection | null;
+  transport: PublicTransportSection | null;
+}
+
+
 export interface SchoolEvent {
   id: string;
   title: string;

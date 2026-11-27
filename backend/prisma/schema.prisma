@@ -1180,3 +1180,53 @@ model EntranceExamSubject {
   @@map("entrance_exam_subjects")
 }
 
+// ==========================================
+// 21. RESIDENTIAL HOSTEL & BOARDING
+// ==========================================
+
+model HostelSection {
+  id          String          @id @default("default")
+  badge       String          @default("Residential Boarding Life") @db.VarChar(100)
+  title       String          @default("A Safe, Caring \"Home Away From Home\"") @db.VarChar(200)
+  description String          @db.Text
+  features    HostelFeature[]
+  createdAt   DateTime        @default(now()) @map("created_at")
+  updatedAt   DateTime        @updatedAt @map("updated_at")
+
+  @@map("hostel_sections")
+}
+
+model HostelFeature {
+  id           String        @id @default(cuid())
+  sectionId    String        @default("default") @map("section_id")
+  section      HostelSection @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+  title        String        @db.VarChar(150)
+  description  String        @db.Text
+  displayOrder Int           @default(0) @map("display_order")
+  isPublished  Boolean       @default(true) @map("is_published")
+  createdAt    DateTime      @default(now()) @map("created_at")
+  updatedAt    DateTime      @updatedAt @map("updated_at")
+
+  @@index([sectionId, displayOrder])
+  @@index([sectionId, isPublished])
+  @@map("hostel_features")
+}
+
+// ==========================================
+// 22. SAFE TRANSPORT FLEET
+// ==========================================
+
+model TransportSection {
+  id          String   @id @default("default")
+  badge       String   @default("Day-Scholar Transport Network") @db.VarChar(100)
+  title       String   @default("Safe, GPS-Tracked Transportation Fleet") @db.VarChar(200)
+  description String   @db.Text
+  ctaText     String   @default("Contact Transport Coordinator for Pick-up Node Details →") @map("cta_text") @db.VarChar(150)
+  ctaUrl      String   @default("/contact") @map("cta_url") @db.VarChar(255)
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@map("transport_sections")
+}
+
+
