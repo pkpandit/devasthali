@@ -110,7 +110,7 @@ export type AdmissionOverviewUpdateInput = z.infer<typeof admissionOverviewUpdat
 
 export const feeStructurePageCreateSchema = z.object({
   pageNumber: z
-    .number({ invalid_type_error: "Page number must be a number" })
+    .number()
     .int("Page number must be an integer")
     .min(1, "Page number must be at least 1"),
   title: z
@@ -129,7 +129,7 @@ export const feeStructurePageCreateSchema = z.object({
 export const feeStructurePageUpdateSchema = z.object({
   id: z.string().min(1, "Page ID is required"),
   pageNumber: z
-    .number({ invalid_type_error: "Page number must be a number" })
+    .number()
     .int("Page number must be an integer")
     .min(1, "Page number must be at least 1"),
   title: z

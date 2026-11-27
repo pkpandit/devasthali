@@ -15,6 +15,9 @@ import { DisclosureWorkspace } from "@/components/admin/disclosure/DisclosureWor
 import { FacilityWorkspace } from "@/components/admin/facilities/FacilityWorkspace";
 import { AdmissionsWorkspace } from "@/components/admin/admissions/AdmissionsWorkspace";
 import { OnlineAdmissionDeskWorkspace } from "@/components/admin/admissions/OnlineAdmissionDeskWorkspace";
+import { FeeStructureWorkspace } from "@/components/admin/admissions/FeeStructureWorkspace";
+import { ProspectusWorkspace } from "@/components/admin/admissions/ProspectusWorkspace";
+import { ProcedureWorkspace } from "@/components/admin/admissions/ProcedureWorkspace";
 import type { ApplicationStatusType } from "@/lib/validation/online-admissions";
 import { AcademicsWorkspace } from "@/components/admin/academics/AcademicsWorkspace";
 import { ActivitiesWorkspace } from "@/components/admin/activities/ActivitiesWorkspace";
@@ -1007,6 +1010,237 @@ export default async function AdminWorkspacePage({
             eligibilityCriteria={serializedCriteria}
             documentRequirements={serializedDocuments}
             faqs={serializedFaqs}
+          />
+        </div>
+      </Card>
+    );
+  }
+
+  // Specialization: /admin/admissions/fees renders interactive FeeStructureWorkspace
+  if (href === "/admin/admissions/fees") {
+    await requireRole(["SUPER_ADMIN"], href);
+
+    const [overview, feePages] = await Promise.all([
+      prisma.admissionOverview.findUnique({
+        where: { id: "default" },
+      }),
+      prisma.feeStructurePage.findMany({
+        orderBy: [{ displayOrder: "asc" }, { pageNumber: "asc" }, { id: "asc" }],
+      }),
+    ]);
+
+    const serializedOverview = overview
+      ? {
+          ...overview,
+          createdAt: overview.createdAt.toISOString(),
+          updatedAt: overview.updatedAt.toISOString(),
+        }
+      : null;
+
+    const serializedFeePages = feePages.map((page) => ({
+      ...page,
+      createdAt: page.createdAt.toISOString(),
+      updatedAt: page.updatedAt.toISOString(),
+    }));
+
+    return (
+      <Card as="section" aria-labelledby="admin-workspace-title">
+        <Breadcrumbs items={workspace.breadcrumbs} />
+        <div className="workspace-header">
+          <h1 className="workspace-title" id="admin-workspace-title" tabIndex={-1}>
+            {workspace.title}
+          </h1>
+          {workspace.badge && <Badge>{workspace.badge}</Badge>}
+        </div>
+        {workspace.description && (
+          <p className="workspace-description">{workspace.description}</p>
+        )}
+        <div className="workspace-meta-bar">
+          <PublicReferenceLink
+            publicHref={workspace.publicHref}
+            title={workspace.title}
+          />
+        </div>
+        <div className="workspace-content">
+          <FeeStructureWorkspace
+            overview={serializedOverview}
+            feePages={serializedFeePages}
+          />
+        </div>
+      </Card>
+    );
+  }
+
+  // Specialization: /admin/admissions/prospectus renders interactive ProspectusWorkspace
+  if (href === "/admin/admissions/prospectus") {
+    await requireRole(["SUPER_ADMIN"], href);
+
+    const overview = await prisma.admissionOverview.findUnique({
+      where: { id: "default" },
+    });
+
+    const serializedOverview = overview
+      ? {
+          ...overview,
+          createdAt: overview.createdAt.toISOString(),
+          updatedAt: overview.updatedAt.toISOString(),
+        }
+      : null;
+
+    return (
+      <Card as="section" aria-labelledby="admin-workspace-title">
+        <Breadcrumbs items={workspace.breadcrumbs} />
+        <div className="workspace-header">
+          <h1 className="workspace-title" id="admin-workspace-title" tabIndex={-1}>
+            {workspace.title}
+          </h1>
+          {workspace.badge && <Badge>{workspace.badge}</Badge>}
+        </div>
+        {workspace.description && (
+          <p className="workspace-description">{workspace.description}</p>
+        )}
+        <div className="workspace-meta-bar">
+          <PublicReferenceLink
+            publicHref={workspace.publicHref}
+            title={workspace.title}
+          />
+        </div>
+        <div className="workspace-content">
+          <ProspectusWorkspace overview={serializedOverview} />
+        </div>
+      </Card>
+    );
+  }
+
+  // Specialization: /admin/admissions/procedure renders interactive ProcedureWorkspace
+  if (href === "/admin/admissions/procedure") {
+    await requireRole(["SUPER_ADMIN"], href);
+
+    const [rules, entranceSubjects] = await Promise.all([
+      prisma.admissionProcedureRule.findMany({
+        orderBy: [{ displayOrder: "asc" }, { id: "asc" }],
+      }),
+      prisma.entranceExamSubject.findMany({
+        orderBy: [{ displayOrder: "asc" }, { id: "asc" }],
+      }),
+    ]);
+
+    const serializedRules = rules.map((r) => ({
+      ...r,
+      createdAt: r.createdAt.toISOString(),
+      updatedAt: r.updatedAt.toISOString(),
+    }));
+
+    const serializedEntranceSubjects = entranceSubjects.map((s) => ({
+      ...s,
+      createdAt: s.createdAt.toISOString(),
+      updatedAt: s.updatedAt.toISOString(),
+    }));
+
+    return (
+      <Card as="section" aria-labelledby="admin-workspace-title">
+        <Breadcrumbs items={workspace.breadcrumbs} />
+        <div className="workspace-header">
+          <h1 className="workspace-title" id="admin-workspace-title" tabIndex={-1}>
+            {workspace.title}
+          </h1>
+          {workspace.badge && <Badge>{workspace.badge}</Badge>}
+        </div>
+        {workspace.description && (
+          <p className="workspace-description">{workspace.description}</p>
+        )}
+        <div className="workspace-meta-bar">
+          <PublicReferenceLink
+            publicHref={workspace.publicHref}
+            title={workspace.title}
+          />
+        </div>
+        <div className="workspace-content">
+          <ProcedureWorkspace
+            rules={serializedRules}
+            entranceSubjects={serializedEntranceSubjects}
+          />
+        </div>
+      </Card>
+    );
+  }
+
+  // Specialization: /admin/admissions/online-form renders interactive OnlineAdmissionDeskWorkspace
+  if (href === "/admin/admissions/online-form") {
+    await requireRole(["SUPER_ADMIN"], href);
+
+    const [applications, rawSettings] = await Promise.all([
+      prisma.admissionApplication.findMany({
+        orderBy: [{ createdAt: "desc" }],
+      }),
+      prisma.admissionRegistrationSetting.findUnique({
+        where: { id: "default" },
+      }),
+    ]);
+
+    const settings = {
+      id: rawSettings?.id ?? "default",
+      isRegistrationOpen: rawSettings?.isRegistrationOpen ?? false,
+      sessionLabel: rawSettings?.sessionLabel ?? "2026-27",
+      guidanceNotice: rawSettings?.guidanceNotice ?? null,
+      closedMessage: rawSettings?.closedMessage ?? null,
+      updatedAt: rawSettings?.updatedAt.toISOString() ?? new Date().toISOString(),
+    };
+
+    const serializedApplications = applications.map((app) => ({
+      id: app.id,
+      applicationNumber: app.applicationNumber,
+      idempotencyKey: app.idempotencyKey,
+      sessionCode: app.sessionCode,
+      appliedClass: app.appliedClass,
+      studentName: app.studentName,
+      dob: app.dob,
+      gender: app.gender,
+      nationality: app.nationality,
+      religion: app.religion,
+      category: app.category,
+      mobile: app.mobile,
+      email: app.email,
+      address: app.address,
+      city: app.city,
+      fatherName: app.fatherName,
+      fatherMobile: app.fatherMobile,
+      fatherOccupation: app.fatherOccupation,
+      motherName: app.motherName,
+      motherMobile: app.motherMobile,
+      motherOccupation: app.motherOccupation,
+      lastAttendedClass: app.lastAttendedClass,
+      previousSchoolName: app.previousSchoolName,
+      previousSchoolBoard: app.previousSchoolBoard,
+      declarationAgreed: app.declarationAgreed,
+      status: app.status as ApplicationStatusType,
+      adminNotes: app.adminNotes,
+      createdAt: app.createdAt.toISOString(),
+      updatedAt: app.updatedAt.toISOString(),
+    }));
+
+    return (
+      <Card as="section" aria-labelledby="admin-workspace-title">
+        <Breadcrumbs items={workspace.breadcrumbs} />
+        <div className="workspace-header">
+          <h1 className="workspace-title" id="admin-workspace-title" tabIndex={-1}>
+            {workspace.title}
+          </h1>
+          {workspace.badge && <Badge>{workspace.badge}</Badge>}
+        </div>
+        {workspace.description && (
+          <p className="workspace-description">{workspace.description}</p>
+        )}
+        <div className="workspace-meta-bar">
+          <PublicReferenceLink
+            publicHref={workspace.publicHref}
+            title={workspace.title}
+          />
+        </div>
+        <div className="workspace-content">
+          <OnlineAdmissionDeskWorkspace
+            applications={serializedApplications}
+            settings={settings}
           />
         </div>
       </Card>

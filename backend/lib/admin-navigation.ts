@@ -327,7 +327,6 @@ export const adminRedirects: Record<string, string> = {
   "/admin/about/principals-message": "/admin/about-leadership",
   "/admin/academics/curriculum": "/admin/academics",
   "/admin/admissions/overview": "/admin/admissions",
-  "/admin/admissions/procedure": "/admin/admissions",
 };
 
 export function getAdminRedirect(href: string): string | undefined {
