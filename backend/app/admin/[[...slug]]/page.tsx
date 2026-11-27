@@ -13,6 +13,8 @@ import { EventsWorkspace } from "@/components/admin/events/EventsWorkspace";
 import { DownloadWorkspace } from "@/components/admin/downloads/DownloadWorkspace";
 import { DisclosureWorkspace } from "@/components/admin/disclosure/DisclosureWorkspace";
 import { FacilityWorkspace } from "@/components/admin/facilities/FacilityWorkspace";
+import { HostelWorkspace } from "@/components/admin/life-at-school/HostelWorkspace";
+import { TransportWorkspace } from "@/components/admin/life-at-school/TransportWorkspace";
 import { AdmissionsWorkspace } from "@/components/admin/admissions/AdmissionsWorkspace";
 import { OnlineAdmissionDeskWorkspace } from "@/components/admin/admissions/OnlineAdmissionDeskWorkspace";
 import { FeeStructureWorkspace } from "@/components/admin/admissions/FeeStructureWorkspace";
@@ -927,6 +929,121 @@ export default async function AdminWorkspacePage({
       </Card>
     );
   }
+
+  // Specialization: /admin/life-at-school/hostels renders interactive HostelWorkspace
+  if (href === "/admin/life-at-school/hostels") {
+    await requireRole(["SUPER_ADMIN"], href);
+
+    const section = await prisma.hostelSection.findUnique({
+      where: { id: "default" },
+      include: {
+        features: {
+          orderBy: [{ displayOrder: "asc" }, { createdAt: "asc" }],
+        },
+      },
+    });
+
+    const serializedSection = section
+      ? {
+          id: section.id,
+          badge: section.badge,
+          title: section.title,
+          description: section.description,
+          createdAt: section.createdAt.toISOString(),
+          updatedAt: section.updatedAt.toISOString(),
+        }
+      : null;
+
+    const serializedFeatures = (section?.features ?? []).map((f) => ({
+      id: f.id,
+      sectionId: f.sectionId,
+      title: f.title,
+      description: f.description,
+      displayOrder: f.displayOrder,
+      isPublished: f.isPublished,
+      createdAt: f.createdAt.toISOString(),
+      updatedAt: f.updatedAt.toISOString(),
+    }));
+
+    return (
+      <Card as="section" aria-labelledby="admin-workspace-title">
+        <Breadcrumbs items={workspace.breadcrumbs} />
+
+        <div className="workspace-header">
+          <h1 className="workspace-title" id="admin-workspace-title" tabIndex={-1}>
+            {workspace.title}
+          </h1>
+          {workspace.badge && <Badge>{workspace.badge}</Badge>}
+        </div>
+
+        {workspace.description && (
+          <p className="workspace-description">{workspace.description}</p>
+        )}
+
+        <div className="workspace-meta-bar">
+          <PublicReferenceLink
+            publicHref={workspace.publicHref}
+            title={workspace.title}
+          />
+        </div>
+
+        <div className="workspace-content">
+          <HostelWorkspace section={serializedSection} features={serializedFeatures} />
+        </div>
+      </Card>
+    );
+  }
+
+  // Specialization: /admin/life-at-school/transport renders interactive TransportWorkspace
+  if (href === "/admin/life-at-school/transport") {
+    await requireRole(["SUPER_ADMIN"], href);
+
+    const section = await prisma.transportSection.findUnique({
+      where: { id: "default" },
+    });
+
+    const serializedSection = section
+      ? {
+          id: section.id,
+          badge: section.badge,
+          title: section.title,
+          description: section.description,
+          ctaText: section.ctaText,
+          ctaUrl: section.ctaUrl,
+          createdAt: section.createdAt.toISOString(),
+          updatedAt: section.updatedAt.toISOString(),
+        }
+      : null;
+
+    return (
+      <Card as="section" aria-labelledby="admin-workspace-title">
+        <Breadcrumbs items={workspace.breadcrumbs} />
+
+        <div className="workspace-header">
+          <h1 className="workspace-title" id="admin-workspace-title" tabIndex={-1}>
+            {workspace.title}
+          </h1>
+          {workspace.badge && <Badge>{workspace.badge}</Badge>}
+        </div>
+
+        {workspace.description && (
+          <p className="workspace-description">{workspace.description}</p>
+        )}
+
+        <div className="workspace-meta-bar">
+          <PublicReferenceLink
+            publicHref={workspace.publicHref}
+            title={workspace.title}
+          />
+        </div>
+
+        <div className="workspace-content">
+          <TransportWorkspace section={serializedSection} />
+        </div>
+      </Card>
+    );
+  }
+
 
   // Specialization: /admin/admissions renders interactive AdmissionsWorkspace
   if (href === "/admin/admissions") {

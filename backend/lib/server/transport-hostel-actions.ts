@@ -3,7 +3,7 @@
 import { revalidatePath, revalidateTag } from "next/cache";
 import { prisma } from "@/lib/server/prisma";
 import { requireRole } from "@/lib/server/auth";
-import { recordAuditLog } from "@/lib/server/audit";
+import { recordAuditEvent } from "@/lib/server/audit";
 import {
   hostelSectionUpdateSchema,
   hostelFeatureCreateSchema,
@@ -73,7 +73,7 @@ export async function updateHostelSectionAction(
       },
     });
 
-    await recordAuditLog({
+    await recordAuditEvent({
       userId: user.id,
       action: "HOSTEL_SECTION_UPDATED",
       entityType: "HostelSection",
@@ -142,7 +142,7 @@ export async function createHostelFeatureAction(
       },
     });
 
-    await recordAuditLog({
+    await recordAuditEvent({
       userId: user.id,
       action: "HOSTEL_FEATURE_CREATED",
       entityType: "HostelFeature",
@@ -197,7 +197,7 @@ export async function updateHostelFeatureAction(
       },
     });
 
-    await recordAuditLog({
+    await recordAuditEvent({
       userId: user.id,
       action: "HOSTEL_FEATURE_UPDATED",
       entityType: "HostelFeature",
@@ -243,7 +243,7 @@ export async function deleteHostelFeatureAction(
       where: { id: parsed.data.id },
     });
 
-    await recordAuditLog({
+    await recordAuditEvent({
       userId: user.id,
       action: "HOSTEL_FEATURE_DELETED",
       entityType: "HostelFeature",
@@ -289,7 +289,7 @@ export async function toggleHostelFeatureStatusAction(
       data: { isPublished: newStatus },
     });
 
-    await recordAuditLog({
+    await recordAuditEvent({
       userId: user.id,
       action: "HOSTEL_FEATURE_STATUS_CHANGED",
       entityType: "HostelFeature",
@@ -353,7 +353,7 @@ export async function reorderHostelFeaturesAction(
       )
     );
 
-    await recordAuditLog({
+    await recordAuditEvent({
       userId: user.id,
       action: "HOSTEL_FEATURES_REORDERED",
       entityType: "HostelFeature",
@@ -412,7 +412,7 @@ export async function updateTransportSectionAction(
       },
     });
 
-    await recordAuditLog({
+    await recordAuditEvent({
       userId: user.id,
       action: "TRANSPORT_SECTION_UPDATED",
       entityType: "TransportSection",
