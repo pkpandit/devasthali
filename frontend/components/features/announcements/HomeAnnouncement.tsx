@@ -1,12 +1,39 @@
 "use client";
 
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { X, ArrowRight, Sparkles } from "lucide-react";
+import type { HomepageAnnouncementData } from "@/types/homepage";
 import { homeAnnouncement } from "@/lib/content/announcements";
 
-export function HomeAnnouncement() {
+interface HomeAnnouncementProps {
+  config?: HomepageAnnouncementData | null;
+}
+
+export function HomeAnnouncement({ config }: HomeAnnouncementProps = {}) {
+  // If config is explicitly provided, use it. Otherwise fall back to static definition if enabled.
+  const announcement = useMemo(() => {
+    if (config !== undefined) {
+      return config;
+    }
+    if (homeAnnouncement.enabled) {
+      return {
+        enabled: homeAnnouncement.enabled,
+        title: homeAnnouncement.title,
+        badge: homeAnnouncement.badge,
+        subtitle: homeAnnouncement.subtitle,
+        imageUrl: homeAnnouncement.image.src,
+        imageAlt: homeAnnouncement.image.alt,
+        linkHref: homeAnnouncement.link.href,
+        linkLabel: homeAnnouncement.link.label,
+        delayMs: homeAnnouncement.delayMs,
+        dismissalKey: homeAnnouncement.dismissalKey,
+      };
+    }
+    return null;
+  }, [config]);
+
   const [isOpen, setIsOpen] = useState(false);
   const modalRef = useRef<HTMLDivElement>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
@@ -14,12 +41,12 @@ export function HomeAnnouncement() {
 
   // Check dismissal state and schedule initial appearance
   useEffect(() => {
-    if (!homeAnnouncement.enabled) return;
+    if (!announcement || !announcement.enabled) return;
 
     let isDismissed = false;
     try {
       isDismissed = Boolean(
-        sessionStorage.getItem(homeAnnouncement.dismissalKey),
+        sessionStorage.getItem(announcement.dismissalKey)
       );
     } catch {
       // Storage unavailable in private/sandboxed contexts; proceed safely
@@ -42,26 +69,31 @@ export function HomeAnnouncement() {
       setIsOpen(true);
     };
 
-    const initialTimer = setTimeout(checkAndOpen, homeAnnouncement.delayMs ?? 3000);
+    const initialTimer = setTimeout(
+      checkAndOpen,
+      announcement.delayMs ?? 3000
+    );
 
     return () => {
       clearTimeout(initialTimer);
       if (retryTimer) clearTimeout(retryTimer);
     };
-  }, []);
+  }, [announcement]);
 
   const handleDismiss = useCallback(() => {
     setIsOpen(false);
-    try {
-      sessionStorage.setItem(homeAnnouncement.dismissalKey, "1");
-    } catch {
-      // Handle unavailable storage gracefully
+    if (announcement) {
+      try {
+        sessionStorage.setItem(announcement.dismissalKey, "1");
+      } catch {
+        // Handle unavailable storage gracefully
+      }
     }
     // Restore focus to previous element
     window.requestAnimationFrame(() => {
       previouslyFocusedElementRef.current?.focus();
     });
-  }, []);
+  }, [announcement]);
 
   // Trap focus, handle Escape key, and lock background scrolling
   useEffect(() => {
@@ -85,7 +117,7 @@ export function HomeAnnouncement() {
       if (e.key === "Tab") {
         if (!modalRef.current) return;
         const focusable = modalRef.current.querySelectorAll<HTMLElement>(
-          'a[href], button:not([disabled]), [tabindex="0"]',
+          'a[href], button:not([disabled]), [tabindex="0"]'
         );
         if (!focusable.length) return;
 
@@ -111,7 +143,7 @@ export function HomeAnnouncement() {
     };
   }, [isOpen, handleDismiss]);
 
-  if (!isOpen || !homeAnnouncement.enabled) {
+  if (!isOpen || !announcement || !announcement.enabled) {
     return null;
   }
 
@@ -138,17 +170,17 @@ export function HomeAnnouncement() {
         {/* Top Header Bar */}
         <div className="flex items-center justify-between px-3.5 py-2.5 sm:px-4 sm:py-3 bg-[#090527] border-b border-[#D97706]/30 shrink-0">
           <div className="flex items-center gap-2 min-w-0">
-            {homeAnnouncement.badge && (
+            {announcement.badge && (
               <span className="hidden sm:inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-heading font-bold uppercase tracking-wider bg-[#B91C1C] text-white shadow-2xs">
                 <Sparkles className="w-3 h-3 text-[#F4CD13]" aria-hidden="true" />
-                <span>{homeAnnouncement.badge}</span>
+                <span>{announcement.badge}</span>
               </span>
             )}
             <h2
               id="announcement-modal-title"
               className="text-base sm:text-base font-heading font-bold text-[#F4CD13] tracking-wide"
             >
-              {homeAnnouncement.title}
+              {announcement.title}
             </h2>
           </div>
 
@@ -158,7 +190,7 @@ export function HomeAnnouncement() {
             type="button"
             onClick={handleDismiss}
             aria-label="Close announcement modal"
-            className="p-2 min-w-[44px] min-h-[44px] -mr-1 rounded-xl text-gray-300 hover:text-white hover:bg-white/10 focus-visible:outline-2 focus-visible:outline-[#F4CD13] transition-colors flex items-center justify-center"
+            className="p-2 min-w-[44px] min-h-[44px] -mr-1 rounded-xl text-gray-300 hover:text-white hover:bg-white/10 focus-visible:outline-2 focus-visible:outline-[#F4CD13] transition-colors flex items-center justify-center cursor-pointer"
           >
             <X className="w-5 h-5 sm:w-6 sm:h-6" aria-hidden="true" />
           </button>
@@ -168,16 +200,16 @@ export function HomeAnnouncement() {
         <div className="overflow-y-auto p-3 sm:p-4 flex flex-col items-center gap-3">
           {/* Main Visual Poster Link */}
           <Link
-            href={homeAnnouncement.link.href}
+            href={announcement.linkHref}
             onClick={handleDismiss}
-            aria-label={`View full details for ${homeAnnouncement.title}`}
+            aria-label={`View full details for ${announcement.title}`}
             className="group relative block w-full rounded-xl overflow-hidden border border-white/10 shadow-lg focus-visible:outline-2 focus-visible:outline-[#F4CD13] transition-transform hover:scale-[1.01]"
           >
             <Image
-              src={homeAnnouncement.image.src}
-              alt={homeAnnouncement.image.alt}
-              width={homeAnnouncement.image.width}
-              height={homeAnnouncement.image.height}
+              src={announcement.imageUrl}
+              alt={announcement.imageAlt}
+              width={1696}
+              height={2528}
               priority
               quality={90}
               className="w-full h-auto object-contain rounded-xl"
@@ -186,24 +218,24 @@ export function HomeAnnouncement() {
 
           {/* Screen Reader Transcription */}
           <div id="announcement-modal-desc" className="sr-only">
-            {homeAnnouncement.title}. {homeAnnouncement.subtitle}. Official invitation to all alumni of Devasthaly Vidyapeeth. Click the action button to visit Alumni Corner.
+            {announcement.title}. {announcement.subtitle || ""}. Official announcement from Devasthaly Vidyapeeth. Click the action button to proceed.
           </div>
 
           {/* Bottom Action CTA Button */}
           <div className="w-full flex flex-col gap-2 pt-1">
             <Link
-              href={homeAnnouncement.link.href}
+              href={announcement.linkHref}
               onClick={handleDismiss}
               className="w-full inline-flex items-center justify-center gap-2 py-2.5 sm:py-3 px-4 min-h-[44px] rounded-xl bg-gradient-to-r from-[#B91C1C] to-[#991B1B] hover:from-[#991B1B] hover:to-[#7F1D1D] text-white font-heading font-bold text-sm sm:text-base uppercase tracking-wider shadow-md hover:shadow-lg transition-all border border-red-500/40 focus-visible:outline-2 focus-visible:outline-[#F4CD13]"
             >
-              <span>{homeAnnouncement.link.label}</span>
+              <span>{announcement.linkLabel}</span>
               <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5" aria-hidden="true" />
             </Link>
 
             <button
               type="button"
               onClick={handleDismiss}
-              className="text-xs text-gray-400 hover:text-gray-200 transition-colors py-1 text-center focus-visible:outline-2 focus-visible:outline-[#F4CD13] rounded-md min-h-[32px] flex items-center justify-center"
+              className="text-xs text-gray-400 hover:text-gray-200 transition-colors py-1 text-center focus-visible:outline-2 focus-visible:outline-[#F4CD13] rounded-md min-h-[32px] flex items-center justify-center cursor-pointer"
             >
               Dismiss and continue to website
             </button>

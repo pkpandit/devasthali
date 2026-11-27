@@ -5,7 +5,10 @@ import type {
   HomepagePrincipalData,
   HomepageStatisticData,
   HomepageHighlightData,
+  HomepageAnnouncementData,
+  HomepageFaqData,
 } from "@/types/homepage";
+import { HOME_FAQ_DATA } from "@/lib/content/home";
 
 export const publicHeroSchema = z
   .object({
@@ -70,6 +73,28 @@ export const publicHighlightSchema = z.object({
   displayOrder: z.number(),
 });
 
+export const publicAnnouncementSchema = z
+  .object({
+    enabled: z.boolean(),
+    title: z.string().min(1),
+    badge: z.string().nullable().optional(),
+    subtitle: z.string().nullable().optional(),
+    imageUrl: z.string().min(1),
+    imageAlt: z.string().min(1),
+    linkHref: z.string().min(1),
+    linkLabel: z.string().min(1),
+    delayMs: z.number().int().min(0),
+    dismissalKey: z.string().min(1),
+  })
+  .nullable();
+
+export const publicFaqSchema = z.object({
+  id: z.string().min(1),
+  question: z.string().min(1),
+  answer: z.string().min(1),
+  displayOrder: z.number(),
+});
+
 export const publicHomepageResponseSchema = z.object({
   success: z.boolean(),
   data: z.object({
@@ -77,6 +102,8 @@ export const publicHomepageResponseSchema = z.object({
     principal: publicPrincipalSchema,
     statistics: z.array(publicStatisticSchema),
     highlights: z.array(publicHighlightSchema),
+    announcement: publicAnnouncementSchema.default(null),
+    faqs: z.array(publicFaqSchema).default([]),
   }),
 });
 
@@ -250,11 +277,22 @@ export const STATIC_FALLBACK_HIGHLIGHTS: HomepageHighlightData[] = [
   },
 ];
 
+export const STATIC_FALLBACK_ANNOUNCEMENT: HomepageAnnouncementData | null = null;
+
+export const STATIC_FALLBACK_FAQS: HomepageFaqData[] = HOME_FAQ_DATA.map((faq, idx) => ({
+  id: `static-faq-${idx + 1}`,
+  question: faq.question,
+  answer: faq.answer,
+  displayOrder: idx,
+}));
+
 export const STATIC_FALLBACK_HOMEPAGE: PublicHomepageData = {
   hero: STATIC_FALLBACK_HERO,
   principal: STATIC_FALLBACK_PRINCIPAL,
   statistics: STATIC_FALLBACK_STATISTICS,
   highlights: STATIC_FALLBACK_HIGHLIGHTS,
+  announcement: STATIC_FALLBACK_ANNOUNCEMENT,
+  faqs: STATIC_FALLBACK_FAQS,
 };
 
 function getBackendOrigin(): string | null {

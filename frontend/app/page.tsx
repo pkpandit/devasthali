@@ -5,7 +5,6 @@ import {
   SCHOOL_INFO,
   NOTICES_DATA,
   FACILITIES_DATA,
-  FAQ_DATA,
 } from "@/lib/school-data";
 import { getPublicNotices } from "@/lib/api/notices";
 import { getPublicHomepage } from "@/lib/api/homepage";
@@ -229,11 +228,12 @@ async function HomeNoticesSection() {
 }
 
 export default async function HomePage() {
-  const { hero, statistics, highlights } = await getPublicHomepage();
+  const { hero, statistics, highlights, announcement, faqs } =
+    await getPublicHomepage();
 
   return (
     <div className="flex flex-col w-full bg-white">
-      <HomeAnnouncement />
+      <HomeAnnouncement config={announcement} />
       {/* =========================================================================
           SECTION 1: HERO & ADMISSION HOOK (Faithful Edplus Distance Recreation)
       ========================================================================= */}
@@ -1142,22 +1142,33 @@ export default async function HomePage() {
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-start">
-            {FAQ_DATA.map((faq, idx) => (
-              <details
-                key={idx}
-                className="group bg-white rounded-2xl border border-[#E5E7EB] hover:border-[#B91C1C] open:border-[#B91C1C] p-5 sm:p-6 transition-all"
-              >
-                <summary className="font-heading font-bold text-sm sm:text-base text-[#111827] cursor-pointer list-none flex items-center justify-between gap-4 group-hover:text-[#B91C1C] transition-colors">
-                  <span>{faq.question}</span>
-                  <span className="text-gray-400 group-open:rotate-180 transition-transform text-sm">
-                    ▾
-                  </span>
-                </summary>
-                <p className="text-base text-gray-600 mt-3 pt-3 border-t border-gray-100 leading-relaxed font-sans">
-                  {faq.answer}
+            {faqs.length > 0 ? (
+              faqs.map((faq, idx) => (
+                <details
+                  key={faq.id || idx}
+                  className="group bg-white rounded-2xl border border-[#E5E7EB] hover:border-[#B91C1C] open:border-[#B91C1C] p-5 sm:p-6 transition-all"
+                >
+                  <summary className="font-heading font-bold text-sm sm:text-base text-[#111827] cursor-pointer list-none flex items-center justify-between gap-4 group-hover:text-[#B91C1C] transition-colors">
+                    <span>{faq.question}</span>
+                    <span className="text-gray-400 group-open:rotate-180 transition-transform text-sm">
+                      ▾
+                    </span>
+                  </summary>
+                  <p className="text-base text-gray-600 mt-3 pt-3 border-t border-gray-100 leading-relaxed font-sans">
+                    {faq.answer}
+                  </p>
+                </details>
+              ))
+            ) : (
+              <div className="col-span-full rounded-2xl border border-dashed border-gray-200 bg-gray-50/50 p-8 text-center">
+                <p className="text-sm font-medium text-gray-700">
+                  Frequently asked questions are currently being updated.
                 </p>
-              </details>
-            ))}
+                <p className="text-xs text-gray-500 mt-1">
+                  For immediate assistance or admission enquiries, please contact the school helpdesk.
+                </p>
+              </div>
+            )}
           </div>
         </Container>
       </section>

@@ -144,6 +144,7 @@ export async function GET() {
         data: {
           hero,
           principal,
+          principalMessage: principal,
           statistics,
           highlights,
           announcement,
