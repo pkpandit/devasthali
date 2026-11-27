@@ -238,6 +238,24 @@ export type OnlineAdmissionsAuditAction =
   | "APPLICATION_STATUS_UPDATED"
   | "REGISTRATION_SETTINGS_UPDATED";
 
+export type AdmissionsPublicationAuditAction =
+  | "ADMISSION_OVERVIEW_UPDATED"
+  | "FEE_PAGE_CREATED"
+  | "FEE_PAGE_UPDATED"
+  | "FEE_PAGE_DELETED"
+  | "FEE_PAGE_STATUS_CHANGED"
+  | "FEE_PAGES_REORDERED"
+  | "ADMISSION_RULE_CREATED"
+  | "ADMISSION_RULE_UPDATED"
+  | "ADMISSION_RULE_DELETED"
+  | "ADMISSION_RULE_STATUS_CHANGED"
+  | "ADMISSION_RULES_REORDERED"
+  | "ENTRANCE_SUBJECT_CREATED"
+  | "ENTRANCE_SUBJECT_UPDATED"
+  | "ENTRANCE_SUBJECT_DELETED"
+  | "ENTRANCE_SUBJECT_STATUS_CHANGED"
+  | "ENTRANCE_SUBJECTS_REORDERED";
+
 export type AuditAction =
   | AuthAuditAction
   | TopperAuditAction
@@ -257,7 +275,8 @@ export type AuditAction =
   | ActivityAuditAction
   | InstructionAuditAction
   | AlumniAuditAction
-  | OnlineAdmissionsAuditAction;
+  | OnlineAdmissionsAuditAction
+  | AdmissionsPublicationAuditAction;
 
 export interface CreateAuditLogParams {
   userId?: string | null;
@@ -311,7 +330,11 @@ export interface CreateAuditLogParams {
     | "CareerOpportunity"
     | "EnquirySubmission"
     | "AdmissionApplication"
-    | "AdmissionRegistrationSetting";
+    | "AdmissionRegistrationSetting"
+    | "AdmissionOverview"
+    | "FeeStructurePage"
+    | "AdmissionProcedureRule"
+    | "EntranceExamSubject";
   entityId: string;
   metadata?: Record<string, unknown> | null;
   ipAddress?: string | null;
