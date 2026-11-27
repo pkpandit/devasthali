@@ -1124,3 +1124,59 @@ model AdmissionSubmissionAttempt {
   @@map("admission_submission_attempts")
 }
 
+model AdmissionOverview {
+  id                         String   @id @default("default")
+  sessionLabel               String   @default("2026-27") @map("session_label") @db.VarChar(50)
+  feeStructureTitle          String   @default("Fee Structure (Session 2026–27)") @map("fee_structure_title") @db.VarChar(200)
+  feeStructureSubtitle       String   @default("Official statutory fee schedule and prospectus for Devasthaly Vidyapeeth, Chilkahar, Ballia.") @map("fee_structure_subtitle") @db.VarChar(500)
+  prospectusTitle            String   @default("Official Devasthaly Vidyapeeth Prospectus") @map("prospectus_title") @db.VarChar(200)
+  prospectusDescription      String   @default("Complete publication containing the vision of Founder Shri Chandra Shekhar, admission eligibility, code of conduct, academic syllabus, examination assessment rules, and hostel guidelines.") @map("prospectus_description") @db.Text
+  prospectusPdfUrl           String   @default("/documents/original/prospectus-2.pdf") @map("prospectus_pdf_url") @db.VarChar(500)
+  prospectusDisplayLabel     String   @default("Prospectus PDF (5.6 MB)") @map("prospectus_display_label") @db.VarChar(100)
+  admissionChartPdfUrl       String   @default("/documents/original/new-admission-chart-2026-27.pdf") @map("admission_chart_pdf_url") @db.VarChar(500)
+  admissionChartDisplayLabel String   @default("Admission Chart (722 KB)") @map("admission_chart_display_label") @db.VarChar(100)
+  createdAt                  DateTime @default(now()) @map("created_at")
+  updatedAt                  DateTime @updatedAt @map("updated_at")
+
+  @@map("admission_overviews")
+}
+
+model FeeStructurePage {
+  id           String   @id @default(cuid())
+  pageNumber   Int      @map("page_number")
+  title        String   @db.VarChar(200)
+  imageUrl     String   @map("image_url") @db.VarChar(500)
+  displayOrder Int      @default(0) @map("display_order")
+  isPublished  Boolean  @default(true) @map("is_published")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  @@index([isPublished, displayOrder])
+  @@map("fee_structure_pages")
+}
+
+model AdmissionProcedureRule {
+  id           String   @id @default(cuid())
+  ruleText     String   @map("rule_text") @db.Text
+  displayOrder Int      @default(0) @map("display_order")
+  isPublished  Boolean  @default(true) @map("is_published")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  @@index([isPublished, displayOrder])
+  @@map("admission_procedure_rules")
+}
+
+model EntranceExamSubject {
+  id           String   @id @default(cuid())
+  classGrade   String   @map("class_grade") @db.VarChar(100)
+  subjects     String   @db.VarChar(255)
+  displayOrder Int      @default(0) @map("display_order")
+  isPublished  Boolean  @default(true) @map("is_published")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  @@index([isPublished, displayOrder])
+  @@map("entrance_exam_subjects")
+}
+

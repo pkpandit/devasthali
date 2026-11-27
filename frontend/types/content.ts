@@ -382,6 +382,46 @@ export interface FeePageItem {
   title: string;
 }
 
+export interface PublicAdmissionOverview {
+  sessionLabel: string;
+  feeStructureTitle: string;
+  feeStructureSubtitle: string;
+  prospectusTitle: string;
+  prospectusDescription: string;
+  prospectusPdfUrl: string;
+  prospectusDisplayLabel: string;
+  admissionChartPdfUrl: string;
+  admissionChartDisplayLabel: string;
+}
+
+export interface PublicFeeStructurePage {
+  id: string;
+  pageNumber: number;
+  title: string;
+  imageUrl: string;
+  displayOrder: number;
+}
+
+export interface PublicAdmissionProcedureRule {
+  id: string;
+  ruleText: string;
+  displayOrder: number;
+}
+
+export interface PublicEntranceExamSubject {
+  id: string;
+  classGrade: string;
+  subjects: string;
+  displayOrder: number;
+}
+
+export interface PublicAdmissionsPublicationsData {
+  overview: PublicAdmissionOverview | null;
+  feePages: PublicFeeStructurePage[];
+  procedureRules: PublicAdmissionProcedureRule[];
+  entranceSubjects: PublicEntranceExamSubject[];
+}
+
 export interface SchoolEvent {
   id: string;
   title: string;
