@@ -273,6 +273,13 @@ export type HomepageAnnouncementFaqAuditAction =
   | "HOMEPAGE_FAQ_STATUS_CHANGED"
   | "HOMEPAGE_FAQS_REORDERED";
 
+export type HomepageTestimonialAuditAction =
+  | "HOMEPAGE_TESTIMONIAL_CREATED"
+  | "HOMEPAGE_TESTIMONIAL_UPDATED"
+  | "HOMEPAGE_TESTIMONIAL_DELETED"
+  | "HOMEPAGE_TESTIMONIAL_STATUS_CHANGED"
+  | "HOMEPAGE_TESTIMONIALS_REORDERED";
+
 export type AuditAction =
   | AuthAuditAction
   | TopperAuditAction
@@ -295,7 +302,8 @@ export type AuditAction =
   | OnlineAdmissionsAuditAction
   | AdmissionsPublicationAuditAction
   | TransportHostelAuditAction
-  | HomepageAnnouncementFaqAuditAction;
+  | HomepageAnnouncementFaqAuditAction
+  | HomepageTestimonialAuditAction;
 
 
 export interface CreateAuditLogParams {
@@ -359,7 +367,8 @@ export interface CreateAuditLogParams {
     | "HostelFeature"
     | "TransportSection"
     | "HomepageAnnouncement"
-    | "HomepageFaq";
+    | "HomepageFaq"
+    | "HomepageTestimonial";
 
   entityId: string;
   metadata?: Record<string, unknown> | null;
