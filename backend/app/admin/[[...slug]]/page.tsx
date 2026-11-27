@@ -603,6 +603,7 @@ export default async function AdminWorkspacePage({
       highlights,
       announcement,
       faqs,
+      testimonials,
     ] = await Promise.all([
       prisma.homepageHero.findUnique({
         where: { id: "default" },
@@ -620,6 +621,9 @@ export default async function AdminWorkspacePage({
         where: { id: "default" },
       }),
       prisma.homepageFaq.findMany({
+        orderBy: [{ displayOrder: "asc" }, { createdAt: "asc" }],
+      }),
+      prisma.homepageTestimonial.findMany({
         orderBy: [{ displayOrder: "asc" }, { createdAt: "asc" }],
       }),
     ]);
@@ -664,6 +668,12 @@ export default async function AdminWorkspacePage({
       updatedAt: faq.updatedAt.toISOString(),
     }));
 
+    const serializedTestimonials = testimonials.map((t) => ({
+      ...t,
+      createdAt: t.createdAt.toISOString(),
+      updatedAt: t.updatedAt.toISOString(),
+    }));
+
     return (
       <Card as="section" aria-labelledby="admin-workspace-title">
         <Breadcrumbs items={workspace.breadcrumbs} />
@@ -694,6 +704,7 @@ export default async function AdminWorkspacePage({
             highlights={serializedHighlights}
             announcement={serializedAnnouncement}
             faqs={serializedFaqs}
+            testimonials={serializedTestimonials}
           />
         </div>
       </Card>

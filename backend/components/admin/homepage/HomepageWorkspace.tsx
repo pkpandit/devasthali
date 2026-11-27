@@ -9,6 +9,7 @@ import {
   LayoutGrid,
   Megaphone,
   HelpCircle,
+  MessageSquareQuote,
 } from "lucide-react";
 import { HeroSectionEditor, type SerializedHomepageHero } from "./HeroSectionEditor";
 import { PrincipalMessageEditor, type SerializedHomepagePrincipalMessage } from "./PrincipalMessageEditor";
@@ -16,9 +17,11 @@ import { StatisticsEditor } from "./StatisticsEditor";
 import { HighlightsEditor } from "./HighlightsEditor";
 import { AnnouncementEditor, type SerializedHomepageAnnouncement } from "./AnnouncementEditor";
 import { FaqsEditor } from "./FaqsEditor";
+import { TestimonialsEditor } from "./TestimonialsEditor";
 import type { SerializedStatistic } from "./StatisticFormDialog";
 import type { SerializedHighlight } from "./HighlightFormDialog";
 import type { SerializedHomepageFaq } from "./FaqFormDialog";
+import type { SerializedHomepageTestimonial } from "./TestimonialFormDialog";
 
 interface HomepageWorkspaceProps {
   hero: SerializedHomepageHero | null;
@@ -27,6 +30,7 @@ interface HomepageWorkspaceProps {
   highlights: SerializedHighlight[];
   announcement: SerializedHomepageAnnouncement | null;
   faqs: SerializedHomepageFaq[];
+  testimonials: SerializedHomepageTestimonial[];
 }
 
 type TabKey =
@@ -35,7 +39,8 @@ type TabKey =
   | "STATISTICS"
   | "HIGHLIGHTS"
   | "ANNOUNCEMENT"
-  | "FAQS";
+  | "FAQS"
+  | "TESTIMONIALS";
 
 export function HomepageWorkspace({
   hero,
@@ -44,6 +49,7 @@ export function HomepageWorkspace({
   highlights,
   announcement,
   faqs,
+  testimonials,
 }: HomepageWorkspaceProps) {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<TabKey>("HERO");
@@ -85,6 +91,12 @@ export function HomepageWorkspace({
       icon: HelpCircle,
       count: faqs.length,
     },
+    {
+      key: "TESTIMONIALS",
+      label: "Parent Testimonials",
+      icon: MessageSquareQuote,
+      count: testimonials.length,
+    },
   ];
 
   return (
@@ -96,7 +108,7 @@ export function HomepageWorkspace({
             Homepage Content Management
           </h2>
           <p className="admin-workspace-toolbar__count">
-            6 sections configured &bull; Live public synchronization &bull; Hero, stats, highlights, popup &amp; FAQs active
+            7 sections configured &bull; Live public synchronization &bull; Hero, stats, highlights, popup, FAQs &amp; testimonials active
           </p>
         </div>
       </div>
@@ -165,6 +177,12 @@ export function HomepageWorkspace({
         )}
         {activeTab === "FAQS" && (
           <FaqsEditor faqs={faqs} onRefresh={handleRefresh} />
+        )}
+        {activeTab === "TESTIMONIALS" && (
+          <TestimonialsEditor
+            testimonials={testimonials}
+            onRefresh={handleRefresh}
+          />
         )}
       </div>
     </div>
