@@ -256,6 +256,15 @@ export type AdmissionsPublicationAuditAction =
   | "ENTRANCE_SUBJECT_STATUS_CHANGED"
   | "ENTRANCE_SUBJECTS_REORDERED";
 
+export type TransportHostelAuditAction =
+  | "HOSTEL_SECTION_UPDATED"
+  | "HOSTEL_FEATURE_CREATED"
+  | "HOSTEL_FEATURE_UPDATED"
+  | "HOSTEL_FEATURE_DELETED"
+  | "HOSTEL_FEATURE_STATUS_CHANGED"
+  | "HOSTEL_FEATURES_REORDERED"
+  | "TRANSPORT_SECTION_UPDATED";
+
 export type AuditAction =
   | AuthAuditAction
   | TopperAuditAction
@@ -276,7 +285,9 @@ export type AuditAction =
   | InstructionAuditAction
   | AlumniAuditAction
   | OnlineAdmissionsAuditAction
-  | AdmissionsPublicationAuditAction;
+  | AdmissionsPublicationAuditAction
+  | TransportHostelAuditAction;
+
 
 export interface CreateAuditLogParams {
   userId?: string | null;
@@ -334,7 +345,11 @@ export interface CreateAuditLogParams {
     | "AdmissionOverview"
     | "FeeStructurePage"
     | "AdmissionProcedureRule"
-    | "EntranceExamSubject";
+    | "EntranceExamSubject"
+    | "HostelSection"
+    | "HostelFeature"
+    | "TransportSection";
+
   entityId: string;
   metadata?: Record<string, unknown> | null;
   ipAddress?: string | null;
