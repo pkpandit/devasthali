@@ -265,6 +265,14 @@ export type TransportHostelAuditAction =
   | "HOSTEL_FEATURES_REORDERED"
   | "TRANSPORT_SECTION_UPDATED";
 
+export type HomepageAnnouncementFaqAuditAction =
+  | "HOMEPAGE_ANNOUNCEMENT_UPDATED"
+  | "HOMEPAGE_FAQ_CREATED"
+  | "HOMEPAGE_FAQ_UPDATED"
+  | "HOMEPAGE_FAQ_DELETED"
+  | "HOMEPAGE_FAQ_STATUS_CHANGED"
+  | "HOMEPAGE_FAQS_REORDERED";
+
 export type AuditAction =
   | AuthAuditAction
   | TopperAuditAction
@@ -286,7 +294,8 @@ export type AuditAction =
   | AlumniAuditAction
   | OnlineAdmissionsAuditAction
   | AdmissionsPublicationAuditAction
-  | TransportHostelAuditAction;
+  | TransportHostelAuditAction
+  | HomepageAnnouncementFaqAuditAction;
 
 
 export interface CreateAuditLogParams {
@@ -348,7 +357,9 @@ export interface CreateAuditLogParams {
     | "EntranceExamSubject"
     | "HostelSection"
     | "HostelFeature"
-    | "TransportSection";
+    | "TransportSection"
+    | "HomepageAnnouncement"
+    | "HomepageFaq";
 
   entityId: string;
   metadata?: Record<string, unknown> | null;
