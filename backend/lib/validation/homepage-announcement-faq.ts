@@ -104,7 +104,7 @@ export function isValidAnnouncementCtaUrl(url: string | null | undefined): boole
 export const homepageAnnouncementUpdateSchema = z.object({
   enabled: z.boolean(),
   title: z
-    .string({ required_error: "Title is required" })
+    .string()
     .trim()
     .min(1, "Title is required")
     .max(150, "Title cannot exceed 150 characters"),
@@ -123,7 +123,7 @@ export const homepageAnnouncementUpdateSchema = z.object({
     .nullable()
     .transform((val) => (val && val.length > 0 ? val : null)),
   imageUrl: z
-    .string({ required_error: "Image URL is required" })
+    .string()
     .trim()
     .min(1, "Image URL is required")
     .max(500, "Image URL cannot exceed 500 characters")
@@ -132,12 +132,12 @@ export const homepageAnnouncementUpdateSchema = z.object({
         "Image URL must be an approved static announcement asset path (e.g. /images/announcements/*.webp)",
     }),
   imageAlt: z
-    .string({ required_error: "Image alt text is required" })
+    .string()
     .trim()
     .min(1, "Image alt text is required")
     .max(255, "Image alt text cannot exceed 255 characters"),
   linkHref: z
-    .string({ required_error: "Link target is required" })
+    .string()
     .trim()
     .min(1, "Link target is required")
     .max(255, "Link target cannot exceed 255 characters")
@@ -146,17 +146,17 @@ export const homepageAnnouncementUpdateSchema = z.object({
         "Link target must be an approved internal path (/alumni, /admissions, /contact, /notices, /facilities)",
     }),
   linkLabel: z
-    .string({ required_error: "Link label is required" })
+    .string()
     .trim()
     .min(1, "Link label is required")
     .max(100, "Link label cannot exceed 100 characters"),
   delayMs: z
-    .number({ required_error: "Display delay is required" })
+    .number()
     .int("Delay must be an integer")
     .min(0, "Delay cannot be negative")
     .max(30000, "Delay cannot exceed 30,000ms (30 seconds)"),
   dismissalKey: z
-    .string({ required_error: "Dismissal key is required" })
+    .string()
     .trim()
     .min(1, "Dismissal key is required")
     .max(100, "Dismissal key cannot exceed 100 characters")
@@ -176,12 +176,12 @@ export type HomepageAnnouncementUpdateInput = z.infer<
 
 export const homepageFaqCreateSchema = z.object({
   question: z
-    .string({ required_error: "Question is required" })
+    .string()
     .trim()
     .min(1, "Question is required")
     .max(300, "Question cannot exceed 300 characters"),
   answer: z
-    .string({ required_error: "Answer is required" })
+    .string()
     .trim()
     .min(1, "Answer is required")
     .max(5000, "Answer cannot exceed 5000 characters"),
@@ -198,12 +198,12 @@ export type HomepageFaqCreateInput = z.infer<typeof homepageFaqCreateSchema>;
 export const homepageFaqUpdateSchema = z.object({
   id: z.string().trim().min(1, "FAQ ID is required"),
   question: z
-    .string({ required_error: "Question is required" })
+    .string()
     .trim()
     .min(1, "Question is required")
     .max(300, "Question cannot exceed 300 characters"),
   answer: z
-    .string({ required_error: "Answer is required" })
+    .string()
     .trim()
     .min(1, "Answer is required")
     .max(5000, "Answer cannot exceed 5000 characters"),

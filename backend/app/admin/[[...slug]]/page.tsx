@@ -596,7 +596,14 @@ export default async function AdminWorkspacePage({
   if (href === "/admin/homepage") {
     await requireRole(["SUPER_ADMIN"], href);
 
-    const [hero, principal, statistics, highlights] = await Promise.all([
+    const [
+      hero,
+      principal,
+      statistics,
+      highlights,
+      announcement,
+      faqs,
+    ] = await Promise.all([
       prisma.homepageHero.findUnique({
         where: { id: "default" },
       }),
@@ -607,6 +614,12 @@ export default async function AdminWorkspacePage({
         orderBy: [{ displayOrder: "asc" }, { createdAt: "asc" }],
       }),
       prisma.homepageHighlight.findMany({
+        orderBy: [{ displayOrder: "asc" }, { createdAt: "asc" }],
+      }),
+      prisma.homepageAnnouncement.findUnique({
+        where: { id: "default" },
+      }),
+      prisma.homepageFaq.findMany({
         orderBy: [{ displayOrder: "asc" }, { createdAt: "asc" }],
       }),
     ]);
@@ -637,6 +650,20 @@ export default async function AdminWorkspacePage({
       updatedAt: hl.updatedAt.toISOString(),
     }));
 
+    const serializedAnnouncement = announcement
+      ? {
+          ...announcement,
+          createdAt: announcement.createdAt.toISOString(),
+          updatedAt: announcement.updatedAt.toISOString(),
+        }
+      : null;
+
+    const serializedFaqs = faqs.map((faq) => ({
+      ...faq,
+      createdAt: faq.createdAt.toISOString(),
+      updatedAt: faq.updatedAt.toISOString(),
+    }));
+
     return (
       <Card as="section" aria-labelledby="admin-workspace-title">
         <Breadcrumbs items={workspace.breadcrumbs} />
@@ -665,6 +692,8 @@ export default async function AdminWorkspacePage({
             principal={serializedPrincipal}
             statistics={serializedStatistics}
             highlights={serializedHighlights}
+            announcement={serializedAnnouncement}
+            faqs={serializedFaqs}
           />
         </div>
       </Card>

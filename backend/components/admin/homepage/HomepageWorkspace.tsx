@@ -2,28 +2,48 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Sparkles, Quote, BarChart3, LayoutGrid } from "lucide-react";
+import {
+  Sparkles,
+  Quote,
+  BarChart3,
+  LayoutGrid,
+  Megaphone,
+  HelpCircle,
+} from "lucide-react";
 import { HeroSectionEditor, type SerializedHomepageHero } from "./HeroSectionEditor";
 import { PrincipalMessageEditor, type SerializedHomepagePrincipalMessage } from "./PrincipalMessageEditor";
 import { StatisticsEditor } from "./StatisticsEditor";
 import { HighlightsEditor } from "./HighlightsEditor";
+import { AnnouncementEditor, type SerializedHomepageAnnouncement } from "./AnnouncementEditor";
+import { FaqsEditor } from "./FaqsEditor";
 import type { SerializedStatistic } from "./StatisticFormDialog";
 import type { SerializedHighlight } from "./HighlightFormDialog";
+import type { SerializedHomepageFaq } from "./FaqFormDialog";
 
 interface HomepageWorkspaceProps {
   hero: SerializedHomepageHero | null;
   principal: SerializedHomepagePrincipalMessage | null;
   statistics: SerializedStatistic[];
   highlights: SerializedHighlight[];
+  announcement: SerializedHomepageAnnouncement | null;
+  faqs: SerializedHomepageFaq[];
 }
 
-type TabKey = "HERO" | "PRINCIPAL" | "STATISTICS" | "HIGHLIGHTS";
+type TabKey =
+  | "HERO"
+  | "PRINCIPAL"
+  | "STATISTICS"
+  | "HIGHLIGHTS"
+  | "ANNOUNCEMENT"
+  | "FAQS";
 
 export function HomepageWorkspace({
   hero,
   principal,
   statistics,
   highlights,
+  announcement,
+  faqs,
 }: HomepageWorkspaceProps) {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<TabKey>("HERO");
@@ -32,11 +52,39 @@ export function HomepageWorkspace({
     router.refresh();
   };
 
-  const tabs: { key: TabKey; label: string; icon: typeof Sparkles; count?: number }[] = [
+  const tabs: {
+    key: TabKey;
+    label: string;
+    icon: typeof Sparkles;
+    count?: number;
+    badgeText?: string;
+  }[] = [
     { key: "HERO", label: "Hero Banner", icon: Sparkles },
     { key: "PRINCIPAL", label: "Principal's Excerpt", icon: Quote },
-    { key: "STATISTICS", label: "Key Statistics", icon: BarChart3, count: statistics.length },
-    { key: "HIGHLIGHTS", label: "Highlights & Actions", icon: LayoutGrid, count: highlights.length },
+    {
+      key: "STATISTICS",
+      label: "Key Statistics",
+      icon: BarChart3,
+      count: statistics.length,
+    },
+    {
+      key: "HIGHLIGHTS",
+      label: "Highlights & Actions",
+      icon: LayoutGrid,
+      count: highlights.length,
+    },
+    {
+      key: "ANNOUNCEMENT",
+      label: "Announcement Popup",
+      icon: Megaphone,
+      badgeText: announcement?.enabled ? "Active" : "Off",
+    },
+    {
+      key: "FAQS",
+      label: "Frequently Asked Questions",
+      icon: HelpCircle,
+      count: faqs.length,
+    },
   ];
 
   return (
@@ -48,7 +96,7 @@ export function HomepageWorkspace({
             Homepage Content Management
           </h2>
           <p className="admin-workspace-toolbar__count">
-            4 sections configured &bull; Live public synchronization &bull; Hero, stats &amp; highlights active
+            6 sections configured &bull; Live public synchronization &bull; Hero, stats, highlights, popup &amp; FAQs active
           </p>
         </div>
       </div>
@@ -77,8 +125,18 @@ export function HomepageWorkspace({
               <Icon size={16} aria-hidden="true" />
               <span>{tab.label}</span>
               {typeof tab.count === "number" && (
-                <span className="admin-tab__badge">
-                  {tab.count}
+                <span className="admin-tab__badge">{tab.count}</span>
+              )}
+              {tab.badgeText && (
+                <span
+                  className={`admin-tab__badge ${
+                    tab.badgeText === "Active"
+                      ? "bg-emerald-100 text-emerald-800 border border-emerald-300"
+                      : "bg-gray-100 text-gray-600 border border-gray-200"
+                  }`}
+                  style={{ fontSize: "0.625rem", padding: "1px 6px" }}
+                >
+                  {tab.badgeText}
                 </span>
               )}
             </button>
@@ -93,12 +151,20 @@ export function HomepageWorkspace({
         aria-labelledby={`homepage-tab-${activeTab.toLowerCase()}`}
       >
         {activeTab === "HERO" && <HeroSectionEditor initialHero={hero} />}
-        {activeTab === "PRINCIPAL" && <PrincipalMessageEditor initialPrincipal={principal} />}
+        {activeTab === "PRINCIPAL" && (
+          <PrincipalMessageEditor initialPrincipal={principal} />
+        )}
         {activeTab === "STATISTICS" && (
           <StatisticsEditor statistics={statistics} onRefresh={handleRefresh} />
         )}
         {activeTab === "HIGHLIGHTS" && (
           <HighlightsEditor highlights={highlights} onRefresh={handleRefresh} />
+        )}
+        {activeTab === "ANNOUNCEMENT" && (
+          <AnnouncementEditor initialAnnouncement={announcement} />
+        )}
+        {activeTab === "FAQS" && (
+          <FaqsEditor faqs={faqs} onRefresh={handleRefresh} />
         )}
       </div>
     </div>
