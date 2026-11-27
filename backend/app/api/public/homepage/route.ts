@@ -14,7 +14,14 @@ function resolveMediaUrl(url: string | null | undefined, storageKey: string | nu
 
 export async function GET() {
   try {
-    const [heroRecord, principalRecord, statisticsRecords, highlightsRecords] = await Promise.all([
+    const [
+      heroRecord,
+      principalRecord,
+      statisticsRecords,
+      highlightsRecords,
+      announcementRecord,
+      faqRecords,
+    ] = await Promise.all([
       prisma.homepageHero.findUnique({
         where: { id: "default" },
       }),
@@ -26,6 +33,13 @@ export async function GET() {
         orderBy: [{ displayOrder: "asc" }, { createdAt: "asc" }],
       }),
       prisma.homepageHighlight.findMany({
+        where: { isPublished: true },
+        orderBy: [{ displayOrder: "asc" }, { createdAt: "asc" }],
+      }),
+      prisma.homepageAnnouncement.findUnique({
+        where: { id: "default" },
+      }),
+      prisma.homepageFaq.findMany({
         where: { isPublished: true },
         orderBy: [{ displayOrder: "asc" }, { createdAt: "asc" }],
       }),
@@ -102,6 +116,28 @@ export async function GET() {
       displayOrder: hl.displayOrder,
     }));
 
+    const announcement = announcementRecord
+      ? {
+          enabled: announcementRecord.enabled,
+          title: announcementRecord.title,
+          badge: announcementRecord.badge || null,
+          subtitle: announcementRecord.subtitle || null,
+          imageUrl: announcementRecord.imageUrl,
+          imageAlt: announcementRecord.imageAlt,
+          linkHref: announcementRecord.linkHref,
+          linkLabel: announcementRecord.linkLabel,
+          delayMs: announcementRecord.delayMs,
+          dismissalKey: announcementRecord.dismissalKey,
+        }
+      : null;
+
+    const faqs = faqRecords.map((faq) => ({
+      id: faq.id,
+      question: faq.question,
+      answer: faq.answer,
+      displayOrder: faq.displayOrder,
+    }));
+
     return NextResponse.json(
       {
         success: true,
@@ -110,6 +146,8 @@ export async function GET() {
           principal,
           statistics,
           highlights,
+          announcement,
+          faqs,
         },
         meta: {
           version: 1,
