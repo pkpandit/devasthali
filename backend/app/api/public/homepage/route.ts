@@ -21,6 +21,7 @@ export async function GET() {
       highlightsRecords,
       announcementRecord,
       faqRecords,
+      testimonialRecords,
     ] = await Promise.all([
       prisma.homepageHero.findUnique({
         where: { id: "default" },
@@ -40,6 +41,10 @@ export async function GET() {
         where: { id: "default" },
       }),
       prisma.homepageFaq.findMany({
+        where: { isPublished: true },
+        orderBy: [{ displayOrder: "asc" }, { createdAt: "asc" }],
+      }),
+      prisma.homepageTestimonial.findMany({
         where: { isPublished: true },
         orderBy: [{ displayOrder: "asc" }, { createdAt: "asc" }],
       }),
@@ -138,6 +143,18 @@ export async function GET() {
       displayOrder: faq.displayOrder,
     }));
 
+    const testimonials = testimonialRecords.map((t) => ({
+      id: t.id,
+      author: t.author,
+      relationship: t.relationship,
+      subject: t.subject || null,
+      quote: t.quote,
+      rating: t.rating,
+      avatarUrl: t.avatarUrl || null,
+      monogram: t.monogram,
+      displayOrder: t.displayOrder,
+    }));
+
     return NextResponse.json(
       {
         success: true,
@@ -149,6 +166,7 @@ export async function GET() {
           highlights,
           announcement,
           faqs,
+          testimonials,
         },
         meta: {
           version: 1,
