@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import Image from "next/image";
 import { getPublicFacilityItems } from "@/lib/api/facilities";
+import { getPublicLifeAtSchoolOverview } from "@/lib/api/life-at-school";
 import {
   CheckCircle2,
   Bus,
@@ -16,6 +17,7 @@ import {
   Sparkles,
   Shield,
   Building,
+  AlertCircle,
 } from "lucide-react";
 
 const FACILITY_ICONS: Record<string, React.ElementType> = {
@@ -38,7 +40,12 @@ export const metadata: Metadata = {
 };
 
 export default async function FacilitiesPage() {
-  const facilities = await getPublicFacilityItems();
+  const [facilities, lifeAtSchool] = await Promise.all([
+    getPublicFacilityItems(),
+    getPublicLifeAtSchoolOverview(),
+  ]);
+  const hostel = lifeAtSchool.hostel;
+  const transport = lifeAtSchool.transport;
 
   return (
     <div className="w-full bg-[#F3F4F6] pb-16">
@@ -134,57 +141,80 @@ export default async function FacilitiesPage() {
         )}
 
         {/* Hostel Highlight Section */}
-        <div id="hostel" className="bg-[#111827] text-white p-8 sm:p-10 rounded-3xl border-t-4 border-[#B91C1C] shadow-xl space-y-6">
-          <div className="flex items-center gap-2 text-[#F4CD13] text-sm font-bold uppercase tracking-wider">
-            <Home className="w-4 h-4 text-[#F4CD13]" />
-            <span>Residential Boarding Life</span>
+        {hostel ? (
+          <div id="hostel" className="bg-[#111827] text-white p-8 sm:p-10 rounded-3xl border-t-4 border-[#B91C1C] shadow-xl space-y-6">
+            <div className="flex items-center gap-2 text-[#F4CD13] text-sm font-bold uppercase tracking-wider">
+              <Home className="w-4 h-4 text-[#F4CD13]" />
+              <span>{hostel.badge}</span>
+            </div>
+
+            <h3 className="font-heading text-2xl sm:text-3xl font-bold">
+              {hostel.title}
+            </h3>
+
+            <p className="text-base text-gray-300 leading-relaxed max-w-3xl font-sans">
+              {hostel.description}
+            </p>
+
+            {hostel.features.length === 0 ? (
+              <div className="p-6 rounded-2xl bg-white/5 border border-white/10 text-center text-sm text-gray-400 font-sans">
+                Boarding residential features are currently being updated. Please contact campus reception for accommodation details.
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2">
+                {hostel.features.map((feat) => (
+                  <div key={feat.id} className="p-5 rounded-2xl bg-white/5 border border-white/10 text-sm text-gray-300 font-sans">
+                    <strong className="block text-white font-bold mb-1 font-heading text-sm">
+                      {feat.title}
+                    </strong>
+                    {feat.description}
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
-
-          <h3 className="font-heading text-2xl sm:text-3xl font-bold">
-            A Safe, Caring &ldquo;Home Away From Home&rdquo;
-          </h3>
-
-          <p className="text-base text-gray-300 leading-relaxed max-w-3xl font-sans">
-            Our residential boarding is structured to instill life-long habits of self-reliance, physical vigor, and focused academic discipline. We maintain completely segregated hostel blocks for boys and girls with strict 24/7 security, resident female and male wardens, and zero tolerance for bullying or ragging.
-          </p>
-
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2">
-            <div className="p-5 rounded-2xl bg-white/5 border border-white/10 text-sm text-gray-300 font-sans">
-              <strong className="block text-white font-bold mb-1 font-heading text-sm">Pure Vegetarian Dining</strong>
-              4 freshly prepared, nutritious meals daily crafted by trained chefs under strict hygiene standards.
-            </div>
-            <div className="p-5 rounded-2xl bg-white/5 border border-white/10 text-sm text-gray-300 font-sans">
-              <strong className="block text-white font-bold mb-1 font-heading text-sm">Evening Supervised Study</strong>
-              2 hours of compulsory, teacher-mentored preparation every evening to clear academic doubts.
-            </div>
-            <div className="p-5 rounded-2xl bg-white/5 border border-white/10 text-sm text-gray-300 font-sans">
-              <strong className="block text-white font-bold mb-1 font-heading text-sm">Parent Connect & Wellness</strong>
-              Scheduled weekly tele-calls, round-the-clock nurse on duty, and routine health checks.
-            </div>
+        ) : (
+          <div id="hostel" className="bg-[#111827] text-white p-8 sm:p-10 rounded-3xl border-t-4 border-[#B91C1C] shadow-xl text-center space-y-3">
+            <AlertCircle className="w-8 h-8 text-amber-400 mx-auto" />
+            <h3 className="font-heading text-xl font-bold">Residential Boarding Details Updating</h3>
+            <p className="text-sm text-gray-300 max-w-md mx-auto font-sans leading-relaxed">
+              Official boarding guidelines are currently being refreshed. Please contact the school reception or chief warden for inquiries.
+            </p>
           </div>
-        </div>
+        )}
 
         {/* Transport Fleet Section */}
-        <div id="transport" className="bg-white p-8 sm:p-10 rounded-3xl border border-gray-200/90 shadow-xs space-y-4">
-          <div className="flex items-center gap-2 text-[#B91C1C] text-sm font-bold uppercase tracking-wider">
-            <Bus className="w-4 h-4 text-[#B91C1C]" />
-            <span>Day-Scholar Transport Network</span>
+        {transport ? (
+          <div id="transport" className="bg-white p-8 sm:p-10 rounded-3xl border border-gray-200/90 shadow-xs space-y-4">
+            <div className="flex items-center gap-2 text-[#B91C1C] text-sm font-bold uppercase tracking-wider">
+              <Bus className="w-4 h-4 text-[#B91C1C]" />
+              <span>{transport.badge}</span>
+            </div>
+            <h3 className="font-heading text-2xl font-bold text-[#111827]">
+              {transport.title}
+            </h3>
+            <p className="text-base text-gray-600 leading-relaxed font-sans">
+              {transport.description}
+            </p>
+            <div className="pt-2">
+              <Link
+                href={transport.ctaUrl || "/contact"}
+                className="inline-flex items-center gap-2 text-sm font-bold text-[#B91C1C] hover:underline"
+              >
+                <span>{transport.ctaText}</span>
+              </Link>
+            </div>
           </div>
-          <h3 className="font-heading text-2xl font-bold text-[#111827]">
-            Safe, GPS-Tracked Transportation Fleet
-          </h3>
-          <p className="text-base text-gray-600 leading-relaxed font-sans">
-            Our yellow school buses operate on strictly monitored routes connecting Chilkahar to Ballia City, Rasra Tehsil, Sikanderpur, Nagra, Bilthara Road, and adjacent rural educational nodes. Each bus is equipped with speed governors, CCTV cameras, first-aid kits, and trained female attendants for younger students.
-          </p>
-          <div className="pt-2">
-            <Link
-              href="/contact"
-              className="inline-flex items-center gap-2 text-sm font-bold text-[#B91C1C] hover:underline"
-            >
-              Contact Transport Coordinator for Pick-up Node Details →
-            </Link>
+        ) : (
+          <div id="transport" className="bg-white p-8 sm:p-10 rounded-3xl border border-gray-200/90 shadow-xs text-center space-y-3">
+            <AlertCircle className="w-8 h-8 text-amber-600 mx-auto" />
+            <h3 className="font-heading text-xl font-bold text-[#111827]">Transport Fleet Details Updating</h3>
+            <p className="text-sm text-gray-600 max-w-md mx-auto font-sans leading-relaxed">
+              Transportation route schedules are currently being finalized. Please contact the campus transport desk for pick-up inquiries.
+            </p>
           </div>
-        </div>
+        )}
+
       </div>
     </div>
   );
