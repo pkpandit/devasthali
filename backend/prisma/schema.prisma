@@ -1229,4 +1229,44 @@ model TransportSection {
   @@map("transport_sections")
 }
 
+// ==========================================
+// 23. HOMEPAGE ANNOUNCEMENT POPUP
+// ==========================================
+
+model HomepageAnnouncement {
+  id           String   @id @default("default")
+  enabled      Boolean  @default(false)
+  title        String   @default("Alumni Meet 2026") @db.VarChar(150)
+  badge        String?  @default("Special Event") @db.VarChar(50)
+  subtitle     String?  @default("Reconnect, Relive, Rejoice") @db.VarChar(200)
+  imageUrl     String   @default("/images/announcements/alumni-meet-2026.webp") @map("image_url") @db.VarChar(500)
+  imageAlt     String   @default("Devasthaly Vidyapeeth Alumni Meet 2026 Official Poster - Reconnect, Relive, Rejoice") @map("image_alt") @db.VarChar(255)
+  linkHref     String   @default("/alumni") @map("link_href") @db.VarChar(255)
+  linkLabel    String   @default("Join the Meet") @map("link_label") @db.VarChar(100)
+  delayMs      Int      @default(3000) @map("delay_ms")
+  dismissalKey String   @default("dvp_announcement_dismissed_alumni_meet_2026") @map("dismissal_key") @db.VarChar(100)
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  @@map("homepage_announcements")
+}
+
+// ==========================================
+// 24. HOMEPAGE FREQUENTLY ASKED QUESTIONS
+// ==========================================
+
+model HomepageFaq {
+  id           String   @id @default(cuid())
+  question     String   @db.VarChar(300)
+  answer       String   @db.Text
+  displayOrder Int      @default(0) @map("display_order")
+  isPublished  Boolean  @default(true) @map("is_published")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  @@index([isPublished, displayOrder])
+  @@map("homepage_faqs")
+}
+
+
 

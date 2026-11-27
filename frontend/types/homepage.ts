@@ -51,9 +51,32 @@ export interface HomepageHighlightData {
   displayOrder: number;
 }
 
+export interface HomepageAnnouncementData {
+  enabled: boolean;
+  title: string;
+  badge?: string | null;
+  subtitle?: string | null;
+  imageUrl: string;
+  imageAlt: string;
+  linkHref: string;
+  linkLabel: string;
+  delayMs: number;
+  dismissalKey: string;
+}
+
+export interface HomepageFaqData {
+  id: string;
+  question: string;
+  answer: string;
+  displayOrder: number;
+}
+
 export interface PublicHomepageData {
   hero: HomepageHeroData | null;
   principal: HomepagePrincipalData | null;
   statistics: HomepageStatisticData[];
   highlights: HomepageHighlightData[];
+  announcement: HomepageAnnouncementData | null;
+  faqs: HomepageFaqData[];
 }
+
