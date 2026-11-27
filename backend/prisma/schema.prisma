@@ -1268,5 +1268,28 @@ model HomepageFaq {
   @@map("homepage_faqs")
 }
 
+// ==========================================
+// 25. HOMEPAGE TESTIMONIALS
+// ==========================================
+
+model HomepageTestimonial {
+  id           String   @id @default(cuid())
+  author       String   @db.VarChar(150)
+  relationship String   @db.VarChar(200)
+  subject      String?  @db.VarChar(150)
+  quote        String   @db.Text
+  rating       Int      @default(5)
+  avatarUrl    String?  @map("avatar_url") @db.VarChar(500)
+  monogram     String   @default("★") @db.VarChar(10)
+  displayOrder Int      @default(0) @map("display_order")
+  isPublished  Boolean  @default(true) @map("is_published")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  @@index([isPublished, displayOrder])
+  @@map("homepage_testimonials")
+}
+
+
 
 

@@ -71,6 +71,18 @@ export interface HomepageFaqData {
   displayOrder: number;
 }
 
+export interface HomepageTestimonialData {
+  id: string;
+  author: string;
+  relationship: string;
+  subject?: string | null;
+  quote: string;
+  rating: number;
+  avatarUrl?: string | null;
+  monogram: string;
+  displayOrder: number;
+}
+
 export interface PublicHomepageData {
   hero: HomepageHeroData | null;
   principal: HomepagePrincipalData | null;
@@ -78,5 +90,6 @@ export interface PublicHomepageData {
   highlights: HomepageHighlightData[];
   announcement: HomepageAnnouncementData | null;
   faqs: HomepageFaqData[];
+  testimonials: HomepageTestimonialData[];
 }
 
