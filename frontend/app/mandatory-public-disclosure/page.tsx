@@ -119,13 +119,13 @@ export default async function MandatoryPublicDisclosurePage() {
                     </caption>
                     <thead className="bg-[#111827] text-white">
                       <tr>
-                        <th scope="col" className="py-3 px-4 font-heading font-bold w-16">
+                        <th scope="col" className="py-3 px-4 font-heading font-bold w-16 whitespace-nowrap">
                           S.NO
                         </th>
-                        <th scope="col" className="py-3 px-4 font-heading font-bold">
+                        <th scope="col" className="py-3 px-4 font-heading font-bold min-w-[200px]">
                           DOCUMENTS / INFORMATION
                         </th>
-                        <th scope="col" className="py-3 px-4 font-heading font-bold text-right w-44">
+                        <th scope="col" className="py-3 px-4 font-heading font-bold text-right whitespace-nowrap w-52 sm:w-56">
                           UPLOADED DOCUMENTS
                         </th>
                       </tr>
@@ -133,22 +133,22 @@ export default async function MandatoryPublicDisclosurePage() {
                     <tbody className="divide-y divide-gray-200 font-sans text-gray-800">
                       {section.documents.map((doc, dIdx) => (
                         <tr key={doc.id || dIdx} className="hover:bg-[#F3F4F6] transition-colors">
-                          <td className="py-3 px-4 font-bold text-[#111827]">{dIdx + 1}</td>
-                          <td className="py-3 px-4 font-medium text-gray-700">
-                            <div>{doc.title}</div>
+                          <td className="py-3 px-4 font-bold text-[#111827] w-16 whitespace-nowrap">{dIdx + 1}</td>
+                          <td className="py-3 px-4 font-medium text-gray-700 min-w-[200px]">
+                            <div className="break-words">{doc.title}</div>
                             {doc.description && (
-                              <div className="text-xs text-gray-500 mt-0.5">{doc.description}</div>
+                              <div className="text-xs text-gray-500 mt-0.5 break-words">{doc.description}</div>
                             )}
                           </td>
-                          <td className="py-3 px-4 text-right">
+                          <td className="py-3 px-4 text-right whitespace-nowrap">
                             <a
                               href={doc.fileUrl}
                               download
                               aria-label={`Download ${doc.title} PDF`}
-                              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-[#B91C1C] text-white text-sm font-heading font-bold hover:bg-[#991B1B] transition-colors shadow-2xs focus-visible:outline-2 focus-visible:outline-[#B91C1C]"
+                              className="inline-flex items-center justify-center gap-1.5 px-3.5 py-1.5 rounded-full bg-[#B91C1C] text-white text-sm font-heading font-bold hover:bg-[#991B1B] transition-colors shadow-2xs focus-visible:outline-2 focus-visible:outline-[#B91C1C] whitespace-nowrap shrink-0"
                             >
-                              <Download className="w-3.5 h-3.5" />
-                              <span>{doc.linkLabel || "VIEW/DOWNLOAD"}</span>
+                              <Download className="w-3.5 h-3.5 shrink-0" />
+                              <span className="whitespace-nowrap">{doc.linkLabel || "VIEW/DOWNLOAD"}</span>
                             </a>
                           </td>
                         </tr>
